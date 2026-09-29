@@ -1,6 +1,6 @@
 # Etapa 5 — Autenticación e invitaciones
 
-Estado: implementación local y migración remota preparadas. La migración se aplicó al proyecto Supabase ResiQ el 2026-09-29 y se verificaron siete tablas con RLS activo. Falta habilitar Google y ejecutar las pruebas remotas antes de presentar la etapa para aprobación final.
+Estado: implementación local y migración remota aplicadas. Se verificaron siete tablas con RLS activo, Google OAuth y el bootstrap del primer administrador el 2026-09-29. Faltan las pruebas remotas de invitaciones antes de presentar la etapa para aprobación final.
 
 ## Alcance implementado
 
@@ -13,11 +13,11 @@ Estado: implementación local y migración remota preparadas. La migración se a
 - Invitaciones de un solo uso: token aleatorio, almacenamiento exclusivo del hash, correo verificado coincidente, expiración y consumo atómico.
 - El rol, la propiedad, la unidad y el tipo de vínculo se toman del registro bloqueado en PostgreSQL, nunca del navegador.
 
-## Configuración externa pendiente
+## Configuración externa
 
-1. En Auth > URL Configuration, usar `http://localhost:3000` como Site URL y agregar `http://localhost:3000/auth/callback` como redirect permitido.
-2. Habilitar Google y configurar su Client ID/secret directamente en Supabase.
-3. Crear una propiedad, torre, unidad y administrador iniciales mediante un procedimiento controlado de bootstrap; no se incluye autoasignación privilegiada desde la aplicación.
+1. Configurado: Site URL `http://localhost:3000` y redirect `http://localhost:3000/auth/callback`.
+2. Configurado: Google habilitado con Client ID y secreto almacenado directamente en Supabase.
+3. Configurado: bootstrap idempotente de dos propiedades de demostración, una torre y veinte apartamentos por propiedad, con el primer administrador asignado de forma controlada.
 
 ## Pruebas exigidas antes de aprobar
 
@@ -28,3 +28,13 @@ Estado: implementación local y migración remota preparadas. La migración se a
 - Invitación válida, vencida, revocada, reutilizada y con correo distinto.
 - Usuario autenticado sin membresía solo ve acceso pendiente.
 - Aislamiento entre dos propiedades y rechazo de roles/unidades alterados desde el cliente.
+
+## Verificaciones del 2026-09-29
+
+- `npm run typecheck`: correcto.
+- `npm run lint`: correcto.
+- `npm run build`: correcto; nueve rutas generadas y Proxy detectado.
+- `/panel` anónimo: redirección 307 a `/login?next=%2Fpanel`.
+- `/login`: respuesta 200 con acceso mediante Google.
+- Supabase OAuth: URL de autorización generada con proveedor `google` y callback `http://localhost:3000/auth/callback`.
+- Bootstrap remoto: dos propiedades, veinte unidades activas por propiedad y rol `administrator` verificados mediante la consulta final.

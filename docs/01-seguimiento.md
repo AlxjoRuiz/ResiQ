@@ -1,6 +1,6 @@
 # Seguimiento del proyecto
 
-Actualizado: 2026-09-28. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
+Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
 
 ## Estado de etapas
 
@@ -11,7 +11,7 @@ Actualizado: 2026-09-28. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 2 | Modelo de datos y ER | Aprobada: «esta perfecto, aprobado. sigamos» |
 | 3 | Diseño detallado de seguridad y RLS | Aprobada: «aprobado sigamos» |
 | 4 | Inicialización del proyecto | Aprobada por el usuario al ordenar continuar y configurar Supabase |
-| 5 | Autenticación e invitaciones | En implementación; migración aplicada en Supabase y RLS verificado, configuración OAuth y pruebas remotas pendientes |
+| 5 | Autenticación e invitaciones | En implementación; migración, RLS, Google OAuth y bootstrap verificados; pruebas remotas de invitaciones pendientes |
 | 6 | Multi-tenancy funcional | No iniciada |
 | 7 | Dashboards | No iniciada |
 | 8 | PQRS | No iniciada |
@@ -93,3 +93,5 @@ Actualizado: 2026-09-28. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 - Etapa 3 aprobada. Etapa 4 entregada y verificada en `05-inicializacion.md`; mantener reglas P02/P06 pendientes y denegación conservadora.
 - Etapa 4 aprobada. Etapa 5 autorizada explícitamente el 2026-09-28 al solicitar continuar después del restablecimiento de uso.
 - El 2026-09-29 se aplicó `20260929003500_auth_and_invitations.sql` al proyecto Supabase ResiQ. La consulta de verificación devolvió las siete tablas esperadas (`profiles`, `properties`, `property_members`, `buildings`, `units`, `unit_memberships`, `invitations`) con RLS activo.
+- El 2026-09-29 se habilitó Google OAuth en Supabase con el cliente web de ResiQ. TypeScript, ESLint y la compilación de producción finalizaron correctamente; `/panel` redirige a `/login`, `/login` responde y Supabase genera la autorización de Google con callback `http://localhost:3000/auth/callback`.
+- El 2026-09-29 se ejecutó el bootstrap controlado para el usuario autenticado: `Conjunto Bosques de ResiQ` y `Edificio Mirador ResiQ`, cada uno con una torre, veinte unidades activas y membresía de administrador.
