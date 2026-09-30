@@ -1,6 +1,6 @@
 # Etapa 6 — Multi-tenancy funcional
 
-Estado: implementación entregada; validación práctica final pendiente. Autorizada por el usuario el 2026-09-30.
+Estado: etapa entregada y validada; pendiente de aprobación explícita del usuario. Autorizada por el usuario el 2026-09-30.
 
 ## Decisiones aprobadas
 
@@ -31,10 +31,20 @@ Estado: implementación entregada; validación práctica final pendiente. Autori
 - [x] TypeScript sin errores.
 - [x] ESLint sin errores.
 - [x] Migración aplicada y verificada en Supabase.
-- [ ] Un administrador puede gestionar propiedad, torre y apartamento desde la interfaz.
-- [ ] P01: un miembro puede tener dos apartamentos vigentes y leer ambos.
-- [ ] P06: al finalizar uno, el miembro deja de leer esa unidad y su vínculo histórico; administración conserva ambos registros y el evento de auditoría.
-- [ ] Un miembro no puede abrir ni ejecutar rutas/RPC administrativas.
+- [x] Un administrador puede gestionar propiedad, torre y apartamento desde la interfaz.
+- [x] P01: un miembro puede tener dos apartamentos vigentes y leer ambos.
+- [x] P06: al finalizar uno, el miembro deja de leer esa unidad y su vínculo histórico; administración conserva ambos registros y el evento de auditoría.
+- [x] Un miembro no puede abrir ni ejecutar rutas/RPC administrativas.
 - [x] Compilación de producción correcta.
 
-La etapa no se considera cerrada hasta completar estas pruebas y recibir aprobación explícita del usuario.
+La validación técnica está completa. La etapa no se considera aprobada hasta recibir la confirmación explícita del usuario.
+
+## Evidencia de validación — 2026-09-30
+
+- La sesión real de `alejoruizm11@gmail.com` leyó inicialmente solo el apartamento 101.
+- Después de crear temporalmente un segundo vínculo mediante la RPC administrativa, la misma sesión leyó los apartamentos 101 y 102.
+- La RPC administrativa invocada con la sesión miembro devolvió `not_authorized`, y la ruta administrativa respondió 404.
+- Al finalizar el vínculo 102, la sesión miembro volvió a leer únicamente el apartamento 101 y dejó de ver el vínculo terminado.
+- La sesión administrativa conservó un registro histórico terminado y dos eventos de auditoría, creación y finalización.
+- El vínculo terminado se conserva como evidencia de auditoría conforme a P06.
+- La sesión administrativa actualizó desde la interfaz, sin cambiar sus valores, los datos generales de la propiedad, la Torre 1 y el apartamento 101. Los tres formularios confirmaron la operación correctamente.
