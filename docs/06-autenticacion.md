@@ -1,6 +1,6 @@
 # Etapa 5 — Autenticación e invitaciones
 
-Estado: implementación local y migraciones remotas aplicadas. Se verificaron siete tablas con RLS activo, Google OAuth, el bootstrap del primer administrador y siete casos transaccionales de invitaciones el 2026-09-29. Faltan cuatro pruebas reales de navegador, segunda cuenta y aislamiento antes de presentar la etapa para aprobación final.
+Estado: implementación local y migraciones remotas aplicadas. Se verificaron siete tablas con RLS activo, Google OAuth, el bootstrap del primer administrador, siete casos transaccionales de invitaciones y el flujo real con una segunda cuenta el 2026-09-29. Etapa lista para aprobación final del usuario.
 
 ## Alcance implementado
 
@@ -50,7 +50,15 @@ La primera aceptación válida reveló que `accept_invitation` usaba `member_id`
 
 ## Pruebas aún pendientes
 
-- Cierre de sesión y renovación de sesión desde el navegador.
-- Edición del perfil propio y rechazo comprobado de un perfil ajeno.
-- Flujo completo de invitación desde la interfaz con una segunda cuenta real.
-- Aislamiento RLS comprobado con usuarios pertenecientes a propiedades distintas.
+No quedan pruebas de cierre pendientes para el alcance de la etapa 5.
+
+## Pruebas de cierre completadas
+
+- Cierre de sesión: redirección correcta al login; una ruta protegida volvió a exigir autenticación.
+- Renovación/persistencia: la segunda cuenta conservó la sesión al recargar el panel.
+- Invitación real: `alejoruizm11@gmail.com` aceptó desde la interfaz una invitación de miembro residente para el apartamento 101 de `Conjunto Bosques de ResiQ`.
+- Selección de cuenta: el acceso de Google solicita elegir cuenta cuando el destino es una invitación, evitando reutilizar accidentalmente la cuenta administradora.
+- Aislamiento visual: el panel de la cuenta invitada mostró una sola comunidad y no mostró `Edificio Mirador ResiQ`.
+- Acceso directo ajeno: la ruta administrativa de la propiedad no vinculada respondió 404.
+- RLS directo: como la segunda identidad se obtuvieron `visible_profiles=1`, `visible_property_members=1`, `visible_unit_memberships=1` y `foreign_property_members=0`.
+- Perfil: una prueba transaccional permitió `own_profile_updates=1` y devolvió `foreign_profile_updates=0`; el rollback evitó cambios persistentes.

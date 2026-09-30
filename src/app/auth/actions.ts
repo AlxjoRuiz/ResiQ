@@ -58,7 +58,10 @@ export async function signInWithGoogle(formData: FormData) {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
+    options: {
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      queryParams: next.startsWith("/invitacion?") ? { prompt: "select_account" } : undefined,
+    },
   });
   if (error || !data.url) redirect("/login?error=oauth");
   redirect(data.url);

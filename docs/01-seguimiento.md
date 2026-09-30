@@ -11,7 +11,7 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 2 | Modelo de datos y ER | Aprobada: «esta perfecto, aprobado. sigamos» |
 | 3 | Diseño detallado de seguridad y RLS | Aprobada: «aprobado sigamos» |
 | 4 | Inicialización del proyecto | Aprobada por el usuario al ordenar continuar y configurar Supabase |
-| 5 | Autenticación e invitaciones | En implementación; migración, RLS, Google OAuth, bootstrap y pruebas transaccionales de invitaciones verificados; faltan pruebas reales de navegador, segunda cuenta y aislamiento RLS |
+| 5 | Autenticación e invitaciones | Implementada y verificada; pendiente de aprobación final del usuario |
 | 6 | Multi-tenancy funcional | No iniciada |
 | 7 | Dashboards | No iniciada |
 | 8 | PQRS | No iniciada |
@@ -30,14 +30,14 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 
 ## Revisión contra el prompt maestro — 2026-09-29
 
-El proyecto está al final de la etapa 5. Las etapas 0–4 están aprobadas y la base funcional de autenticación e invitaciones ya existe. Todavía no corresponde iniciar la etapa 6 porque faltan cuatro comprobaciones de cierre y la aprobación explícita de la etapa 5.
+El proyecto está listo para cerrar la etapa 5. Las etapas 0–4 están aprobadas y la autenticación, sesiones, perfiles, invitaciones y aislamiento inicial de datos quedaron verificados. Todavía no corresponde iniciar la etapa 6 porque falta la aprobación explícita de la etapa 5.
 
 ### Para cerrar la etapa 5
 
-- [ ] Comprobar cierre de sesión y renovación de sesión desde el navegador.
-- [ ] Editar el perfil propio y comprobar que otro usuario no pueda editarlo ni leerlo fuera de la proyección autorizada.
-- [ ] Completar una invitación desde la interfaz con una segunda cuenta real.
-- [ ] Comprobar aislamiento RLS con usuarios reales vinculados a propiedades distintas.
+- [x] Comprobar cierre de sesión y renovación de sesión desde el navegador.
+- [x] Editar el perfil propio y comprobar que otro usuario no pueda editarlo ni leerlo fuera de la proyección autorizada.
+- [x] Completar una invitación desde la interfaz con una segunda cuenta real.
+- [x] Comprobar aislamiento RLS con usuarios reales vinculados a propiedades distintas.
 - [ ] Presentar resultados y solicitar aprobación explícita de la etapa 5.
 
 ### Trabajo funcional todavía no iniciado
@@ -147,3 +147,7 @@ El proyecto está al final de la etapa 5. Las etapas 0–4 están aprobadas y la
 - El 2026-09-29 se habilitó Google OAuth en Supabase con el cliente web de ResiQ. TypeScript, ESLint y la compilación de producción finalizaron correctamente; `/panel` redirige a `/login`, `/login` responde y Supabase genera la autorización de Google con callback `http://localhost:3000/auth/callback`.
 - El 2026-09-29 se ejecutó el bootstrap controlado para el usuario autenticado: `Conjunto Bosques de ResiQ` y `Edificio Mirador ResiQ`, cada uno con una torre, veinte unidades activas y membresía de administrador.
 - Las pruebas remotas detectaron y corrigieron una ambigüedad PL/pgSQL en `accept_invitation`. Después de aplicar `20260929220000_fix_accept_invitation_member_id.sql`, pasaron siete casos transaccionales sin persistir datos: válida, reutilizada, revocada, vencida, correo diferente, rol alterado y rollback limpio.
+- El 2026-09-29 se completó el flujo real con una segunda cuenta de Google: creación desde la interfaz, selección explícita de cuenta, OAuth, aceptación y acceso únicamente a `Conjunto Bosques de ResiQ` como `member`.
+- El cierre de sesión redirigió al login y la sesión de la cuenta invitada sobrevivió a una recarga del panel.
+- La prueba RLS como la segunda identidad devolvió un perfil, una membresía de propiedad, un vínculo de unidad y cero membresías de la propiedad ajena. La ruta administrativa de la segunda propiedad respondió 404.
+- La prueba transaccional de perfiles permitió una actualización propia y cero actualizaciones ajenas; finalizó con rollback.
