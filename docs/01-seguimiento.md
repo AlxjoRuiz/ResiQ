@@ -11,7 +11,7 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 2 | Modelo de datos y ER | Aprobada: «esta perfecto, aprobado. sigamos» |
 | 3 | Diseño detallado de seguridad y RLS | Aprobada: «aprobado sigamos» |
 | 4 | Inicialización del proyecto | Aprobada por el usuario al ordenar continuar y configurar Supabase |
-| 5 | Autenticación e invitaciones | Implementada y verificada; pendiente de aprobación final del usuario |
+| 5 | Autenticación e invitaciones | Aprobada por el usuario: «aprobado, seguimos mañana» |
 | 6 | Multi-tenancy funcional | No iniciada |
 | 7 | Dashboards | No iniciada |
 | 8 | PQRS | No iniciada |
@@ -30,7 +30,7 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 
 ## Revisión contra el prompt maestro — 2026-09-29
 
-El proyecto está listo para cerrar la etapa 5. Las etapas 0–4 están aprobadas y la autenticación, sesiones, perfiles, invitaciones y aislamiento inicial de datos quedaron verificados. Todavía no corresponde iniciar la etapa 6 porque falta la aprobación explícita de la etapa 5.
+La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están cerradas. La etapa 6 permanece sin iniciar hasta retomar el trabajo con su alcance y decisiones previas.
 
 ### Para cerrar la etapa 5
 
@@ -38,7 +38,7 @@ El proyecto está listo para cerrar la etapa 5. Las etapas 0–4 están aprobada
 - [x] Editar el perfil propio y comprobar que otro usuario no pueda editarlo ni leerlo fuera de la proyección autorizada.
 - [x] Completar una invitación desde la interfaz con una segunda cuenta real.
 - [x] Comprobar aislamiento RLS con usuarios reales vinculados a propiedades distintas.
-- [ ] Presentar resultados y solicitar aprobación explícita de la etapa 5.
+- [x] Presentar resultados y recibir aprobación explícita de la etapa 5.
 
 ### Trabajo funcional todavía no iniciado
 
