@@ -1,6 +1,6 @@
 # Seguimiento del proyecto
 
-Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
+Actualizado: 2026-09-30. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
 
 ## Estado de etapas
 
@@ -12,7 +12,7 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 3 | Diseño detallado de seguridad y RLS | Aprobada: «aprobado sigamos» |
 | 4 | Inicialización del proyecto | Aprobada por el usuario al ordenar continuar y configurar Supabase |
 | 5 | Autenticación e invitaciones | Aprobada por el usuario: «aprobado, seguimos mañana» |
-| 6 | Multi-tenancy funcional | No iniciada |
+| 6 | Multi-tenancy funcional | Implementación entregada; validación práctica final pendiente; P01/P06 aprobadas |
 | 7 | Dashboards | No iniciada |
 | 8 | PQRS | No iniciada |
 | 9 | Paquetes | No iniciada |
@@ -30,7 +30,7 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 
 ## Revisión contra el prompt maestro — 2026-09-29
 
-La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están cerradas. La etapa 6 permanece sin iniciar hasta retomar el trabajo con su alcance y decisiones previas.
+La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están cerradas. La etapa 6 fue autorizada y su implementación está entregada; queda la validación práctica final.
 
 ### Para cerrar la etapa 5
 
@@ -71,7 +71,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 
 ### Decisiones que deben cerrarse antes de implementar
 
-- Antes de la etapa 6: P01 (múltiples propiedades/unidades por usuario) y P06 (acceso histórico al finalizar un vínculo).
+- P01 y P06 quedaron resueltas antes de implementar la etapa 6.
 - Antes de las etapas 9 y 11: P08 (datos mínimos visibles para portería y destinatarios compartidos).
 - Antes de la etapa 11: P04, P05 y P07 para ocupación, cupos y restricciones por mora.
 - Antes de la etapa 12: P02 y P03 para visibilidad y carga de cartera.
@@ -103,12 +103,12 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 
 | ID | Decisión | Situación / bloqueo |
 |---|---|---|
-| P01 | Permitir múltiples propiedades/unidades por usuario | Arquitectura compatible; confirmar política de uso antes de implementar vinculaciones |
+| P01 | Permitir múltiples propiedades/unidades por usuario | Aprobada: una persona puede pertenecer a varias propiedades y tener varios vínculos de unidad vigentes |
 | P02 | Cartera visible a residentes además del propietario | Propuesta: autorización expresa; cerrar en etapa 3 |
 | P03 | Carga de cartera manual, Excel o integración | Manual es propuesta, no elección confirmada; cerrar antes de etapa 12 |
 | P04 | Reservas pendientes ocupan horario y vencen | Sin decisión; cerrar antes de etapa 11 |
 | P05 | Reserva exclusiva o por cupos | MVP exclusivo propuesto; cerrar antes de etapa 11 |
-| P06 | Acceso histórico al mudarse o perder membresía | Propuesta conservadora: retirar acceso operativo; definir excepciones antes de etapa 3 |
+| P06 | Acceso histórico al mudarse o perder membresía | Aprobada: retirar de inmediato el acceso operativo e histórico del antiguo miembro; administración conserva los registros para auditoría |
 | P07 | Mora: umbral, saldo, fecha de cómputo y reglas aplicables | 30 días es valor inicial solicitado; precisar comparación y validar regla de restricción antes de activarla |
 | P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Definir alcance de datos mínimos antes de módulos respectivos |
 | P09 | Convocatoria de asambleas, representación y conservación de evidencia | Definir con propiedad antes de etapa 14; no asumir reglas legales |
@@ -141,7 +141,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - Detenerse al terminar cada etapa y esperar aprobación. No crear código ni migraciones durante las etapas de diseño.
 - Etapa 2 aprobada: diccionario de 36 tablas, consolidaciones y diagramas; no implica resolución de los pendientes P01–P11 expresamente reservados en el documento.
 - Etapa 3: ver `04-seguridad.md`, matriz de permisos, contratos de operaciones y casos de prueba. No hay políticas ejecutadas ni aplicación.
-- Etapa 3 aprobada. Etapa 4 entregada y verificada en `05-inicializacion.md`; mantener reglas P02/P06 pendientes y denegación conservadora.
+- Etapa 3 aprobada. Etapa 4 entregada y verificada en `05-inicializacion.md`; mantener P02 pendiente y denegación conservadora.
 - Etapa 4 aprobada. Etapa 5 autorizada explícitamente el 2026-09-28 al solicitar continuar después del restablecimiento de uso.
 - El 2026-09-29 se aplicó `20260929003500_auth_and_invitations.sql` al proyecto Supabase ResiQ. La consulta de verificación devolvió las siete tablas esperadas (`profiles`, `properties`, `property_members`, `buildings`, `units`, `unit_memberships`, `invitations`) con RLS activo.
 - El 2026-09-29 se habilitó Google OAuth en Supabase con el cliente web de ResiQ. TypeScript, ESLint y la compilación de producción finalizaron correctamente; `/panel` redirige a `/login`, `/login` responde y Supabase genera la autorización de Google con callback `http://localhost:3000/auth/callback`.
@@ -151,3 +151,5 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El cierre de sesión redirigió al login y la sesión de la cuenta invitada sobrevivió a una recarga del panel.
 - La prueba RLS como la segunda identidad devolvió un perfil, una membresía de propiedad, un vínculo de unidad y cero membresías de la propiedad ajena. La ruta administrativa de la segunda propiedad respondió 404.
 - La prueba transaccional de perfiles permitió una actualización propia y cero actualizaciones ajenas; finalizó con rollback.
+- El 2026-09-30 el usuario aprobó P01 y P06 y autorizó la etapa 6. Se implementaron formularios y RPC de administración para datos de la propiedad, torres, apartamentos, miembros, roles y vínculos, con auditoría transaccional y denegación del historial al terminar un vínculo.
+- El 2026-09-30 se aplicó `20260930100000_multitenancy_management.sql` al proyecto Supabase ResiQ. TypeScript, ESLint y la compilación de producción finalizaron correctamente. La prueba transaccional final quedó pendiente porque el editor SQL de Supabase presentó una incidencia técnica y dejó de responder.

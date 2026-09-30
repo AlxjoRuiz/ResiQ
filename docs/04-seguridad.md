@@ -26,12 +26,12 @@ En solicitudes nuevas, una membresía revocada deja de autorizar. Una operación
 
 Si hay varios roles activos en una misma propiedad, se combinan sus permisos autorizados; se audita el actor real. Cambiar de vista no elimina privilegios ya concedidos ni crea otros. No usar selección de rol del navegador como control.
 
-### Reglas pendientes P02/P06/P08
+### Reglas P02/P06/P08
 
 Se propone un comportamiento conservador mientras se aclaran reglas de negocio:
 
 - Cartera: solo vínculo vigente con finance_access concedido explícitamente por administración. No autoasignar por ser residente o propietario. La política definitiva de quién debe recibirlo continúa pendiente P02.
-- Mudanza: vínculo vencido deja de permitir operaciones y datos de esa unidad, incluidos históricos, aunque siga siendo miembro de otra unidad. Acceso histórico especial pendiente P06. Administración conserva historial según política de retención.
+- Mudanza: P06 aprobada el 2026-09-30. Un vínculo vencido deja de permitir operaciones y datos de esa unidad, incluidos históricos, aunque la persona siga siendo miembro de otra unidad. Administración conserva el registro para auditoría y retención.
 - PQRS/llamados: autor o destinatario explícito, no todo el apartamento. Se requiere membresía y vínculo vigente con la unidad para acceso operativo del miembro.
 - Paquetes: destinatario explícito y vinculado. Si no hay miembro destinatario, visible solo a administración/portería hasta vincularlo mediante operación autorizada. Compartir entre ocupantes pendiente P08.
 
