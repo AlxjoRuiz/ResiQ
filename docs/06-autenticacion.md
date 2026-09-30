@@ -1,6 +1,6 @@
 # Etapa 5 — Autenticación e invitaciones
 
-Estado: implementación local y migración remota aplicadas. Se verificaron siete tablas con RLS activo, Google OAuth y el bootstrap del primer administrador el 2026-09-29. Faltan las pruebas remotas de invitaciones antes de presentar la etapa para aprobación final.
+Estado: implementación local y migraciones remotas aplicadas. Se verificaron siete tablas con RLS activo, Google OAuth, el bootstrap del primer administrador y siete casos transaccionales de invitaciones el 2026-09-29. Faltan cuatro pruebas reales de navegador, segunda cuenta y aislamiento antes de presentar la etapa para aprobación final.
 
 ## Alcance implementado
 

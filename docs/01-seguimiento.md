@@ -11,7 +11,7 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 2 | Modelo de datos y ER | Aprobada: «esta perfecto, aprobado. sigamos» |
 | 3 | Diseño detallado de seguridad y RLS | Aprobada: «aprobado sigamos» |
 | 4 | Inicialización del proyecto | Aprobada por el usuario al ordenar continuar y configurar Supabase |
-| 5 | Autenticación e invitaciones | En implementación; migración, RLS, Google OAuth y bootstrap verificados; pruebas remotas de invitaciones pendientes |
+| 5 | Autenticación e invitaciones | En implementación; migración, RLS, Google OAuth, bootstrap y pruebas transaccionales de invitaciones verificados; faltan pruebas reales de navegador, segunda cuenta y aislamiento RLS |
 | 6 | Multi-tenancy funcional | No iniciada |
 | 7 | Dashboards | No iniciada |
 | 8 | PQRS | No iniciada |
@@ -27,6 +27,57 @@ Actualizado: 2026-09-29. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 18 | Responsive y UX integral | No iniciada |
 | 19 | Deploy | No iniciada |
 | 20 | Preparación comercial SaaS | No iniciada |
+
+## Revisión contra el prompt maestro — 2026-09-29
+
+El proyecto está al final de la etapa 5. Las etapas 0–4 están aprobadas y la base funcional de autenticación e invitaciones ya existe. Todavía no corresponde iniciar la etapa 6 porque faltan cuatro comprobaciones de cierre y la aprobación explícita de la etapa 5.
+
+### Para cerrar la etapa 5
+
+- [ ] Comprobar cierre de sesión y renovación de sesión desde el navegador.
+- [ ] Editar el perfil propio y comprobar que otro usuario no pueda editarlo ni leerlo fuera de la proyección autorizada.
+- [ ] Completar una invitación desde la interfaz con una segunda cuenta real.
+- [ ] Comprobar aislamiento RLS con usuarios reales vinculados a propiedades distintas.
+- [ ] Presentar resultados y solicitar aprobación explícita de la etapa 5.
+
+### Trabajo funcional todavía no iniciado
+
+| Etapa | Trabajo principal pendiente |
+|---|---|
+| 6 | Gestión multi-tenant completa: propiedades, edificios, unidades, miembros, roles y vínculos |
+| 7 | Dashboards para residente, portería, administración y plataforma |
+| 8 | PQRS, mensajes y adjuntos privados |
+| 9 | Paquetes, estados, entrega y avisos |
+| 10 | Visitantes, entradas y mantenimiento como tipo de visita |
+| 11 | Zonas comunes, horarios, bloqueos y reservas |
+| 12 | Cartera, obligaciones, pagos, aplicaciones y reglas de mora |
+| 13 | Llamados de atención, destinatarios y adjuntos |
+| 14 | Asambleas, agenda, documentos, asistentes y representación |
+| 15 | Notificaciones internas, comunicaciones y correo centralizado |
+| 16 | Auditoría integral y revisión de seguridad |
+| 17 | Pruebas unitarias, integración, RLS y E2E integrales |
+| 18 | Revisión responsive, accesibilidad y experiencia completa |
+| 19 | Despliegue público, variables, dominio y comprobaciones de producción |
+| 20 | Planes, límites, operación y preparación comercial SaaS |
+
+### Capacidades transversales pendientes
+
+- Completar la biblioteca visual: formularios, tablas, diálogos, navegación, avisos, paginación, fechas, carga de archivos y estados vacíos/carga/error.
+- Implementar Storage privado, validación de archivos y descargas autorizadas.
+- Implementar colas y registros de correo con proveedor, reintentos e idempotencia.
+- Implementar eventos de actividad y auditoría desde cada operación de negocio.
+- Crear la administración de plataforma, planes y asignaciones prevista para la etapa 20.
+- Incorporar una suite de pruebas automatizadas; actualmente no hay casos en `tests` ni comandos de pruebas en `package.json`.
+
+### Decisiones que deben cerrarse antes de implementar
+
+- Antes de la etapa 6: P01 (múltiples propiedades/unidades por usuario) y P06 (acceso histórico al finalizar un vínculo).
+- Antes de las etapas 9 y 11: P08 (datos mínimos visibles para portería y destinatarios compartidos).
+- Antes de la etapa 11: P04, P05 y P07 para ocupación, cupos y restricciones por mora.
+- Antes de la etapa 12: P02 y P03 para visibilidad y carga de cartera.
+- Antes de la etapa 14: P09 para convocatoria, representación y conservación de evidencia.
+- Antes del primer módulo con archivos o correo: P10 para proveedor, dominio, límites y retención.
+- Antes de la etapa 20: P11 para planes, límites y alcance comercial.
 
 ## Aprobaciones y alcance
 

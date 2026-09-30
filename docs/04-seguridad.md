@@ -1,6 +1,6 @@
 # Etapa 3 — Seguridad
 
-Estado: aprobado por el usuario con «aprobado sigamos». Fecha: 2026-09-28. No hay SQL, políticas ejecutadas ni aplicación inicializada. Complementa el modelo aprobado; no declara que el producto sea seguro antes de probarlo.
+Estado: aprobado por el usuario con «aprobado sigamos». Fecha: 2026-09-28. Este documento registra el diseño aprobado en la etapa 3; en ese momento todavía no había SQL, políticas ejecutadas ni aplicación inicializada. La etapa 5 ya implementó y verificó el subconjunto de autenticación, perfiles, membresías e invitaciones. El resto de la matriz continúa pendiente de sus etapas funcionales y de la auditoría integral de la etapa 16.
 
 ## 1. Objetivo
 

@@ -1,6 +1,8 @@
 # Etapa 4 — Inicialización
 
-Estado: entregada y verificada; pendiente de aprobación del usuario. Fecha: 2026-09-28.
+Estado: entregada, verificada y aprobada por el usuario. Fecha: 2026-09-28.
+
+Nota de seguimiento: este documento conserva el alcance que tenía la etapa 4 al entregarse. La conexión remota, OAuth, las tablas iniciales y RLS se añadieron después en la etapa 5 y se documentan en `06-autenticacion.md`.
 
 ## Objetivo y alcance
 Base Next.js App Router, React, TypeScript estricto, Tailwind, configuración shadcn/ui y clientes Supabase. No incluye login, OAuth, membresías, dashboards, datos ficticios cargados ni políticas RLS ejecutadas.
