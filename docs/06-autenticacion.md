@@ -38,3 +38,19 @@ Estado: implementación local y migración remota aplicadas. Se verificaron siet
 - `/login`: respuesta 200 con acceso mediante Google.
 - Supabase OAuth: URL de autorización generada con proveedor `google` y callback `http://localhost:3000/auth/callback`.
 - Bootstrap remoto: dos propiedades, veinte unidades activas por propiedad y rol `administrator` verificados mediante la consulta final.
+- Google OAuth real: el primer administrador inició sesión y Supabase creó su perfil correctamente.
+- Credenciales inválidas: Supabase respondió `400 invalid_credentials`.
+- Rutas anónimas: `/panel`, `/perfil` e `/invitacion` respondieron `307` hacia `/login` conservando `next`.
+- Callback cancelado o inválido: respondió `307` hacia `/login?error=callback`.
+- Invitaciones remotas: pasaron los casos válida, reutilizada, revocada, vencida, correo diferente y rol alterado; el bloque de prueba confirmó rollback limpio.
+
+## Corrección encontrada durante las pruebas
+
+La primera aceptación válida reveló que `accept_invitation` usaba `member_id` como variable y como columna dentro de la misma función. PostgreSQL devolvía `42702 column reference member_id is ambiguous`. La migración `20260929220000_fix_accept_invitation_member_id.sql` renombra la variable a `created_member_id`; la matriz completa pasó después de aplicar la corrección.
+
+## Pruebas aún pendientes
+
+- Cierre de sesión y renovación de sesión desde el navegador.
+- Edición del perfil propio y rechazo comprobado de un perfil ajeno.
+- Flujo completo de invitación desde la interfaz con una segunda cuenta real.
+- Aislamiento RLS comprobado con usuarios pertenecientes a propiedades distintas.
