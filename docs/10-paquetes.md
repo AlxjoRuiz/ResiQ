@@ -34,11 +34,11 @@ Cuando hay destinatario asociado, la operación crea una notificación interna y
 - `src/lib/packages/constants.ts`
 - `supabase/functions/process-email-jobs/index.ts`
 
-## Validación esperada
+## Validación realizada — 2026-10-01
 
-- TypeScript, ESLint y compilación de producción.
-- Aplicación de la migración en Supabase.
-- Registro real desde un rol de administración o portería.
-- Confirmación de que el destinatario ve su paquete y otro residente del mismo apartamento no lo ve.
-- Entrega con nombre de quien retira y evento de historial.
+- TypeScript, ESLint y compilación de producción finalizados sin errores.
+- Migración aplicada en Supabase; `packages` existe con RLS activa y las cuatro RPC públicas fueron resueltas por PostgreSQL.
+- Paquete de control registrado desde administración para Torre 1, apartamento 101, con transportadora, guía, remitente y origen.
+- Entrega registrada a nombre de una persona y comprobada en el historial junto al evento de recepción.
+- Prueba RLS mediante dos identidades: el destinatario asociado obtuvo un paquete y una identidad no asociada obtuvo cero.
 - Correo real pendiente mientras Resend no tenga sus secretos y dominio configurados.

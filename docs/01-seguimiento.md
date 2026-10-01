@@ -15,7 +15,7 @@ Actualizado: 2026-10-01. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 6 | Multi-tenancy funcional | Aprobada por el usuario al solicitar continuar con los pasos restantes |
 | 7 | Dashboards | Aprobada por el usuario: «ya lo revise esta correcto, sigamos con el paso 8» |
 | 8 | PQRS | Aprobada por el usuario: «si esta bien seguimos mas tarde» |
-| 9 | Paquetes | En implementación; alcance y P08 aprobados por el usuario |
+| 9 | Paquetes | Implementada y validada; pendiente de aprobación explícita del usuario |
 | 10 | Visitas y mantenimiento | No iniciada |
 | 11 | Zonas y reservas | No iniciada |
 | 12 | Cartera | No iniciada |
@@ -160,3 +160,4 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-01 se aplicó `20260930220000_pqrs.sql` al proyecto Supabase ResiQ. Las tablas `pqrs`, `pqrs_messages`, `documents`, `notifications` y `activity_events` respondieron correctamente mediante la API. TypeScript, ESLint y la compilación de producción finalizaron sin errores; las rutas protegidas `/panel` y `/panel/propiedades/[propertyId]/pqrs` respondieron y redirigieron al inicio de sesión cuando no había sesión. El envío real queda condicionado a configurar Resend y desplegar `process-email-jobs`, tal como se documenta en `09-pqrs.md`.
 - El 2026-10-01 el usuario aprobó el cierre técnico de la etapa 8 y autorizó continuar con la etapa 9. P08 debe resolverse explícitamente antes de implementar paquetes.
 - El 2026-10-01 el usuario aprobó P08 para paquetes y el alcance de la etapa 9: destinatario explícito, privacidad entre ocupantes, registro de remitente y origen, entrega a una persona identificada y estado notificado únicamente cuando el proveedor acepte el correo. El registro de entradas y salidas de visitantes pertenece a la etapa 10.
+- El 2026-10-01 se aplicó `20261001100000_packages.sql` al proyecto Supabase ResiQ. La tabla `packages` quedó con RLS activa y las RPC de directorio, recepción, asociación y entrega quedaron disponibles. Se registró y entregó un paquete de prueba para el apartamento 101; el historial conservó ambos eventos, el destinatario autenticado obtuvo un registro y una identidad no asociada obtuvo cero. TypeScript, ESLint y la compilación de producción finalizaron correctamente. La etapa 9 queda pendiente de aprobación explícita antes de iniciar visitas y mantenimiento.
