@@ -13,8 +13,8 @@ Actualizado: 2026-09-30. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 4 | Inicialización del proyecto | Aprobada por el usuario al ordenar continuar y configurar Supabase |
 | 5 | Autenticación e invitaciones | Aprobada por el usuario: «aprobado, seguimos mañana» |
 | 6 | Multi-tenancy funcional | Aprobada por el usuario al solicitar continuar con los pasos restantes |
-| 7 | Dashboards | Autorizada; implementación en validación |
-| 8 | PQRS | No iniciada |
+| 7 | Dashboards | Aprobada por el usuario: «ya lo revise esta correcto, sigamos con el paso 8» |
+| 8 | PQRS | Autorizada; implementación en validación |
 | 9 | Paquetes | No iniciada |
 | 10 | Visitas y mantenimiento | No iniciada |
 | 11 | Zonas y reservas | No iniciada |
@@ -112,7 +112,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 | P07 | Mora: umbral, saldo, fecha de cómputo y reglas aplicables | 30 días es valor inicial solicitado; precisar comparación y validar regla de restricción antes de activarla |
 | P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Definir alcance de datos mínimos antes de módulos respectivos |
 | P09 | Convocatoria de asambleas, representación y conservación de evidencia | Definir con propiedad antes de etapa 14; no asumir reglas legales |
-| P10 | Correo, dominio, límites de archivos, conservación y respaldo | Definir proveedor y parámetros antes de implementar las partes correspondientes |
+| P10 | Correo, dominio, límites de archivos, conservación y respaldo | Aprobada: Resend en modo de prueba hasta tener dominio; Storage privado; PDF/JPG/PNG; 10 MB y 5 archivos; validación de firma; enlaces de 5 min; retención de 5 años; respaldo de Supabase y copia externa antes de producción |
 | P11 | Planes, límites, pago electrónico, contabilidad completa | No definidos; no implementar facturación ni pasarela |
 
 ## Seguimiento de requisitos
@@ -156,3 +156,4 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-09-30 se completó la validación de P01/P06 con la sesión real del miembro: acceso simultáneo a los apartamentos 101 y 102, pérdida inmediata del 102 al terminar el vínculo, conservación administrativa del historial y dos eventos de auditoría. La RPC administrativa devolvió `not_authorized` para el miembro y la ruta administrativa respondió 404. Queda la comprobación visual final de los formularios administrativos antes de solicitar el cierre de la etapa 6.
 - El 2026-09-30 se completó la comprobación visual administrativa: los formularios de propiedad, Torre 1 y apartamento 101 confirmaron sus actualizaciones con los valores vigentes, sin alterar la estructura. La etapa 6 quedó técnicamente validada y pendiente de aprobación explícita.
 - El 2026-09-30 el usuario aprobó continuar, cerrando la etapa 6 y autorizando la etapa 7. Se implementaron dashboards separados para residente, portería, administración y plataforma, con navegación derivada de roles y protección en servidor. La migración de identidad de plataforma y métricas agregadas fue aplicada; quedan pendientes la designación explícita del primer superadmin y las validaciones visuales finales.
+- El 2026-09-30 el usuario revisó y aprobó la etapa 7 y autorizó la etapa 8. También aprobó P10 con Resend, Storage privado, formatos PDF/JPG/PNG, máximo de 10 MB y 5 archivos, verificación de contenido, enlaces firmados de 5 minutos, retención de 5 años y respaldo externo antes de producción.

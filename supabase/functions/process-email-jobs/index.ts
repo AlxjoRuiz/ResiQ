@@ -1,0 +1,45 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; property_id?: string }; dedupe_key: string };
+const jsonHeaders = { "content-type": "application/json" };
+
+function emailContent(job: EmailJob, appUrl: string) {
+  const isCreated = job.template_key === "pqrs_created";
+  const heading = isCreated ? "Nueva PQRS en ResiQ" : "Actualización de tu PQRS";
+  const subject = job.template_data.subject ?? "PQRS";
+  const path = job.template_data.property_id && job.template_data.pqrs_id ? `/panel/propiedades/${job.template_data.property_id}/pqrs/${job.template_data.pqrs_id}` : "/panel";
+  const text = `${heading}\n\n${subject}\n\nConsulta el detalle en ${appUrl}${path}`;
+  const html = `<h1>${heading}</h1><p>${subject.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!)}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>`;
+  return { subject: heading, text, html };
+}
+
+Deno.serve(async (request) => {
+  const workerSecret = Deno.env.get("EMAIL_WORKER_SECRET");
+  if (!workerSecret || request.headers.get("x-worker-secret") !== workerSecret) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: jsonHeaders });
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  const from = Deno.env.get("RESEND_FROM_EMAIL");
+  const appUrl = (Deno.env.get("APP_URL") ?? "http://localhost:3000").replace(/\/$/, "");
+  if (!supabaseUrl || !serviceKey || !resendKey || !from) return new Response(JSON.stringify({ error: "missing_configuration" }), { status: 500, headers: jsonHeaders });
+  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  const workerName = crypto.randomUUID();
+  const { data, error } = await supabase.rpc("claim_email_jobs", { worker_name: workerName, batch_size: 10 });
+  if (error) return new Response(JSON.stringify({ error: "queue_unavailable" }), { status: 500, headers: jsonHeaders });
+  const results = [];
+  for (const job of (data ?? []) as EmailJob[]) {
+    const content = emailContent(job, appUrl);
+    try {
+      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": job.dedupe_key }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text }) });
+      const responseBody = await response.json() as { id?: string; message?: string; name?: string };
+      if (!response.ok || !responseBody.id) throw new Error(responseBody.message ?? responseBody.name ?? `http_${response.status}`);
+      await supabase.rpc("complete_email_job", { target_job_id: job.id, provider_id: responseBody.id, target_subject: content.subject, target_body: content.text });
+      results.push({ id: job.id, status: "accepted" });
+    } catch (failure) {
+      const message = failure instanceof Error ? failure.message : "unknown_error";
+      await supabase.rpc("fail_email_job", { target_job_id: job.id, error_code: "resend_error", error_message: message, target_subject: content.subject, target_body: content.text });
+      results.push({ id: job.id, status: "failed" });
+    }
+  }
+  return new Response(JSON.stringify({ processed: results.length, results }), { headers: jsonHeaders });
+});
