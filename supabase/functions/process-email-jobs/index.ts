@@ -1,9 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; property_id?: string; recipient_name?: string; carrier?: string }; dedupe_key: string };
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; scheduled_start?: string }; dedupe_key: string };
 const jsonHeaders = { "content-type": "application/json" };
 
 function emailContent(job: EmailJob, appUrl: string) {
+  if (job.template_key.startsWith("visit_")) {
+    const headings: Record<string, string> = { visit_authorized: "Visita autorizada en ResiQ", visit_entered: "Tu visita ingresó", visit_exited: "Tu visita salió", visit_cancelled: "Visita cancelada" };
+    const heading = headings[job.template_key] ?? "Actualización de visita";
+    const details = [`Visitante: ${job.template_data.visitor_name ?? "Sin nombre"}`, job.template_data.scheduled_start ? `Horario: ${new Date(job.template_data.scheduled_start).toLocaleString("es-CO")}` : ""].filter(Boolean).join("\n");
+    const path = job.template_data.property_id && job.template_data.visitor_id ? `/panel/propiedades/${job.template_data.property_id}/visitas/${job.template_data.visitor_id}` : "/panel";
+    const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
+    return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
+  }
   if (job.template_key === "package_received") {
     const heading = "Paquete recibido en ResiQ";
     const details = [`Paquete para ${job.template_data.recipient_name ?? "ti"}`, job.template_data.carrier ? `Transportadora: ${job.template_data.carrier}` : ""].filter(Boolean).join("\n");

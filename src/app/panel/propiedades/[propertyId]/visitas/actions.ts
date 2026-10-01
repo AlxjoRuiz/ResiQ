@@ -1,0 +1,38 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { visitKinds } from "@/lib/visitors/constants";
+
+export type VisitState = { error?: string; success?: string } | undefined;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
+function friendlyError(message?: string) {
+  if (message?.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
+  if (message?.includes("authorization_evidence_required")) return "Indica cómo se confirmó la autorización con el residente.";
+  if (message?.includes("invalid_host")) return "El anfitrión ya no está vinculado a ese apartamento.";
+  if (message?.includes("outside_authorized_window")) return "El ingreso está fuera de la ventana autorizada.";
+  if (message?.includes("service_required")) return "Especifica el tipo de servicio de mantenimiento.";
+  if (message?.includes("invalid_transition")) return "La visita ya no admite ese cambio.";
+  return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
+}
+
+export async function createVisit(_: VisitState, data: FormData): Promise<VisitState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),hostMemberId=field(data,"hostMemberId"),visitorName=field(data,"visitorName"),documentLastDigits=field(data,"documentLastDigits"),kind=field(data,"kind"),company=field(data,"company"),serviceType=field(data,"serviceType"),scheduledStart=field(data,"scheduledStart"),scheduledEnd=field(data,"scheduledEnd"),notes=field(data,"notes"),authorizationNote=field(data,"authorizationNote");
+  const peopleCount=Number(field(data,"peopleCount")); const start=new Date(scheduledStart),end=new Date(scheduledEnd);
+  if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||(hostMemberId&&!uuidPattern.test(hostMemberId))||visitorName.length<2||visitorName.length>120||!visitKinds.some(([value])=>value===kind)||!Number.isInteger(peopleCount)||peopleCount<1||peopleCount>20||Number.isNaN(start.valueOf())||Number.isNaN(end.valueOf())||end<=start||documentLastDigits.length>6||notes.length>1000)return{error:"Completa los campos con información válida."};
+  const supabase=await createClient(); const result=await supabase.rpc("create_visit",{target_property_id:propertyId,target_unit_id:unitId,target_host_member_id:hostMemberId||null,target_visitor_name:visitorName,target_document_last_digits:documentLastDigits||null,target_kind:kind,target_company:company,target_service_type:serviceType,target_scheduled_start:start.toISOString(),target_scheduled_end:end.toISOString(),target_people_count:peopleCount,target_notes:notes,target_authorization_note:authorizationNote});
+  if(result.error||!result.data)return{error:friendlyError(result.error?.message)}; revalidatePath(`/panel/propiedades/${propertyId}/visitas`); redirect(`/panel/propiedades/${propertyId}/visitas/${result.data}?created=1`);
+}
+
+export async function cancelVisit(_: VisitState,data:FormData):Promise<VisitState>{
+  const propertyId=field(data,"propertyId"),visitorId=field(data,"visitorId"),reason=field(data,"reason"); if(!uuidPattern.test(propertyId)||!uuidPattern.test(visitorId)||reason.length<3||reason.length>500)return{error:"Escribe un motivo válido."};
+  const supabase=await createClient();const result=await supabase.rpc("cancel_visit",{target_visitor_id:visitorId,target_reason:reason});if(result.error)return{error:friendlyError(result.error.message)};revalidatePath(`/panel/propiedades/${propertyId}/visitas`);revalidatePath(`/panel/propiedades/${propertyId}/visitas/${visitorId}`);return{success:"Visita cancelada."};
+}
+export async function registerVisitEntry(_:VisitState,data:FormData):Promise<VisitState>{
+  const propertyId=field(data,"propertyId"),visitorId=field(data,"visitorId"),notes=field(data,"notes");if(!uuidPattern.test(propertyId)||!uuidPattern.test(visitorId)||notes.length>1000)return{error:"Revisa las observaciones."};const supabase=await createClient();const result=await supabase.rpc("register_visit_entry",{target_visitor_id:visitorId,target_notes:notes});if(result.error)return{error:friendlyError(result.error.message)};revalidatePath(`/panel/propiedades/${propertyId}/visitas`);revalidatePath(`/panel/propiedades/${propertyId}/visitas/${visitorId}`);return{success:"Ingreso registrado."};
+}
+export async function registerVisitExit(_:VisitState,data:FormData):Promise<VisitState>{
+  const propertyId=field(data,"propertyId"),visitorId=field(data,"visitorId"),notes=field(data,"notes");if(!uuidPattern.test(propertyId)||!uuidPattern.test(visitorId)||notes.length>1000)return{error:"Revisa las observaciones."};const supabase=await createClient();const result=await supabase.rpc("register_visit_exit",{target_visitor_id:visitorId,target_notes:notes});if(result.error)return{error:friendlyError(result.error.message)};revalidatePath(`/panel/propiedades/${propertyId}/visitas`);revalidatePath(`/panel/propiedades/${propertyId}/visitas/${visitorId}`);return{success:"Salida registrada."};
+}
