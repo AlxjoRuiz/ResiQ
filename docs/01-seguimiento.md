@@ -1,6 +1,6 @@
 # Seguimiento del proyecto
 
-Actualizado: 2026-09-30. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
+Actualizado: 2026-10-01. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
 
 ## Estado de etapas
 
@@ -14,8 +14,8 @@ Actualizado: 2026-09-30. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 5 | Autenticación e invitaciones | Aprobada por el usuario: «aprobado, seguimos mañana» |
 | 6 | Multi-tenancy funcional | Aprobada por el usuario al solicitar continuar con los pasos restantes |
 | 7 | Dashboards | Aprobada por el usuario: «ya lo revise esta correcto, sigamos con el paso 8» |
-| 8 | PQRS | Entregada y validada técnicamente; pendiente de aprobación del usuario |
-| 9 | Paquetes | No iniciada |
+| 8 | PQRS | Aprobada por el usuario: «si esta bien seguimos mas tarde» |
+| 9 | Paquetes | En implementación; alcance y P08 aprobados por el usuario |
 | 10 | Visitas y mantenimiento | No iniciada |
 | 11 | Zonas y reservas | No iniciada |
 | 12 | Cartera | No iniciada |
@@ -110,7 +110,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 | P05 | Reserva exclusiva o por cupos | MVP exclusivo propuesto; cerrar antes de etapa 11 |
 | P06 | Acceso histórico al mudarse o perder membresía | Aprobada: retirar de inmediato el acceso operativo e histórico del antiguo miembro; administración conserva los registros para auditoría |
 | P07 | Mora: umbral, saldo, fecha de cómputo y reglas aplicables | 30 días es valor inicial solicitado; precisar comparación y validar regla de restricción antes de activarla |
-| P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Definir alcance de datos mínimos antes de módulos respectivos |
+| P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Aprobada para paquetes: portería ve torre/apartamento y nombres de residentes activos, sin correo, teléfono, roles ni historial; solo el destinatario asociado ve el paquete. Reservas se precisarán en la etapa 11 |
 | P09 | Convocatoria de asambleas, representación y conservación de evidencia | Definir con propiedad antes de etapa 14; no asumir reglas legales |
 | P10 | Correo, dominio, límites de archivos, conservación y respaldo | Aprobada: Resend en modo de prueba hasta tener dominio; Storage privado; PDF/JPG/PNG; 10 MB y 5 archivos; validación de firma; enlaces de 5 min; retención de 5 años; respaldo de Supabase y copia externa antes de producción |
 | P11 | Planes, límites, pago electrónico, contabilidad completa | No definidos; no implementar facturación ni pasarela |
@@ -158,3 +158,5 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-09-30 el usuario aprobó continuar, cerrando la etapa 6 y autorizando la etapa 7. Se implementaron dashboards separados para residente, portería, administración y plataforma, con navegación derivada de roles y protección en servidor. La migración de identidad de plataforma y métricas agregadas fue aplicada; quedan pendientes la designación explícita del primer superadmin y las validaciones visuales finales.
 - El 2026-09-30 el usuario revisó y aprobó la etapa 7 y autorizó la etapa 8. También aprobó P10 con Resend, Storage privado, formatos PDF/JPG/PNG, máximo de 10 MB y 5 archivos, verificación de contenido, enlaces firmados de 5 minutos, retención de 5 años y respaldo externo antes de producción.
 - El 2026-10-01 se aplicó `20260930220000_pqrs.sql` al proyecto Supabase ResiQ. Las tablas `pqrs`, `pqrs_messages`, `documents`, `notifications` y `activity_events` respondieron correctamente mediante la API. TypeScript, ESLint y la compilación de producción finalizaron sin errores; las rutas protegidas `/panel` y `/panel/propiedades/[propertyId]/pqrs` respondieron y redirigieron al inicio de sesión cuando no había sesión. El envío real queda condicionado a configurar Resend y desplegar `process-email-jobs`, tal como se documenta en `09-pqrs.md`.
+- El 2026-10-01 el usuario aprobó el cierre técnico de la etapa 8 y autorizó continuar con la etapa 9. P08 debe resolverse explícitamente antes de implementar paquetes.
+- El 2026-10-01 el usuario aprobó P08 para paquetes y el alcance de la etapa 9: destinatario explícito, privacidad entre ocupantes, registro de remitente y origen, entrega a una persona identificada y estado notificado únicamente cuando el proveedor acepte el correo. El registro de entradas y salidas de visitantes pertenece a la etapa 10.
