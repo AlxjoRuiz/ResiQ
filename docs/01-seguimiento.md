@@ -14,7 +14,7 @@ Actualizado: 2026-09-30. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 5 | Autenticación e invitaciones | Aprobada por el usuario: «aprobado, seguimos mañana» |
 | 6 | Multi-tenancy funcional | Aprobada por el usuario al solicitar continuar con los pasos restantes |
 | 7 | Dashboards | Aprobada por el usuario: «ya lo revise esta correcto, sigamos con el paso 8» |
-| 8 | PQRS | Autorizada; implementación en validación |
+| 8 | PQRS | Entregada y validada técnicamente; pendiente de aprobación del usuario |
 | 9 | Paquetes | No iniciada |
 | 10 | Visitas y mantenimiento | No iniciada |
 | 11 | Zonas y reservas | No iniciada |
@@ -157,3 +157,4 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-09-30 se completó la comprobación visual administrativa: los formularios de propiedad, Torre 1 y apartamento 101 confirmaron sus actualizaciones con los valores vigentes, sin alterar la estructura. La etapa 6 quedó técnicamente validada y pendiente de aprobación explícita.
 - El 2026-09-30 el usuario aprobó continuar, cerrando la etapa 6 y autorizando la etapa 7. Se implementaron dashboards separados para residente, portería, administración y plataforma, con navegación derivada de roles y protección en servidor. La migración de identidad de plataforma y métricas agregadas fue aplicada; quedan pendientes la designación explícita del primer superadmin y las validaciones visuales finales.
 - El 2026-09-30 el usuario revisó y aprobó la etapa 7 y autorizó la etapa 8. También aprobó P10 con Resend, Storage privado, formatos PDF/JPG/PNG, máximo de 10 MB y 5 archivos, verificación de contenido, enlaces firmados de 5 minutos, retención de 5 años y respaldo externo antes de producción.
+- El 2026-10-01 se aplicó `20260930220000_pqrs.sql` al proyecto Supabase ResiQ. Las tablas `pqrs`, `pqrs_messages`, `documents`, `notifications` y `activity_events` respondieron correctamente mediante la API. TypeScript, ESLint y la compilación de producción finalizaron sin errores; las rutas protegidas `/panel` y `/panel/propiedades/[propertyId]/pqrs` respondieron y redirigieron al inicio de sesión cuando no había sesión. El envío real queda condicionado a configurar Resend y desplegar `process-email-jobs`, tal como se documenta en `09-pqrs.md`.

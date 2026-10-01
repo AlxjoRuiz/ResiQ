@@ -23,6 +23,14 @@ Las acciones generan una notificación dentro de la base de datos y un trabajo i
 
 La entrega real de correo requiere configurar los Secrets de Supabase, desplegar la función y programar su ejecución. Resend se mantiene en modo de prueba hasta verificar un dominio propio.
 
+## Validación del 1 de octubre de 2026
+
+- La migración se ejecutó correctamente en Supabase.
+- Las cinco tablas operativas consultables por la aplicación respondieron `200` en PostgREST.
+- TypeScript, ESLint y la compilación de producción de Next.js finalizaron correctamente.
+- Las rutas del panel y PQRS respondieron con protección de sesión activa.
+- La prueba visual completa con dos identidades y el envío real de correo se realizará cuando se configuren los Secrets de Resend; no se considera comprobado el envío externo antes de ese paso.
+
 ## Respaldo
 
 Se usarán los respaldos administrados de Supabase y, antes de producción, se validará una copia externa restaurable de la base y los objetos privados.
