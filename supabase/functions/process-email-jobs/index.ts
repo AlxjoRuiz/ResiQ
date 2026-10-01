@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 
 type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; scheduled_start?: string }; dedupe_key: string };
 const jsonHeaders = { "content-type": "application/json" };
