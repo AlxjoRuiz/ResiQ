@@ -12,8 +12,8 @@ Actualizado: 2026-09-30. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 3 | Diseño detallado de seguridad y RLS | Aprobada: «aprobado sigamos» |
 | 4 | Inicialización del proyecto | Aprobada por el usuario al ordenar continuar y configurar Supabase |
 | 5 | Autenticación e invitaciones | Aprobada por el usuario: «aprobado, seguimos mañana» |
-| 6 | Multi-tenancy funcional | Entregada y validada; pendiente de aprobación explícita del usuario |
-| 7 | Dashboards | No iniciada |
+| 6 | Multi-tenancy funcional | Aprobada por el usuario al solicitar continuar con los pasos restantes |
+| 7 | Dashboards | Autorizada; implementación en validación |
 | 8 | PQRS | No iniciada |
 | 9 | Paquetes | No iniciada |
 | 10 | Visitas y mantenimiento | No iniciada |
@@ -155,3 +155,4 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-09-30 se aplicó `20260930100000_multitenancy_management.sql` al proyecto Supabase ResiQ. TypeScript, ESLint y la compilación de producción finalizaron correctamente. La prueba transaccional final quedó pendiente porque el editor SQL de Supabase presentó una incidencia técnica y dejó de responder.
 - El 2026-09-30 se completó la validación de P01/P06 con la sesión real del miembro: acceso simultáneo a los apartamentos 101 y 102, pérdida inmediata del 102 al terminar el vínculo, conservación administrativa del historial y dos eventos de auditoría. La RPC administrativa devolvió `not_authorized` para el miembro y la ruta administrativa respondió 404. Queda la comprobación visual final de los formularios administrativos antes de solicitar el cierre de la etapa 6.
 - El 2026-09-30 se completó la comprobación visual administrativa: los formularios de propiedad, Torre 1 y apartamento 101 confirmaron sus actualizaciones con los valores vigentes, sin alterar la estructura. La etapa 6 quedó técnicamente validada y pendiente de aprobación explícita.
+- El 2026-09-30 el usuario aprobó continuar, cerrando la etapa 6 y autorizando la etapa 7. Se implementaron dashboards separados para residente, portería, administración y plataforma, con navegación derivada de roles y protección en servidor. La migración de identidad de plataforma y métricas agregadas fue aplicada; quedan pendientes la designación explícita del primer superadmin y las validaciones visuales finales.
