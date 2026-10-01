@@ -16,7 +16,7 @@ Actualizado: 2026-10-01. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 7 | Dashboards | Aprobada por el usuario: «ya lo revise esta correcto, sigamos con el paso 8» |
 | 8 | PQRS | Aprobada por el usuario: «si esta bien seguimos mas tarde» |
 | 9 | Paquetes | Aprobada por el usuario: «vale, quedó aprobada. sigamos amigos» |
-| 10 | Visitas y mantenimiento | Autorizada y en implementación |
+| 10 | Visitas y mantenimiento | Implementada y validada técnicamente; pendiente de revisión visual y aprobación del usuario |
 | 11 | Zonas y reservas | No iniciada |
 | 12 | Cartera | No iniciada |
 | 13 | Llamados de atención | No iniciada |
@@ -162,3 +162,4 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-01 el usuario aprobó P08 para paquetes y el alcance de la etapa 9: destinatario explícito, privacidad entre ocupantes, registro de remitente y origen, entrega a una persona identificada y estado notificado únicamente cuando el proveedor acepte el correo. El registro de entradas y salidas de visitantes pertenece a la etapa 10.
 - El 2026-10-01 se aplicó `20261001100000_packages.sql` al proyecto Supabase ResiQ. La tabla `packages` quedó con RLS activa y las RPC de directorio, recepción, asociación y entrega quedaron disponibles. Se registró y entregó un paquete de prueba para el apartamento 101; el historial conservó ambos eventos, el destinatario autenticado obtuvo un registro y una identidad no asociada obtuvo cero. TypeScript, ESLint y la compilación de producción finalizaron correctamente. La etapa 9 queda pendiente de aprobación explícita antes de iniciar visitas y mantenimiento.
 - El 2026-10-01 el usuario aprobó la etapa 9 y autorizó continuar con la etapa 10. Para visitas se adopta una ventana explícita de inicio/fin de máximo 24 horas, un solo ingreso por autorización, documento completo no almacenado y evidencia textual obligatoria cuando portería o administración registra la autorización en nombre del anfitrión.
+- El 2026-10-01 se aplicó `20261001150000_visitors.sql` al proyecto Supabase ResiQ. `visitors` y `visitor_entries` quedaron publicadas con RLS activa; la API anónima devolvió listas vacías y la RPC de ingreso rechazó llamadas sin sesión. Una prueba transaccional autorizó mantenimiento, creó ingreso, registró salida y comprobó visibilidad 1/0 para anfitrión/identidad ajena, revirtiendo todos los datos de prueba. TypeScript, ESLint y la compilación finalizaron correctamente; la ruta autenticada de creación respondió 200. La inspección visual automatizada no pudo completarse porque una extensión del navegador interfirió con la sesión local, por lo que queda la revisión visual del usuario antes de aprobar la etapa.

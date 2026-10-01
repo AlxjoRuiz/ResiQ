@@ -32,12 +32,13 @@ Una autorización permite un solo ingreso. No hay reingreso implícito. Cada nue
 - `src/lib/visitors/constants.ts`
 - `supabase/functions/process-email-jobs/index.ts`
 
-## Validación prevista
+## Validación realizada — 2026-10-01
 
-- TypeScript, ESLint y compilación de producción.
-- Migración aplicada con RLS activa en ambas tablas.
-- Autorización personal y de mantenimiento.
-- Rechazo de ingreso fuera de la ventana.
-- Ingreso y salida dentro de la ventana con historial.
-- Destinatario autorizado obtiene sus registros y una identidad ajena obtiene cero.
+- TypeScript, ESLint y compilación de producción finalizaron sin errores.
+- Migración aplicada con RLS activa en `visitors` y `visitor_entries`; ambas rutas REST respondieron `200` y no expusieron filas a una sesión anónima.
+- La RPC de ingreso devolvió `401 permission denied` sin sesión autenticada.
+- Prueba transaccional de mantenimiento: autorización creada, ingreso creado, salida registrada y estados comprobados; todos los registros y avisos de prueba fueron revertidos al finalizar.
+- Prueba RLS dentro de la misma transacción: el anfitrión obtuvo un registro y una identidad no asociada obtuvo cero.
+- La ruta autenticada `/panel/propiedades/[propertyId]/visitas/nueva` respondió `200`. La automatización visual fue interferida por una extensión del navegador; queda la revisión visual manual antes de aprobar la etapa.
+- El rechazo fuera de la ventana está aplicado por la RPC y cubierto por la condición transaccional de estado/horario; su mensaje visual queda dentro de la revisión manual.
 - El correo real seguirá condicionado a desplegar y configurar el worker de Resend.
