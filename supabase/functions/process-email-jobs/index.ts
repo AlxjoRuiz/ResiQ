@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; scheduled_start?: string }; dedupe_key: string };
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string }; dedupe_key: string };
 const jsonHeaders = { "content-type": "application/json" };
 
 function emailContent(job: EmailJob, appUrl: string) {
@@ -9,6 +9,15 @@ function emailContent(job: EmailJob, appUrl: string) {
     const heading = headings[job.template_key] ?? "Actualización de visita";
     const details = [`Visitante: ${job.template_data.visitor_name ?? "Sin nombre"}`, job.template_data.scheduled_start ? `Horario: ${new Date(job.template_data.scheduled_start).toLocaleString("es-CO")}` : ""].filter(Boolean).join("\n");
     const path = job.template_data.property_id && job.template_data.visitor_id ? `/panel/propiedades/${job.template_data.property_id}/visitas/${job.template_data.visitor_id}` : "/panel";
+    const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
+    return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
+  }
+  if (job.template_key.startsWith("reservation_")) {
+    const headings: Record<string, string> = { reservation_created: "Solicitud de reserva recibida", reservation_approved: "Reserva aprobada", reservation_rejected: "Reserva rechazada", reservation_cancelled: "Reserva cancelada", reservation_expired: "Solicitud de reserva vencida" };
+    const heading = headings[job.template_key] ?? "Actualización de reserva";
+    const timeZone = job.template_data.timezone ?? "America/Bogota";
+    const details = [job.template_data.amenity_name ? `Zona: ${job.template_data.amenity_name}` : "", job.template_data.starts_at ? `Inicio: ${new Date(job.template_data.starts_at).toLocaleString("es-CO", { timeZone })}` : "", job.template_data.ends_at ? `Fin: ${new Date(job.template_data.ends_at).toLocaleString("es-CO", { timeZone })}` : ""].filter(Boolean).join("\n");
+    const path = job.template_data.property_id ? `/panel/propiedades/${job.template_data.property_id}/reservas` : "/panel";
     const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
     return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
   }

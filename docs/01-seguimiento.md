@@ -17,8 +17,8 @@ Actualizado: 2026-10-01. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 8 | PQRS | Aprobada por el usuario: «si esta bien seguimos mas tarde» |
 | 9 | Paquetes | Aprobada por el usuario: «vale, quedó aprobada. sigamos amigos» |
 | 10 | Visitas y mantenimiento | Aprobada por el usuario: «listo, todo aprobado sigamos» |
-| 11 | Zonas y reservas | Diseño propuesto; P04, P05, P07 y P08 pendientes de aprobación explícita |
-| 12 | Cartera | No iniciada |
+| 11 | Zonas y reservas | Aprobada por el usuario: «aprobado, sigamos con los siguientes pasos» |
+| 12 | Cartera | Diseño autorizado; P02 y P03 pendientes de decisión antes de implementar |
 | 13 | Llamados de atención | No iniciada |
 | 14 | Asambleas | No iniciada |
 | 15 | Notificaciones y comunicaciones | No iniciada |
@@ -40,16 +40,10 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - [x] Comprobar aislamiento RLS con usuarios reales vinculados a propiedades distintas.
 - [x] Presentar resultados y recibir aprobación explícita de la etapa 5.
 
-### Trabajo funcional todavía no iniciado
+### Trabajo funcional restante
 
 | Etapa | Trabajo principal pendiente |
 |---|---|
-| 6 | Gestión multi-tenant completa: propiedades, edificios, unidades, miembros, roles y vínculos |
-| 7 | Dashboards para residente, portería, administración y plataforma |
-| 8 | PQRS, mensajes y adjuntos privados |
-| 9 | Paquetes, estados, entrega y avisos |
-| 10 | Visitantes, entradas y mantenimiento como tipo de visita |
-| 11 | Zonas comunes, horarios, bloqueos y reservas |
 | 12 | Cartera, obligaciones, pagos, aplicaciones y reglas de mora |
 | 13 | Llamados de atención, destinatarios y adjuntos |
 | 14 | Asambleas, agenda, documentos, asistentes y representación |
@@ -72,8 +66,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 ### Decisiones que deben cerrarse antes de implementar
 
 - P01 y P06 quedaron resueltas antes de implementar la etapa 6.
-- Antes de las etapas 9 y 11: P08 (datos mínimos visibles para portería y destinatarios compartidos).
-- Antes de la etapa 11: P04, P05 y P07 para ocupación, cupos y restricciones por mora.
+- P04, P05, P07 y P08 quedaron aprobadas antes de implementar la etapa 11.
 - Antes de la etapa 12: P02 y P03 para visibilidad y carga de cartera.
 - Antes de la etapa 14: P09 para convocatoria, representación y conservación de evidencia.
 - Antes del primer módulo con archivos o correo: P10 para proveedor, dominio, límites y retención.
@@ -106,11 +99,11 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 | P01 | Permitir múltiples propiedades/unidades por usuario | Aprobada: una persona puede pertenecer a varias propiedades y tener varios vínculos de unidad vigentes |
 | P02 | Cartera visible a residentes además del propietario | Propuesta: autorización expresa; cerrar en etapa 3 |
 | P03 | Carga de cartera manual, Excel o integración | Manual es propuesta, no elección confirmada; cerrar antes de etapa 12 |
-| P04 | Reservas pendientes ocupan horario y vencen | Sin decisión; cerrar antes de etapa 11 |
-| P05 | Reserva exclusiva o por cupos | MVP exclusivo propuesto; cerrar antes de etapa 11 |
+| P04 | Reservas pendientes ocupan horario y vencen | Aprobada: bloquean 24 horas por defecto, configurable entre 60 minutos y 48 horas, sin superar el inicio |
+| P05 | Reserva exclusiva o por cupos | Aprobada: reserva exclusiva en el MVP; capacidad limita asistentes |
 | P06 | Acceso histórico al mudarse o perder membresía | Aprobada: retirar de inmediato el acceso operativo e histórico del antiguo miembro; administración conserva los registros para auditoría |
-| P07 | Mora: umbral, saldo, fecha de cómputo y reglas aplicables | 30 días es valor inicial solicitado; precisar comparación y validar regla de restricción antes de activarla |
-| P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Aprobada para paquetes: portería ve torre/apartamento y nombres de residentes activos, sin correo, teléfono, roles ni historial; solo el destinatario asociado ve el paquete. Reservas se precisarán en la etapa 11 |
+| P07 | Mora: umbral, saldo, fecha de cómputo y reglas aplicables | Aprobada para etapa 11: configuración inactiva; cálculo y bloqueo real se implementan con cartera en etapa 12 |
+| P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Aprobada: paquetes conservan destinatario explícito; en reservas, residentes ajenos ven sólo ocupación anónima, portería ve agenda operativa y administración el detalle completo |
 | P09 | Convocatoria de asambleas, representación y conservación de evidencia | Definir con propiedad antes de etapa 14; no asumir reglas legales |
 | P10 | Correo, dominio, límites de archivos, conservación y respaldo | Aprobada: Resend en modo de prueba hasta tener dominio; Storage privado; PDF/JPG/PNG; 10 MB y 5 archivos; validación de firma; enlaces de 5 min; retención de 5 años; respaldo de Supabase y copia externa antes de producción |
 | P11 | Planes, límites, pago electrónico, contabilidad completa | No definidos; no implementar facturación ni pasarela |
@@ -164,4 +157,6 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-01 el usuario aprobó la etapa 9 y autorizó continuar con la etapa 10. Para visitas se adopta una ventana explícita de inicio/fin de máximo 24 horas, un solo ingreso por autorización, documento completo no almacenado y evidencia textual obligatoria cuando portería o administración registra la autorización en nombre del anfitrión.
 - El 2026-10-01 se aplicó `20261001150000_visitors.sql` al proyecto Supabase ResiQ. `visitors` y `visitor_entries` quedaron publicadas con RLS activa; la API anónima devolvió listas vacías y la RPC de ingreso rechazó llamadas sin sesión. Una prueba transaccional autorizó mantenimiento, creó ingreso, registró salida y comprobó visibilidad 1/0 para anfitrión/identidad ajena, revirtiendo todos los datos de prueba. TypeScript, ESLint y la compilación finalizaron correctamente. La revisión visual confirmó el listado, filtros, formulario, dependencia apartamento-anfitrión, restricciones HTML y adaptación móvil sin desbordamiento. El aviso observado provino exclusivamente de la extensión MetaMask del navegador. La etapa 10 queda técnicamente validada y pendiente de aprobación explícita.
 - El 2026-10-01 el usuario aprobó la etapa 10 y autorizó continuar con la etapa 11. Se documentó en `12-zonas-reservas.md` una propuesta conjunta para P04, P05, P07 y P08; no se crean migraciones ni código de reservas hasta recibir aprobación explícita de esas decisiones.
+- El 2026-10-01 el usuario aprobó P04, P05, P07 y P08. Se implementaron zonas, horarios, cierres y reservas exclusivas con vencimiento configurable, separación por roles, RLS, auditoría, notificaciones y correo en cola. Se aplicó `20261001190000_reservations.sql`; TypeScript, ESLint, compilación y Deno finalizaron correctamente. La prueba remota creó y aprobó una solicitud temporal, rechazó un cruce y terminó con `stage11_transactional_checks_passed` y rollback. La etapa 11 queda técnicamente validada y pendiente de aprobación explícita.
+- El 2026-10-01 el usuario aprobó la etapa 11 y autorizó continuar con la etapa 12. Se configuró `.npmrc` con 4 GB para Node y `npm run verify` para ejecutar TypeScript, ESLint y compilación de forma secuencial; la rutina completa finalizó correctamente. P02 y P03 deben resolverse antes de implementar cartera.
 

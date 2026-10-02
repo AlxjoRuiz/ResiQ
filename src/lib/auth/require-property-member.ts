@@ -20,7 +20,7 @@ export async function requirePropertyMember(propertyId: string) {
   if (!membership) notFound();
 
   const { data: property } = await supabase.from("properties")
-    .select("id,name,address,city,status")
+    .select("id,name,address,city,timezone,status")
     .eq("id", propertyId)
     .eq("status", "active")
     .maybeSingle();
