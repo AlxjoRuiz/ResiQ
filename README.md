@@ -1,6 +1,6 @@
 # Propiedad Horizontal
 
-Plataforma SaaS para propiedades horizontales de Colombia. Estado: etapa 4 entregada para aprobación; base de aplicación creada, sin autenticación ni migraciones implementadas.
+Plataforma SaaS para propiedades horizontales de Colombia. Estado: etapas 0–12 aprobadas; diseño de la etapa 13, llamados de atención, pendiente de aprobación.
 
 ## Orden de lectura para continuar
 
@@ -17,4 +17,4 @@ Datos de prueba acordados: dos propiedades ficticias, veinte apartamentos cada u
 
 ## Desarrollo local
 
-Consulta [Inicialización y arranque](docs/05-inicializacion.md). La etapa 4 está entregada para aprobación. La página inicial es pública y no conecta todavía a un proyecto remoto de Supabase. Comandos: npm run dev, npm run lint, npm run typecheck y npm run build.
+Consulta [Inicialización y arranque](docs/05-inicializacion.md) y el [seguimiento vigente](docs/01-seguimiento.md). Supabase, Google OAuth y los módulos aprobados hasta cartera están integrados. Comandos: npm run dev, npm run lint, npm run typecheck, npm run build y npm run verify.
