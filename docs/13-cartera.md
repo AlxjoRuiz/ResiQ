@@ -2,7 +2,7 @@
 
 ## Estado
 
-Diseño propuesto el 2026-10-01. La etapa fue autorizada después de aprobar zonas y reservas, pero **P02 y P03 requieren aprobación explícita antes de crear migraciones o código financiero**.
+Diseño aprobado por el usuario el 2026-10-01 con «vale aprobado, sigamos hermano». P02 y P03 quedaron cerradas y la implementación local de la etapa 12 está en validación.
 
 ## 1. Objetivo
 
@@ -118,8 +118,8 @@ Los nombres exactos se fijarán durante la implementación; este diseño no crea
 - [x] Propuesta P03 de registro manual e importación Excel con vista previa.
 - [x] Regla P07 cerrada con cálculo exacto por unidad.
 - [x] Operaciones, privacidad, interfaz, notificaciones y pruebas previstas.
-- [ ] P02 y P03 aprobadas por el usuario.
-- [ ] Migración y aplicación implementadas.
+- [x] P02 y P03 aprobadas por el usuario.
+- [x] Migración y aplicación implementadas localmente.
 - [ ] Validación local y remota completada.
 - [ ] Etapa 12 aprobada después de la implementación.
 

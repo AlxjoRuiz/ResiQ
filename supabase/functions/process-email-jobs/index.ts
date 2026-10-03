@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string }; dedupe_key: string };
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string };
 const jsonHeaders = { "content-type": "application/json" };
 
 function emailContent(job: EmailJob, appUrl: string) {
@@ -18,6 +18,15 @@ function emailContent(job: EmailJob, appUrl: string) {
     const timeZone = job.template_data.timezone ?? "America/Bogota";
     const details = [job.template_data.amenity_name ? `Zona: ${job.template_data.amenity_name}` : "", job.template_data.starts_at ? `Inicio: ${new Date(job.template_data.starts_at).toLocaleString("es-CO", { timeZone })}` : "", job.template_data.ends_at ? `Fin: ${new Date(job.template_data.ends_at).toLocaleString("es-CO", { timeZone })}` : ""].filter(Boolean).join("\n");
     const path = job.template_data.property_id ? `/panel/propiedades/${job.template_data.property_id}/reservas` : "/panel";
+    const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
+    return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
+  }
+  if (["receivable_created", "receivable_voided", "payment_recorded", "payment_voided", "delinquency_notice"].includes(job.template_key)) {
+    const headings: Record<string, string> = { receivable_created: "Cartera actualizada en ResiQ", receivable_voided: "Obligación anulada", payment_recorded: "Pago registrado en ResiQ", payment_voided: "Pago anulado", delinquency_notice: "Aviso de mora en ResiQ" };
+    const heading = headings[job.template_key] ?? "Actualización de cartera";
+    const amount = typeof job.template_data.amount === "number" ? new Intl.NumberFormat("es-CO", { style: "currency", currency: job.template_data.currency ?? "COP" }).format(job.template_data.amount) : "";
+    const details = [job.template_data.unit_label ? `Apartamento: ${job.template_data.unit_label}` : "", job.template_data.concept ? `Concepto: ${job.template_data.concept}` : "", amount ? `Valor: ${amount}` : "", job.template_data.due_on ? `Vencimiento: ${job.template_data.due_on}` : "", job.template_data.paid_on ? `Fecha de pago: ${job.template_data.paid_on}` : ""].filter(Boolean).join("\n");
+    const path = job.template_data.property_id && job.template_data.unit_id ? `/panel/propiedades/${job.template_data.property_id}/cartera/${job.template_data.unit_id}` : "/panel";
     const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
     return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
   }

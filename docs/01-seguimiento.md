@@ -18,7 +18,7 @@ Actualizado: 2026-10-01. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 9 | Paquetes | Aprobada por el usuario: «vale, quedó aprobada. sigamos amigos» |
 | 10 | Visitas y mantenimiento | Aprobada por el usuario: «listo, todo aprobado sigamos» |
 | 11 | Zonas y reservas | Aprobada por el usuario: «aprobado, sigamos con los siguientes pasos» |
-| 12 | Cartera | Diseño presentado en `13-cartera.md`; P02 y P03 pendientes de aprobación antes de implementar |
+| 12 | Cartera | P02 y P03 aprobadas; implementación local completa y validación remota pendiente |
 | 13 | Llamados de atención | No iniciada |
 | 14 | Asambleas | No iniciada |
 | 15 | Notificaciones y comunicaciones | No iniciada |
@@ -97,8 +97,8 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 | ID | Decisión | Situación / bloqueo |
 |---|---|---|
 | P01 | Permitir múltiples propiedades/unidades por usuario | Aprobada: una persona puede pertenecer a varias propiedades y tener varios vínculos de unidad vigentes |
-| P02 | Cartera visible a residentes además del propietario | Propuesta en etapa 12: acceso expreso por vínculo vigente mediante `finance_access`; pendiente de aprobación |
-| P03 | Carga de cartera manual, Excel o integración | Propuesta en etapa 12: registro manual e importación `.xlsx` con vista previa y lote transaccional; sin integración externa; pendiente de aprobación |
+| P02 | Cartera visible a residentes además del propietario | Aprobada: acceso expreso por vínculo vigente mediante `finance_access` |
+| P03 | Carga de cartera manual, Excel o integración | Aprobada: registro manual e importación `.xlsx` con vista previa y lote transaccional; sin integración externa |
 | P04 | Reservas pendientes ocupan horario y vencen | Aprobada: bloquean 24 horas por defecto, configurable entre 60 minutos y 48 horas, sin superar el inicio |
 | P05 | Reserva exclusiva o por cupos | Aprobada: reserva exclusiva en el MVP; capacidad limita asistentes |
 | P06 | Acceso histórico al mudarse o perder membresía | Aprobada: retirar de inmediato el acceso operativo e histórico del antiguo miembro; administración conserva los registros para auditoría |
@@ -160,4 +160,4 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-01 el usuario aprobó P04, P05, P07 y P08. Se implementaron zonas, horarios, cierres y reservas exclusivas con vencimiento configurable, separación por roles, RLS, auditoría, notificaciones y correo en cola. Se aplicó `20261001190000_reservations.sql`; TypeScript, ESLint, compilación y Deno finalizaron correctamente. La prueba remota creó y aprobó una solicitud temporal, rechazó un cruce y terminó con `stage11_transactional_checks_passed` y rollback. La etapa 11 queda técnicamente validada y pendiente de aprobación explícita.
 - El 2026-10-01 el usuario aprobó la etapa 11 y autorizó continuar con la etapa 12. Se configuró `.npmrc` con 4 GB para Node y `npm run verify` para ejecutar TypeScript, ESLint y compilación de forma secuencial; la rutina completa finalizó correctamente. P02 y P03 deben resolverse antes de implementar cartera.
 - El 2026-10-01 se presentó el diseño de la etapa 12 en `13-cartera.md`: acceso financiero expreso por apartamento (P02), registro manual e importación Excel validada (P03), cálculo de mora por unidad, pagos aplicados sin sobrepasar saldos y conexión segura con la restricción de reservas. No se crearán migraciones ni código financiero hasta recibir aprobación explícita.
-
+- El 2026-10-02 se implementó localmente la etapa 12: obligaciones, pagos y aplicaciones, acceso financiero explícito, importación `.xlsx` con vista previa, cálculo de mora, bloqueo de reservas, avisos y pantallas por rol. TypeScript, compilación, Deno y auditoría de dependencias finalizaron correctamente; la migración remota y sus pruebas transaccionales quedan pendientes.
