@@ -120,9 +120,9 @@ Los nombres exactos se fijarán durante la implementación; este diseño no crea
 - [x] Operaciones, privacidad, interfaz, notificaciones y pruebas previstas.
 - [x] P02 y P03 aprobadas por el usuario.
 - [x] Migración y aplicación implementadas localmente.
-- [ ] Validación local y remota completada.
+- [x] Validación local y remota completada.
 - [ ] Etapa 12 aprobada después de la implementación.
 
 ## 9. Siguiente paso
 
-Después de aprobar P02, P03 y el alcance anterior, implementar únicamente la etapa 12. Al terminar, presentar migración aplicada, pruebas, archivos modificados y resultados; no iniciar la etapa 13 sin una nueva aprobación explícita.
+La etapa 12 quedó implementada y validada en local y Supabase. Las pruebas transaccionales confirmaron saldos, aplicación y anulación de pagos, rechazo de sobreasignaciones, bloqueo por mora, resumen y rollback limpio. Falta la aprobación explícita del usuario para cerrar la etapa e iniciar la etapa 13.
