@@ -1,0 +1,17 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { attentionCategoryLabel, attentionStatusLabel } from "@/lib/attention-calls/constants";
+import { requirePropertyMember } from "@/lib/auth/require-property-member";
+
+type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
+type Recipient = { member_id: string; read_at: string | null };
+function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
+const formatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" });
+
+export default async function AttentionCallsPage({ params }: { params: Promise<{ propertyId: string }> }) {
+  const { propertyId } = await params;
+  const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const isAdmin = membership.roles.includes("administrator");
+  const { data: calls } = await supabase.from("attention_calls").select("id,category,reason,status,issued_at,units(code,buildings(name)),attention_call_recipients(member_id,read_at)").eq("property_id", propertyId).order("issued_at", { ascending: false });
+  return <main className="mx-auto min-h-screen max-w-5xl px-5 py-8 sm:px-10"><header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6"><div><Link href={`/panel/propiedades/${propertyId}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Panel de {property.name}</Link><p className="mt-5 text-xs font-semibold tracking-wider text-primary uppercase">Convivencia privada</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Llamados de atención</h1><p className="mt-2 text-sm text-muted-foreground">Cada persona ve únicamente los llamados dirigidos expresamente a ella.</p></div>{isAdmin && <Button asChild><Link href={`/panel/propiedades/${propertyId}/llamados/nuevo`}>Crear llamado</Link></Button>}</header><section className="mt-7 grid gap-4">{(calls ?? []).length === 0 ? <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground">No hay llamados visibles para tu cuenta.</div> : calls?.map((item) => { const recipients = (item.attention_call_recipients ?? []) as Recipient[]; const own = recipients.find((recipient) => recipient.member_id === membership.id); return <Link key={item.id} href={`/panel/propiedades/${propertyId}/llamados/${item.id}`} className="rounded-2xl border bg-card p-5 transition-colors hover:bg-muted/50"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{attentionCategoryLabel(item.category)} · {unitLabel(item.units as UnitRelation)}</p><h2 className="mt-2 text-lg font-semibold">{item.reason}</h2></div><div className="flex items-center gap-2">{own && !own.read_at && <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">Nuevo</span>}<span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{attentionStatusLabel(item.status)}</span></div></div><p className="mt-3 text-xs text-muted-foreground">Emitido el {formatter.format(new Date(item.issued_at))}{isAdmin ? ` · ${recipients.length} destinatario(s)` : ""}</p></Link>; })}</section></main>;
+}
