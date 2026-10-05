@@ -19,8 +19,8 @@ Actualizado: 2026-10-05. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 10 | Visitas y mantenimiento | Aprobada por el usuario: «listo, todo aprobado sigamos» |
 | 11 | Zonas y reservas | Aprobada por el usuario: «aprobado, sigamos con los siguientes pasos» |
 | 12 | Cartera | Aprobada por el usuario al solicitar continuar el 2026-10-03 |
-| 13 | Llamados de atención | Implementada y validada; envío real pendiente de secretos Resend y aprobación de cierre |
-| 14 | Asambleas | No iniciada |
+| 13 | Llamados de atención | Aprobada por el usuario el 2026-10-05 después de confirmar la recepción real del correo |
+| 14 | Asambleas | Diseño P09 presentado; pendiente de aprobación antes de implementar |
 | 15 | Notificaciones y comunicaciones | No iniciada |
 | 16 | Auditoría integral y seguridad | No iniciada |
 | 17 | Testing integral | No iniciada |
@@ -102,7 +102,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 | P06 | Acceso histórico al mudarse o perder membresía | Aprobada: retirar de inmediato el acceso operativo e histórico del antiguo miembro; administración conserva los registros para auditoría |
 | P07 | Mora: umbral, saldo, fecha de cómputo y reglas aplicables | Aprobada para etapa 11: configuración inactiva; cálculo y bloqueo real se implementan con cartera en etapa 12 |
 | P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Aprobada: paquetes conservan destinatario explícito; en reservas, residentes ajenos ven sólo ocupación anónima, portería ve agenda operativa y administración el detalle completo |
-| P09 | Convocatoria de asambleas, representación y conservación de evidencia | Definir con propiedad antes de etapa 14; no asumir reglas legales |
+| P09 | Convocatoria de asambleas, representación y conservación de evidencia | Propuesta presentada en `15-asambleas.md`; pendiente de aprobación explícita |
 | P10 | Correo, dominio, límites de archivos, conservación y respaldo | Aprobada: Resend en modo de prueba hasta tener dominio; Storage privado; PDF/JPG/PNG; 10 MB y 5 archivos; validación de firma; enlaces de 5 min; retención de 5 años; respaldo de Supabase y copia externa antes de producción |
 | P11 | Planes, límites, pago electrónico, contabilidad completa | No definidos; no implementar facturación ni pasarela |
 
@@ -163,3 +163,5 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-03 el usuario aprobó las decisiones de la etapa 13 y autorizó su implementación. Se añadieron llamados privados, destinatarios explícitos, evidencias, lectura, estados lineales, actividad, auditoría, notificaciones y correo en cola.
 - El 2026-10-05 se aplicó `20261003100000_attention_calls.sql` en Supabase. La prueba transaccional remota validó creación, aislamiento RLS, destinatario inválido, evidencia, lectura, aceptación de correo, transiciones y cierre, y terminó con rollback limpio. TypeScript, ESLint, compilación y Deno finalizaron correctamente.
 - El 2026-10-05 se desplegó y validó `process-email-jobs`: una llamada sin secreto devolvió HTTP 401 y una entrega controlada fue aceptada por Resend y registrada en `email_logs`. `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL` permanecen en Edge Functions Secrets; `project_url` y el secreto del worker están cifrados en Vault. La migración `20261005153000_schedule_email_worker.sql` programó el worker cada minuto mediante Cron y `pg_net`; dos ejecuciones automáticas terminaron en `succeeded` con HTTP 200 y cola vacía. La etapa 13 queda técnicamente completa y pendiente de aprobación explícita.
+
+- El 2026-10-05 el usuario confirmó la recepción del correo real y aprobó el cierre de la etapa 13. Se presentó `15-asambleas.md` para resolver P09; no se implementan tablas, migraciones ni pantallas de asambleas hasta aprobar esas decisiones.
