@@ -128,8 +128,10 @@ Las tablas no concederán escrituras directas a `authenticated`; las mutaciones 
 - La prueba remota con `ROLLBACK` validó creación, rechazo de destinatario inválido, privacidad del destinatario y de una identidad ajena, preparación y rechazo de evidencia, lectura, aceptación del correo, secuencia de estados, cierre y actividad. No dejó datos de prueba.
 - TypeScript, ESLint, compilación de producción y `deno check` finalizaron correctamente.
 - `process-email-jobs` quedó desplegada con el formato vigente de Supabase y con la validación JWT heredada desactivada. El endpoint rechazó una llamada sin `x-worker-secret` con HTTP 401.
-- Los secretos `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL` ya están configurados en Supabase. La función rechaza llamadas sin el secreto con HTTP 401; queda pendiente una prueba controlada de envío real y programar su invocación periódica.
+- Los secretos `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL` están configurados en Edge Functions Secrets; `project_url` y `email_worker_secret` permanecen cifrados en Vault. La función rechaza llamadas sin el secreto con HTTP 401.
+- Una entrega controlada fue aceptada por Resend y quedó registrada en `email_jobs` y `email_logs`. El remitente de prueba solo permite el correo propietario de la cuenta; para otros destinatarios se requiere verificar un dominio.
+- `20261005153000_schedule_email_worker.sql` habilita `pg_cron` y `pg_net` y ejecuta el worker cada minuto. Dos ejecuciones automáticas terminaron en `succeeded`, llamaron la función con HTTP 200 y encontraron la cola vacía después de la entrega.
 
 ## 11. Siguiente paso
 
-Configurar los secretos de Resend cuando estén disponibles, ejecutar una entrega real controlada y aprobar el cierre de esta etapa. No iniciar la etapa 14 de asambleas sin una nueva aprobación.
+La etapa 13 quedó técnicamente completa y pendiente de aprobación explícita. Antes de producción se debe verificar un dominio propio en Resend y sustituir el remitente de prueba. No iniciar la etapa 14 de asambleas sin una nueva aprobación.

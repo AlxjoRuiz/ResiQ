@@ -1,7 +1,9 @@
-# Trabajador de correos de PQRS
+# Trabajador de correos de ResiQ
 
 Esta Edge Function toma trabajos persistentes de `email_jobs`, envía el correo con Resend y registra cada intento en `email_logs`. La llave de Resend y el secreto del trabajador permanecen únicamente en Supabase Secrets.
 
 Variables requeridas: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `EMAIL_WORKER_SECRET` y `APP_URL`. Supabase proporciona `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` a la función.
 
-Para producción se debe verificar un dominio propio en Resend, configurar `RESEND_FROM_EMAIL` con ese dominio y programar una invocación periódica autenticada con el encabezado `x-worker-secret`. Mientras no exista dominio propio, el envío queda en modo de prueba de Resend.
+`20261005153000_schedule_email_worker.sql` ejecuta la función cada minuto con Supabase Cron y `pg_net`. La URL del proyecto y una copia cifrada del secreto del worker se leen desde Vault con los nombres `project_url` y `email_worker_secret`; sus valores no forman parte de la migración ni del repositorio.
+
+El remitente `onboarding@resend.dev` sirve únicamente para pruebas dirigidas al correo propietario de la cuenta de Resend. Antes de producción se debe verificar un dominio propio y configurar `RESEND_FROM_EMAIL` con una dirección de ese dominio.
