@@ -128,7 +128,7 @@ Las tablas no concederán escrituras directas a `authenticated`; las mutaciones 
 - La prueba remota con `ROLLBACK` validó creación, rechazo de destinatario inválido, privacidad del destinatario y de una identidad ajena, preparación y rechazo de evidencia, lectura, aceptación del correo, secuencia de estados, cierre y actividad. No dejó datos de prueba.
 - TypeScript, ESLint, compilación de producción y `deno check` finalizaron correctamente.
 - `process-email-jobs` quedó desplegada con el formato vigente de Supabase y con la validación JWT heredada desactivada. El endpoint rechazó una llamada sin `x-worker-secret` con HTTP 401.
-- El envío real continúa desactivado de forma segura hasta configurar en Supabase `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL`; actualmente no existen secretos personalizados en el proyecto.
+- Los secretos `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL` ya están configurados en Supabase. La función rechaza llamadas sin el secreto con HTTP 401; queda pendiente una prueba controlada de envío real y programar su invocación periódica.
 
 ## 11. Siguiente paso
 
