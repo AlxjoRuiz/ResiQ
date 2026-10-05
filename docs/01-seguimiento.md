@@ -1,6 +1,6 @@
 # Seguimiento del proyecto
 
-Actualizado: 2026-10-03. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
+Actualizado: 2026-10-05. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
 
 ## Estado de etapas
 
@@ -19,7 +19,7 @@ Actualizado: 2026-10-03. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 10 | Visitas y mantenimiento | Aprobada por el usuario: «listo, todo aprobado sigamos» |
 | 11 | Zonas y reservas | Aprobada por el usuario: «aprobado, sigamos con los siguientes pasos» |
 | 12 | Cartera | Aprobada por el usuario al solicitar continuar el 2026-10-03 |
-| 13 | Llamados de atención | Diseño presentado; pendiente aprobación antes de implementar |
+| 13 | Llamados de atención | Implementada y validada; envío real pendiente de secretos Resend y aprobación de cierre |
 | 14 | Asambleas | No iniciada |
 | 15 | Notificaciones y comunicaciones | No iniciada |
 | 16 | Auditoría integral y seguridad | No iniciada |
@@ -44,7 +44,6 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 
 | Etapa | Trabajo principal pendiente |
 |---|---|
-| 13 | Llamados de atención, destinatarios y adjuntos |
 | 14 | Asambleas, agenda, documentos, asistentes y representación |
 | 15 | Notificaciones internas, comunicaciones y correo centralizado |
 | 16 | Auditoría integral y revisión de seguridad |
@@ -161,3 +160,6 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-01 se presentó el diseño de la etapa 12 en `13-cartera.md`: acceso financiero expreso por apartamento (P02), registro manual e importación Excel validada (P03), cálculo de mora por unidad, pagos aplicados sin sobrepasar saldos y conexión segura con la restricción de reservas. No se crearán migraciones ni código financiero hasta recibir aprobación explícita.
 - El 2026-10-02 se implementó y publicó la etapa 12: obligaciones, pagos y aplicaciones, acceso financiero explícito, importación `.xlsx` con vista previa, cálculo de mora, bloqueo de reservas, avisos y pantallas por rol. Se aplicó `20261001230000_finance.sql` en Supabase y se añadió `20261002233000_restrict_finance_table_writes.sql` para dejar las escrituras únicamente en RPC auditadas. La prueba transaccional verificó saldo inicial, aplicación parcial, rechazo de sobreasignación, anulación con recálculo, bloqueo por mora, resumen y rollback limpio. TypeScript, ESLint, compilación, Deno y auditoría de dependencias finalizaron correctamente. La etapa 12 queda técnicamente validada y pendiente de aprobación explícita.
 - El 2026-10-03 el usuario aprobó continuar, cerrando la etapa 12 y autorizando el diseño de la etapa 13. Se presentó `14-llamados-atencion.md` con destinatarios explícitos, evidencia privada, estados lineales, notificación verificable y exclusión de multas o efectos jurídicos automáticos. No se crea código ni migración de llamados hasta aprobar estas decisiones.
+- El 2026-10-03 el usuario aprobó las decisiones de la etapa 13 y autorizó su implementación. Se añadieron llamados privados, destinatarios explícitos, evidencias, lectura, estados lineales, actividad, auditoría, notificaciones y correo en cola.
+- El 2026-10-05 se aplicó `20261003100000_attention_calls.sql` en Supabase. La prueba transaccional remota validó creación, aislamiento RLS, destinatario inválido, evidencia, lectura, aceptación de correo, transiciones y cierre, y terminó con rollback limpio. TypeScript, ESLint, compilación y Deno finalizaron correctamente.
+- El 2026-10-05 se desplegó `process-email-jobs` con el formato vigente de Supabase y se desactivó la validación JWT heredada porque la función aplica `EMAIL_WORKER_SECRET`. Una llamada sin secreto devolvió HTTP 401. El proyecto todavía no tiene secretos personalizados; el envío real queda bloqueado de forma segura hasta configurar `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL`.

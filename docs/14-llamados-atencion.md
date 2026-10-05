@@ -2,7 +2,7 @@
 
 ## Estado
 
-Diseño presentado el 2026-10-03. La implementación permanece pendiente de aprobación explícita.
+Diseño aprobado e implementación completada el 2026-10-05. La etapa queda técnicamente validada y pendiente de aprobación explícita para cerrarla antes de iniciar la etapa 14.
 
 ## 1. Objetivo
 
@@ -121,6 +121,15 @@ Las tablas no concederán escrituras directas a `authenticated`; las mutaciones 
 4. Exigir nota al cerrar y conservar el registro sin eliminación desde la aplicación.
 5. Mantener descargos, multas y consecuencias jurídicas fuera de esta etapa.
 
-## 10. Siguiente paso
+## 10. Implementación y validación
 
-Tras aprobar estas decisiones, implementar la migración, RLS, RPC, Storage privado, correo, pantallas administrativa y de destinatario, pruebas locales y validación remota. No iniciar la etapa 14 de asambleas sin una nueva aprobación.
+- Se aplicó `20261003100000_attention_calls.sql` en Supabase con tablas, destinatarios explícitos, RLS, RPC, evidencias privadas, actividad, auditoría, notificaciones y cola de correo.
+- Se añadieron listados y detalle por rol, creación administrativa, lectura del destinatario, evidencias y transiciones controladas.
+- La prueba remota con `ROLLBACK` validó creación, rechazo de destinatario inválido, privacidad del destinatario y de una identidad ajena, preparación y rechazo de evidencia, lectura, aceptación del correo, secuencia de estados, cierre y actividad. No dejó datos de prueba.
+- TypeScript, ESLint, compilación de producción y `deno check` finalizaron correctamente.
+- `process-email-jobs` quedó desplegada con el formato vigente de Supabase y con la validación JWT heredada desactivada. El endpoint rechazó una llamada sin `x-worker-secret` con HTTP 401.
+- El envío real continúa desactivado de forma segura hasta configurar en Supabase `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL`; actualmente no existen secretos personalizados en el proyecto.
+
+## 11. Siguiente paso
+
+Configurar los secretos de Resend cuando estén disponibles, ejecutar una entrega real controlada y aprobar el cierre de esta etapa. No iniciar la etapa 14 de asambleas sin una nueva aprobación.
