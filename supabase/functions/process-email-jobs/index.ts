@@ -1,9 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string };
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string };
 const jsonHeaders = { "content-type": "application/json" };
 
 function emailContent(job: EmailJob, appUrl: string) {
+  if (job.template_key.startsWith("assembly_")) {
+    const headings: Record<string, string> = { assembly_published: "Nueva convocatoria de asamblea", assembly_reminder: "Recordatorio de asamblea", assembly_updated: "Cambio en una asamblea", assembly_cancelled: "Asamblea cancelada" };
+    const heading = headings[job.template_key] ?? "Actualización de asamblea";
+    const details = [job.template_data.title ? `Asamblea: ${job.template_data.title}` : "", job.template_data.starts_at ? `Fecha: ${new Date(job.template_data.starts_at).toLocaleString("es-CO", { timeZone: "America/Bogota" })}` : "", job.template_data.location ? `Lugar: ${job.template_data.location}` : ""].filter(Boolean).join("\n");
+    const path = job.template_data.property_id && job.template_data.assembly_id ? `/panel/propiedades/${job.template_data.property_id}/asambleas/${job.template_data.assembly_id}` : "/panel";
+    const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
+    return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
+  }
   if (job.template_key === "attention_call_created") {
     const heading = "Nuevo llamado de atención en ResiQ";
     const details = [job.template_data.reason ? `Motivo: ${job.template_data.reason}` : "", job.template_data.issued_on ? `Fecha: ${job.template_data.issued_on}` : ""].filter(Boolean).join("\n");

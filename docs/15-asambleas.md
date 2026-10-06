@@ -163,4 +163,24 @@ Para implementar la etapa 14 se requiere aprobar P09 con estas decisiones:
 7. Documentos publicados versionados, sin sobrescritura física.
 8. Votación, coeficientes, quórum, mayorías y resultados fuera de alcance.
 
-No se crearán tablas, migraciones ni pantallas de asambleas hasta recibir aprobación explícita.
+El usuario aprobó explícitamente P09 con «si dale, me parece bien» el 2026-10-05.
+
+## 10. Implementación entregada
+
+- Migraciones `20261005190000_assemblies.sql` y `20261005200000_fix_assembly_required_notes.sql` aplicadas al proyecto Supabase ResiQ.
+- Tablas con RLS: `assemblies`, `assembly_agenda`, `assembly_attendees` y `assembly_representations`.
+- Operaciones RPC para borrador, publicación, cambios relevantes, estados, RSVP, asistencia, representación y documentos.
+- Convocatoria individual y recordatorios idempotentes a siete días y veinticuatro horas en `email_jobs`.
+- Worker `process-email-jobs` desplegado con plantillas de publicación, recordatorio, cambio y cancelación.
+- Documentos privados versionados para convocatoria, soportes, acta y evidencias de representación; enlaces firmados por cinco minutos.
+- Rutas administrativas y privadas por propiedad, más `/panel/asambleas` para la vista consolidada del residente.
+- Prueba transaccional en `supabase/tests/assemblies_transactional.sql` con rollback completo.
+
+## 11. Verificación
+
+- TypeScript y ESLint finalizaron correctamente.
+- La compilación de producción con Webpack finalizó correctamente usando una carpeta aislada, porque el servidor de desarrollo mantenía `.next` abierto.
+- La prueba remota terminó con `stage14_transactional_checks_passed` y confirmó publicación, tres correos programados, RSVP, RLS, representación sin evidencia rechazada, asistencia, corrección con nota y cierre.
+- La prueba detectó y permitió corregir la validación SQL de notas `NULL` antes del cierre técnico.
+
+La etapa 14 queda técnicamente completa y pendiente de aprobación funcional del usuario antes de iniciar la etapa 15.

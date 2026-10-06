@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "lint": "eslint src next.config.ts postcss.config.mjs eslint.config.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.verify.json",
     "verify": "npm run typecheck && npm run lint && npm run build"
   },
   "engines": {

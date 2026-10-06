@@ -20,7 +20,7 @@ Actualizado: 2026-10-05. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 11 | Zonas y reservas | Aprobada por el usuario: «aprobado, sigamos con los siguientes pasos» |
 | 12 | Cartera | Aprobada por el usuario al solicitar continuar el 2026-10-03 |
 | 13 | Llamados de atención | Aprobada por el usuario el 2026-10-05 después de confirmar la recepción real del correo |
-| 14 | Asambleas | Diseño P09 presentado; pendiente de aprobación antes de implementar |
+| 14 | Asambleas | Implementada y validada; pendiente de aprobación funcional del usuario |
 | 15 | Notificaciones y comunicaciones | No iniciada |
 | 16 | Auditoría integral y seguridad | No iniciada |
 | 17 | Testing integral | No iniciada |
@@ -44,7 +44,6 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 
 | Etapa | Trabajo principal pendiente |
 |---|---|
-| 14 | Asambleas, agenda, documentos, asistentes y representación |
 | 15 | Notificaciones internas, comunicaciones y correo centralizado |
 | 16 | Auditoría integral y revisión de seguridad |
 | 17 | Pruebas unitarias, integración, RLS y E2E integrales |
@@ -55,9 +54,9 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 ### Capacidades transversales pendientes
 
 - Completar la biblioteca visual: formularios, tablas, diálogos, navegación, avisos, paginación, fechas, carga de archivos y estados vacíos/carga/error.
-- Implementar Storage privado, validación de archivos y descargas autorizadas.
-- Implementar colas y registros de correo con proveedor, reintentos e idempotencia.
-- Implementar eventos de actividad y auditoría desde cada operación de negocio.
+- Storage privado, validación de archivos y descargas autorizadas están implementados; queda configurar respaldo externo antes de producción.
+- La cola y los registros de correo con Resend, reintentos e idempotencia están implementados; la etapa 15 consolidará la experiencia de comunicaciones.
+- Los módulos implementados generan actividad y auditoría; la etapa 16 realizará la revisión integral.
 - Crear la administración de plataforma, planes y asignaciones prevista para la etapa 20.
 - Incorporar una suite de pruebas automatizadas; actualmente no hay casos en `tests` ni comandos de pruebas en `package.json`.
 
@@ -66,7 +65,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - P01 y P06 quedaron resueltas antes de implementar la etapa 6.
 - P04, P05, P07 y P08 quedaron aprobadas antes de implementar la etapa 11.
 - Antes de la etapa 12: P02 y P03 para visibilidad y carga de cartera.
-- Antes de la etapa 14: P09 para convocatoria, representación y conservación de evidencia.
+- P09 quedó aprobada antes de implementar la etapa 14.
 - Antes del primer módulo con archivos o correo: P10 para proveedor, dominio, límites y retención.
 - Antes de la etapa 20: P11 para planes, límites y alcance comercial.
 
@@ -102,7 +101,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 | P06 | Acceso histórico al mudarse o perder membresía | Aprobada: retirar de inmediato el acceso operativo e histórico del antiguo miembro; administración conserva los registros para auditoría |
 | P07 | Mora: umbral, saldo, fecha de cómputo y reglas aplicables | Aprobada para etapa 11: configuración inactiva; cálculo y bloqueo real se implementan con cartera en etapa 12 |
 | P08 | Destinatarios compartidos de paquetes y visibilidad de reservas para portería | Aprobada: paquetes conservan destinatario explícito; en reservas, residentes ajenos ven sólo ocupación anónima, portería ve agenda operativa y administración el detalle completo |
-| P09 | Convocatoria de asambleas, representación y conservación de evidencia | Propuesta presentada en `15-asambleas.md`; pendiente de aprobación explícita |
+| P09 | Convocatoria de asambleas, representación y conservación de evidencia | Aprobada el 2026-10-05: audiencia explícita, RSVP separado, asistencia administrativa, representación con evidencia, recordatorios y documentos versionados; sin voto o quórum automático |
 | P10 | Correo, dominio, límites de archivos, conservación y respaldo | Aprobada: Resend en modo de prueba hasta tener dominio; Storage privado; PDF/JPG/PNG; 10 MB y 5 archivos; validación de firma; enlaces de 5 min; retención de 5 años; respaldo de Supabase y copia externa antes de producción |
 | P11 | Planes, límites, pago electrónico, contabilidad completa | No definidos; no implementar facturación ni pasarela |
 
@@ -165,3 +164,4 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-05 se desplegó y validó `process-email-jobs`: una llamada sin secreto devolvió HTTP 401 y una entrega controlada fue aceptada por Resend y registrada en `email_logs`. `EMAIL_WORKER_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `APP_URL` permanecen en Edge Functions Secrets; `project_url` y el secreto del worker están cifrados en Vault. La migración `20261005153000_schedule_email_worker.sql` programó el worker cada minuto mediante Cron y `pg_net`; dos ejecuciones automáticas terminaron en `succeeded` con HTTP 200 y cola vacía. La etapa 13 queda técnicamente completa y pendiente de aprobación explícita.
 
 - El 2026-10-05 el usuario confirmó la recepción del correo real y aprobó el cierre de la etapa 13. Se presentó `15-asambleas.md` para resolver P09; no se implementan tablas, migraciones ni pantallas de asambleas hasta aprobar esas decisiones.
+- El 2026-10-05 el usuario aprobó P09 y la etapa 14 fue implementada. Se aplicaron `20261005190000_assemblies.sql` y `20261005200000_fix_assembly_required_notes.sql`; se desplegó el worker con correos de convocatoria, cambios, cancelación y recordatorios. La prueba transaccional remota terminó con `stage14_transactional_checks_passed` y rollback limpio. TypeScript, ESLint y la compilación de producción con Webpack finalizaron correctamente. La etapa 14 queda técnicamente completa y pendiente de aprobación funcional antes de iniciar la etapa 15.

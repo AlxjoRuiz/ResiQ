@@ -1,0 +1,13 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export async function GET(_: Request, { params }: { params: Promise<{ documentId: string }> }) {
+  const { documentId } = await params; if (!uuidPattern.test(documentId)) return NextResponse.json({ error: "No encontrado." }, { status: 404 });
+  const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  const { data: document } = await supabase.from("documents").select("bucket,object_path,original_name,status,assembly_id,assembly_representation_id").eq("id", documentId).eq("status", "available").or("assembly_id.not.is.null,assembly_representation_id.not.is.null").maybeSingle();
+  if (!document) return NextResponse.json({ error: "No encontrado." }, { status: 404 });
+  const { data, error } = await supabase.storage.from(document.bucket).createSignedUrl(document.object_path, 300, { download: document.original_name });
+  if (error || !data) return NextResponse.json({ error: "No fue posible descargar el archivo." }, { status: 500 });
+  return NextResponse.redirect(data.signedUrl);
+}
