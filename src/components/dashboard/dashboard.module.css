@@ -70,3 +70,7 @@
 .panelSurface > main:not(.canvas) { background: #edf2e9; border: 1px solid #ffffffa6; border-radius: 28px; }
 .panelSurface > main [data-slot="card"] { border-radius: 22px; border-color: #e5ebe2; box-shadow: 0 4px 20px #344a3406; }
 @media (max-width: 700px) { .moduleContent header { gap: 14px; } .moduleContent input, .moduleContent select, .moduleContent textarea { max-width: 100%; } .panelSurface > main:not(.canvas) { border-radius: 22px; } }
+.communityLink { padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease, color 150ms ease; }
+.moduleContent > main > a:not([data-slot="button"]), .moduleContent a[class~="hover:text-foreground"] { display: inline-flex; align-items: center; padding: 8px 12px; border-radius: 10px; transition: background-color 150ms ease, color 150ms ease; }
+.communityLink:hover, .communityLink:focus-visible, .moduleContent > main > a:hover, .moduleContent a[class~="hover:text-foreground"]:hover, .moduleContent > main > a:focus-visible, .moduleContent a[class~="hover:text-foreground"]:focus-visible { background-color: #dbe6d5; color: #244832; }
+@media (prefers-reduced-motion: reduce) { .communityLink, .moduleContent > main > a, .moduleContent a[class~="hover:text-foreground"] { transition: none; } }
