@@ -51,3 +51,5 @@ Una autorización permite un solo ingreso. No hay reingreso implícito. Cada nue
 ## Cambio aprobado — 2026-10-06
 
 Migración `20261006230000_visit_requests.sql` aplicada. Se conserva el estado y el historial de las visitas anteriores; las nuevas comienzan pendientes. Rechazo con motivo obligatorio, aceptación solo antes del fin de la visita y decisión única protegida por bloqueo transaccional. La prueba en Supabase verificó creación por residente, rechazo de creación por administrador y portería, rechazo de revisión por residente y portería, rechazo de ingreso por administrador y de visita rechazada, aceptación, rechazo e ingreso/salida por portería. Todo se revirtió al finalizar, incluidos los avisos.
+
+TypeScript, ESLint y build de producción con webpack correctos. Publicación verificada en Vercel: listado del administrador con solicitudes pendientes/aceptadas y sin botón de creación. Las decisiones y movimientos se comprobaron mediante las RPC en la prueba transaccional; no se ejecutó una solicitud real nueva desde las tres sesiones de usuario.
