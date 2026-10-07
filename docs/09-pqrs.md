@@ -42,3 +42,5 @@ Cambio solicitado por Alejandro: el formulario de residente pide apartamento, ti
 La migración `20261007030000_pqrs_request_types.sql` añade `request_type` y una RPC de seis parámetros con las mismas validaciones de pertenencia, auditoría y avisos. Se conserva la RPC anterior para compatibilidad durante el despliegue. Las PQRS históricas con categoría Queja/Sugerencia conservan sus datos originales y reciben el tipo conocido; las demás no se clasifican por suposición. En ellas se muestra PQRS anterior; cuando el tema histórico no se especificó, se indica Tema sin especificar.
 
 Migración aplicada en Supabase. TypeScript y ESLint correctos. Prueba `supabase/tests/pqrs_request_types_transaction.sql` PASS: los cuatro tipos se guardan con tema Aseo, se rechazan tipos/temas inválidos y la creación por usuario sin vínculo. Rollback de todos los datos y avisos de prueba.
+
+Publicación confirmada en Vercel desde el perfil de residente: Tipo de solicitud encima de Categoría del tema, con selecciones obligatorias independientes. Captura del formulario guardada para revisión.

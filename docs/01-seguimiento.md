@@ -186,3 +186,5 @@ Validación del ajuste: TypeScript y ESLint correctos; prueba transaccional en S
 ### PQRS: tipo separado del tema — 2026-10-07
 
 Solicitud de Alejandro implementada: Queja/Reclamo en Tipo de solicitud, por encima de Categoría del tema. Se incluye Petición/Sugerencia como tipos; las categorías conservan solo temas operativos. Listado y detalle muestran ambos valores. Migración aplicada y prueba transaccional PASS; TypeScript y ESLint correctos. Se conservan datos anteriores y los permisos de privacidad.
+
+Publicación confirmada en Vercel desde el perfil de residente: Tipo de solicitud encima de Categoría del tema, con selecciones obligatorias independientes. Captura del formulario guardada para revisión.
