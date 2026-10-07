@@ -2,26 +2,28 @@
 
 ## Alcance
 
-El módulo reúne visitas personales y servicios de mantenimiento. El residente autoriza visitas para sus apartamentos vigentes. Portería y administración pueden registrar una autorización en nombre de un residente activo, pero deben seleccionar al anfitrión y registrar cómo confirmaron su consentimiento.
+El módulo reúne visitas personales y servicios de mantenimiento. El residente solicita visitas para sus apartamentos vigentes. Administración consulta las solicitudes y acepta o rechaza desde el detalle; no crea visitas ni registra movimientos. Portería registra el ingreso de las visitas aceptadas y su salida; no crea ni decide solicitudes.
 
 Cada autorización contiene visitante, apartamento, anfitrión, tipo, cantidad de personas, ventana de inicio y fin, observaciones y, para mantenimiento, empresa y tipo de servicio. Se admiten de dos a seis últimos dígitos del documento; el documento completo no se almacena.
 
 ## Estados y movimientos
 
-1. `authorized`: existe una autorización vigente.
-2. `entered`: portería o administración registró el ingreso dentro de la ventana autorizada.
-3. `exited`: se cerró el movimiento con fecha y actor.
-4. `cancelled`: el anfitrión o administración canceló antes del ingreso.
+1. `pending`: solicitud pendiente de administración.
+2. `authorized`: administración aceptó la solicitud.
+3. `rejected`: administración rechazó con motivo obligatorio.
+4. `entered`: portería registró el ingreso dentro de la ventana aceptada.
+5. `exited`: portería cerró el movimiento con fecha y actor.
+6. `cancelled`: el residente canceló su solicitud pendiente o aceptada antes del ingreso.
 
 Una autorización permite un solo ingreso. No hay reingreso implícito. Cada nuevo acceso requiere una autorización nueva. La ventana dura como máximo 24 horas y la base de datos rechaza ingresos fuera de ella.
 
 ## Seguridad y privacidad
 
 - El anfitrión solo consulta y cancela sus propias autorizaciones mientras mantiene membresía y vínculo vigentes con el apartamento.
-- Administración y portería consultan la proyección operativa de su propiedad y registran movimientos mediante RPC transaccionales.
+- Administración decide mediante `review_visit`; únicamente portería registra movimientos. Las RPC validan los roles aunque se invoquen directamente.
 - La RLS protege `visitors`, `visitor_entries` y su historial incluso frente a llamadas directas a la API.
 - No se ofrece inserción, actualización ni eliminación directa de las tablas al cliente.
-- La nota de autorización delegada queda visible únicamente en la vista operativa de administración y portería.
+- Las notas de autorizaciones delegadas anteriores se conservan como historial; el flujo nuevo no permite creación delegada.
 - Cada autorización, ingreso, salida y cancelación genera evento funcional, auditoría y notificación individual al anfitrión.
 
 ## Archivos principales
@@ -45,3 +47,7 @@ Una autorización permite un solo ingreso. No hay reingreso implícito. Cada nue
 - El rechazo fuera de la ventana está aplicado por la RPC y cubierto por la prueba transaccional de estado y horario.
 - El correo real seguirá condicionado a desplegar y configurar el worker de Resend.
 
+
+## Cambio aprobado — 2026-10-06
+
+Migración `20261006230000_visit_requests.sql` aplicada. Se conserva el estado y el historial de las visitas anteriores; las nuevas comienzan pendientes. Rechazo con motivo obligatorio, aceptación solo antes del fin de la visita y decisión única protegida por bloqueo transaccional. La prueba en Supabase verificó creación por residente, rechazo de creación por administrador y portería, rechazo de revisión por residente y portería, rechazo de ingreso por administrador y de visita rechazada, aceptación, rechazo e ingreso/salida por portería. Todo se revirtió al finalizar, incluidos los avisos.

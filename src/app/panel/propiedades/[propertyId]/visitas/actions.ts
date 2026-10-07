@@ -36,3 +36,12 @@ export async function registerVisitEntry(_:VisitState,data:FormData):Promise<Vis
 export async function registerVisitExit(_:VisitState,data:FormData):Promise<VisitState>{
   const propertyId=field(data,"propertyId"),visitorId=field(data,"visitorId"),notes=field(data,"notes");if(!uuidPattern.test(propertyId)||!uuidPattern.test(visitorId)||notes.length>1000)return{error:"Revisa las observaciones."};const supabase=await createClient();const result=await supabase.rpc("register_visit_exit",{target_visitor_id:visitorId,target_notes:notes});if(result.error)return{error:friendlyError(result.error.message)};revalidatePath(`/panel/propiedades/${propertyId}/visitas`);revalidatePath(`/panel/propiedades/${propertyId}/visitas/${visitorId}`);return{success:"Salida registrada."};
 }
+
+export async function reviewVisit(_:VisitState,data:FormData):Promise<VisitState>{
+  const propertyId=field(data,"propertyId"),visitorId=field(data,"visitorId"),decision=field(data,"decision"),reason=field(data,"reason");
+  if(!uuidPattern.test(propertyId)||!uuidPattern.test(visitorId)||!["approve","reject"].includes(decision)||reason.length>500||(decision==="reject"&&reason.length<3))return{error:"Para rechazar, escribe un motivo de al menos tres caracteres."};
+  const supabase=await createClient();const {error}=await supabase.rpc("review_visit",{target_visitor_id:visitorId,target_approved:decision==="approve",target_reason:reason});
+  if(error)return{error:friendlyError(error.message)};
+  revalidatePath(`/panel/propiedades/${propertyId}/visitas`);revalidatePath(`/panel/propiedades/${propertyId}/visitas/${visitorId}`);
+  return{success:decision==="approve"?"Solicitud aceptada.":"Solicitud rechazada."};
+}

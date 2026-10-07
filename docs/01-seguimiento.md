@@ -176,3 +176,9 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 - El 2026-10-06 se creo resi-q en Vercel desde AlxjoRuiz/ResiQ main y se desplego https://resi-q.vercel.app con las dos variables publicas de Supabase. Se verificaron portada, login y acceso Google al panel con las dos comunidades administrativas. Supabase Site URL quedo en https://resi-q.vercel.app y se agregaron callbacks /auth/callback y /auth/callback?next=**, conservando el callback local. Falta dominio propio verificado para Resend y actualizar APP_URL del worker para enlaces desplegados.
 
 - El 2026-10-06 se probo en Vercel la sesion residente alejoruizm11@gmail.com: panel muestra solo Bosques, rol member y apartamento 101; dashboard de Mirador, paquetes de Mirador y formulario administrativo de invitaciones de Bosques devolvieron 404 sin datos. La convocatoria autorizada abre con RSVP Asistire persistente y sin listado administrativo de convocados. No se modificaron permisos ni datos. Esta prueba visual no sustituye las pruebas RLS ni verifica todos los registros privados de otros residentes.
+
+### Ajuste aprobado de visitas — 2026-10-06
+
+Alejandro confirmó: residente solicita, administrador acepta/rechaza sin crear visitas, portería registra ingreso/salida. Implementado en interfaz y RPC; migración aplicada y prueba transaccional completa aprobada con rollback. Se conservan visitas históricas. Además, las deudas de prueba holaaaa/fffff fueron anuladas y se habilitó expresamente el acceso financiero del residente del apartamento 101.
+
+Validación del ajuste: TypeScript y ESLint correctos; prueba transaccional en Supabase PASS con rollback. Worker de correos actualizado para solicitudes y rechazos (panel mostró nueva fecha de despliegue). La comprobación visual de la aplicación publicada queda pendiente debido a tiempos de espera del navegador durante esta sesión.

@@ -20,7 +20,7 @@ function emailContent(job: EmailJob, appUrl: string) {
     return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
   }
   if (job.template_key.startsWith("visit_")) {
-    const headings: Record<string, string> = { visit_authorized: "Visita autorizada en ResiQ", visit_entered: "Tu visita ingresó", visit_exited: "Tu visita salió", visit_cancelled: "Visita cancelada" };
+    const headings: Record<string, string> = { visit_requested: "Solicitud de visita en ResiQ", visit_rejected: "Visita rechazada en ResiQ", visit_authorized: "Visita aceptada en ResiQ", visit_entered: "Tu visita ingresó", visit_exited: "Tu visita salió", visit_cancelled: "Visita cancelada" };
     const heading = headings[job.template_key] ?? "Actualización de visita";
     const details = [`Visitante: ${job.template_data.visitor_name ?? "Sin nombre"}`, job.template_data.scheduled_start ? `Horario: ${new Date(job.template_data.scheduled_start).toLocaleString("es-CO")}` : ""].filter(Boolean).join("\n");
     const path = job.template_data.property_id && job.template_data.visitor_id ? `/panel/propiedades/${job.template_data.property_id}/visitas/${job.template_data.visitor_id}` : "/panel";
