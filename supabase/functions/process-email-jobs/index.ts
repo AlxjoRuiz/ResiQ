@@ -77,8 +77,12 @@ export default {
   if (error) return new Response(JSON.stringify({ error: "queue_unavailable" }), { status: 500, headers: jsonHeaders });
   const results = [];
   for (const job of (data ?? []) as EmailJob[]) {
-    const content = emailContent(job, appUrl);
+    let content = { subject: "", html: "", text: "" };
     try {
+      const authorization = await supabase.rpc("authorize_email_job", { target_job_id: job.id, worker_name: workerName });
+      if (authorization.error) throw new Error("email_authorization_unavailable");
+      if (authorization.data !== true) { results.push({ id: job.id, status: "cancelled" }); continue; }
+      content = emailContent(job, appUrl);
       const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": job.dedupe_key }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text }) });
       const responseBody = await response.json() as { id?: string; message?: string; name?: string };
       if (!response.ok || !responseBody.id) throw new Error(responseBody.message ?? responseBody.name ?? `http_${response.status}`);
