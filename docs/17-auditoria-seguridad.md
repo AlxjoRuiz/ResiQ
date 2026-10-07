@@ -58,3 +58,9 @@ Verificación propia: seis pruebas Node de redirección, bytes, limpieza y Excel
 Las pruebas SQL del autor, la nueva regresión histórica y la consulta de catálogo permanecen pendientes de ejecución integrada. No se consideran verificadas por las pruebas Node/Deno.
 
 Alejandro confirmó que SUPABASE_SECRET_KEY aún no está configurada en Vercel. No actualizar main hasta configurar esa variable exclusivamente en servidor, coordinar migraciones y rutas, y redesplegar el worker con las cinco migraciones aplicadas en orden. No copiar claves al chat, archivos versionados ni variables NEXT_PUBLIC. Navegador automatizado sigue agotando tiempo de espera, por lo que no se verificó configuración remota.
+
+La verificación completa de la integración terminó correctamente: TypeScript, ESLint y compilación Next 16.4 con Webpack. Alejandro confirmó que guardó SUPABASE_SECRET_KEY como secreto de Producción en Vercel el 2026-10-07; no se leyó ni almacenó su valor. La comprobación inicial de catálogo en Supabase mostró que las RPC y guardas nuevas aún no estaban aplicadas.
+
+Cinco migraciones de seguridad aplicadas en una transacción en Supabase, resultado stage16_security_migrations_applied. Antes de aplicar se ejecutaron las migraciones combinadas con regresiones de access_revocation y property_status, resultado stage16_integrated_rls_passed y rollback completo. Archivos con Storage real, concurrencia y regresión histórica de correos pendientes.
+
+La revisión automática rechazó el push directo a main porque evitaba el PR de borrador. Main no se actualizó. La migración de finalización ya restringe RPC antiguas: la publicación de adjuntos requiere desplegar las rutas nuevas del PR #9. Solicitar confirmación explícita para fusionar el PR por GitHub y activar producción; no eludir el rechazo con otro push. Worker actualizado todavía pendiente de despliegue.
