@@ -4,7 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { pqrsCategories, pqrsStatuses } from "@/lib/pqrs/constants";
+import { pqrsCategories, pqrsRequestTypes, pqrsStatuses } from "@/lib/pqrs/constants";
 import { addPqrsMessage, changePqrsStatus, createPqrs, type PqrsState } from "@/app/panel/propiedades/[propertyId]/pqrs/actions";
 
 const inputClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -22,7 +22,8 @@ export function CreatePqrsForm({ propertyId, units }: { propertyId: string; unit
   return <form action={action} className="grid gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" defaultValue="" required><option value="" disabled>Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></label>
-    <label className={labelClass}>Categoría<select className={inputClass} name="category" defaultValue="administration" required>{pqrsCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    <label className={labelClass}>Tipo de solicitud<select className={inputClass} name="requestType" defaultValue="" required><option value="" disabled>Selecciona qué deseas presentar</option>{pqrsRequestTypes.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+    <label className={labelClass}>Categoría del tema<select className={inputClass} name="category" defaultValue="" required><option value="" disabled>Selecciona el tema</option>{pqrsCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label className={labelClass}>Asunto<input className={inputClass} name="subject" required minLength={4} maxLength={140} placeholder="Describe brevemente tu solicitud" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" required minLength={10} maxLength={5000} placeholder="Incluye la información necesaria para atender tu solicitud." /></label>
     <p className="text-xs text-muted-foreground">Después de crear la PQRS podrás adjuntar hasta 5 archivos PDF, JPG o PNG.</p>

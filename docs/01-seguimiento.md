@@ -182,3 +182,7 @@ La etapa 5 quedó implementada, verificada y aprobada. Las etapas 0–5 están c
 Alejandro confirmó: residente solicita, administrador acepta/rechaza sin crear visitas, portería registra ingreso/salida. Implementado en interfaz y RPC; migración aplicada y prueba transaccional completa aprobada con rollback. Se conservan visitas históricas. Además, las deudas de prueba holaaaa/fffff fueron anuladas y se habilitó expresamente el acceso financiero del residente del apartamento 101.
 
 Validación del ajuste: TypeScript y ESLint correctos; prueba transaccional en Supabase PASS con rollback. Worker de correos actualizado para solicitudes y rechazos (panel mostró nueva fecha de despliegue). Compilación de producción con webpack correcta. Tras recuperarse el navegador, Vercel mostró el listado de solicitudes con Pendientes/Aceptadas y sin opción de creación para administrador; publicación confirmada.
+
+### PQRS: tipo separado del tema — 2026-10-07
+
+Solicitud de Alejandro implementada: Queja/Reclamo en Tipo de solicitud, por encima de Categoría del tema. Se incluye Petición/Sugerencia como tipos; las categorías conservan solo temas operativos. Listado y detalle muestran ambos valores. Migración aplicada y prueba transaccional PASS; TypeScript y ESLint correctos. Se conservan datos anteriores y los permisos de privacidad.
