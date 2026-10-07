@@ -28,4 +28,5 @@ Esta entrega no cierra la auditoría de seguridad ni la etapa 15 de notificacion
 
 A petición de Alejandro, se retiraron las tarjetas centrales de servicios; los accesos permanecen en la barra lateral. El centro muestra novedades dirigidas a la membresía actual, cartera consultada mediante la RPC existente de cuentas autorizadas y estados de visitas, paquetes y PQRS. Portería no consulta cartera ni PQRS. No se marcan notificaciones como leídas, no se generan avisos y no cambian permisos. Este resumen de lectura no completa la etapa de centralización de notificaciones.
 
-Validación de esta revisión: TypeScript, ESLint, compilación y comprobación visual en curso.
+Verificación: TypeScript y ESLint correctos; Vercel compiló correctamente la rama. Los resultados finales de compilación y revisión visual se registran en https://github.com/AlxjoRuiz/ResiQ/pull/14.
+
