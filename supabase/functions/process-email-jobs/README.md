@@ -7,3 +7,6 @@ Variables requeridas: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `EMAIL_WORKER_SECRE
 `20261005153000_schedule_email_worker.sql` ejecuta la función cada minuto con Supabase Cron y `pg_net`. La URL del proyecto y una copia cifrada del secreto del worker se leen desde Vault con los nombres `project_url` y `email_worker_secret`; sus valores no forman parte de la migración ni del repositorio.
 
 El remitente `onboarding@resend.dev` sirve únicamente para pruebas dirigidas al correo propietario de la cuenta de Resend. Antes de producción se debe verificar un dominio propio y configurar `RESEND_FROM_EMAIL` con una dirección de ese dominio.
+## Limpieza de adjuntos rechazados
+
+El worker elimina hasta cinco archivos rechazados por ejecución mediante Storage API y libera su cuota solo después de confirmar que el objeto desapareció. La limpieza espera dos horas y cinco minutos desde el rechazo para que expiren los enlaces de carga firmados de dos horas. Los rechazos siguen ocupando uno de los cinco cupos hasta completar la limpieza. Aplicar `20261007173000_attachment_quota_cleanup.sql` y volver a desplegar este worker; el cron existente lo ejecuta cada minuto. Los errores de eliminación conservan el cupo para reintentar. No eliminar filas de `storage.objects` directamente.
