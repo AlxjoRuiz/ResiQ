@@ -56,3 +56,18 @@
 .balance p { color: #617064; font-size: 12px; margin-bottom: 6px; }
 .balance strong { font-size: 21px; letter-spacing: -.02em; overflow-wrap: anywhere; }
 .accountBalance { display: block; font-size: 12px; color: #617064; margin-top: 4px; }
+.profileLink { display: flex; align-items: center; gap: 8px; padding: 9px 15px; background: white; color: #405b49; border-radius: 24px; font-size: 13px; }
+.moduleContent { min-width: 0; }
+.moduleContent > main { padding: 0; margin: 0; max-width: none; min-height: 0; width: 100%; }
+.moduleContent [data-slot="card"], .moduleContent section > a, .moduleContent section > div:global(.rounded-2xl) { border-radius: 22px; background-color: white; box-shadow: 0 4px 20px #344a3406; border-color: #e5ebe2; }
+.moduleContent header { border-color: #d9e2d4; }
+.moduleContent input:not([type="checkbox"]):not([type="radio"]), .moduleContent select, .moduleContent textarea { background-color: #fff; border-color: #ccd9c7; border-radius: 12px; }
+.moduleContent table { background: white; }
+.moduleContent thead { background-color: #e8efdf; }
+.moduleContent th, .moduleContent td { border-color: #e5ebe2; }
+.moduleContent h1 { font-size: clamp(25px, 3vw, 34px); }
+.panelSurface { background: #dceade; min-height: 100vh; color: #202c25; }
+.panelSurface > main:not(.canvas) { background: #edf2e9; border: 1px solid #ffffffa6; border-radius: 28px; }
+.panelSurface > main [data-slot="card"] { border-radius: 22px; border-color: #e5ebe2; box-shadow: 0 4px 20px #344a3406; }
+@media (max-width: 700px) { .moduleContent header { gap: 14px; } .moduleContent input, .moduleContent select, .moduleContent textarea { max-width: 100%; } .panelSurface > main:not(.canvas) { border-radius: 22px; } }
+
