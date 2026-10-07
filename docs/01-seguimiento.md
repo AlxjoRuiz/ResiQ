@@ -22,7 +22,7 @@ Actualizado: 2026-10-05. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 13 | Llamados de atención | Aprobada por el usuario el 2026-10-05 después de confirmar la recepción real del correo |
 | 14 | Asambleas | Implementada y validada; pendiente de aprobación funcional del usuario |
 | 15 | Notificaciones y comunicaciones | No iniciada |
-| 16 | Auditoría integral y seguridad | No iniciada |
+| 16 | Auditoría integral y seguridad | En curso: PR de seguridad integrados, migraciones y auditoría de permisos aplicadas; cierre pendiente |
 | 17 | Testing integral | No iniciada |
 | 18 | Responsive y UX integral | No iniciada |
 | 19 | Deploy | No iniciada |
@@ -201,3 +201,4 @@ Alejandro aprobó el alcance de etapa 15 y después solicitó revisar los ocho P
 Etapa 16: revisión estática adicional de avisos, auditoría y colas; preparado stage16_security_catalog_readonly.sql para confirmar RLS y privilegios efectivos en remoto. Ejecución remota pendiente.
 Integración de seguridad preparada en codex/integracion-seguridad con ocho PR; seis regresiones Node, tres Deno y auditoría de producción correctas. Configuración privada de Vercel y pruebas SQL remotas pendientes; main aún no actualizado.
 Etapa 16: lint y compilación integrados correctos; clave privada guardada según Alejandro; cinco migraciones aplicadas y RLS con rollback correcto. Revisión automática rechazó push directo a main; falta fusionar PR #9 y desplegar worker. Los adjuntos requieren rutas nuevas tras revocar finalización antigua.
+PR #9 fusionado por GitHub, Vercel success, worker actualizado y salud Cron/HTTP 200 comprobada. Auditoría remota detectó grants heredados; migración adicional restringe notificaciones a read_at y retira TRUNCATE de roles navegador. Regresión effective_grants PASS. Etapa 16 sigue abierta por pruebas de archivos/concurrencia/correo y revisión restante.
