@@ -70,4 +70,3 @@
 .panelSurface > main:not(.canvas) { background: #edf2e9; border: 1px solid #ffffffa6; border-radius: 28px; }
 .panelSurface > main [data-slot="card"] { border-radius: 22px; border-color: #e5ebe2; box-shadow: 0 4px 20px #344a3406; }
 @media (max-width: 700px) { .moduleContent header { gap: 14px; } .moduleContent input, .moduleContent select, .moduleContent textarea { max-width: 100%; } .panelSurface > main:not(.canvas) { border-radius: 22px; } }
-
