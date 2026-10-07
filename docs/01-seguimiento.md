@@ -202,3 +202,6 @@ Etapa 16: revisión estática adicional de avisos, auditoría y colas; preparado
 Integración de seguridad preparada en codex/integracion-seguridad con ocho PR; seis regresiones Node, tres Deno y auditoría de producción correctas. Configuración privada de Vercel y pruebas SQL remotas pendientes; main aún no actualizado.
 Etapa 16: lint y compilación integrados correctos; clave privada guardada según Alejandro; cinco migraciones aplicadas y RLS con rollback correcto. Revisión automática rechazó push directo a main; falta fusionar PR #9 y desplegar worker. Los adjuntos requieren rutas nuevas tras revocar finalización antigua.
 PR #9 fusionado por GitHub, Vercel success, worker actualizado y salud Cron/HTTP 200 comprobada. Auditoría remota detectó grants heredados; migración adicional restringe notificaciones a read_at y retira TRUNCATE de roles navegador. Regresión effective_grants PASS. Etapa 16 sigue abierta por pruebas de archivos/concurrencia/correo y revisión restante.
+
+### Diseño claro de paneles — 2026-10-07
+Alejandro aprobó aplicar la propuesta de verde salvia y tarjetas blancas a administración, residente y portería. Dashboard con navegación por rol, adaptación móvil y resúmenes reales acotados por RLS; sin migraciones ni cambios de permisos. Alcance y validación en docs/18-diseno-paneles.md. No cierra etapa 15 ni auditoría de etapa 16.
