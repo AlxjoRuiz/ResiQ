@@ -64,3 +64,12 @@ La verificación completa de la integración terminó correctamente: TypeScript,
 Cinco migraciones de seguridad aplicadas en una transacción en Supabase, resultado stage16_security_migrations_applied. Antes de aplicar se ejecutaron las migraciones combinadas con regresiones de access_revocation y property_status, resultado stage16_integrated_rls_passed y rollback completo. Archivos con Storage real, concurrencia y regresión histórica de correos pendientes.
 
 La revisión automática rechazó el push directo a main porque evitaba el PR de borrador. Main no se actualizó. La migración de finalización ya restringe RPC antiguas: la publicación de adjuntos requiere desplegar las rutas nuevas del PR #9. Solicitar confirmación explícita para fusionar el PR por GitHub y activar producción; no eludir el rechazo con otro push. Worker actualizado todavía pendiente de despliegue.
+
+## Publicación y auditoría remota — 2026-10-07
+PR #9 fusionado por GitHub tras autorización explícita; main a262498. Vercel confirmó success para ese commit. La carpeta Desktop/ResiQ se actualizó por fast-forward; las notas anteriores se conservaron además en stash como respaldo, ya incorporadas al repositorio.
+
+Worker desplegado en Supabase: index.ts y cleanup-documents.ts comparados por contenido desde el editor. El editor web solo admitió archivos .ts, por lo que se usaron imports npm:@supabase/supabase-js@2.117.3 equivalentes al mapeo de deno.json del repositorio. El panel mostró despliegue reciente. La consulta de salud mostró tres ejecuciones Cron succeeded y respuestas HTTP 200; no acredita entrega de correos ni prueba archivos reales.
+
+La auditoría de permisos efectivos detectó grants heredados: authenticated podía modificar todas las columnas de notifications y anon/authenticated tenían TRUNCATE en varias tablas públicas. RLS no protege TRUNCATE; la presencia del grant no prueba que exista un endpoint público de truncado. Se aplicó 20261007190000_restrict_effective_browser_grants.sql para limitar edición a read_at y retirar TRUNCATE de roles de navegador y PUBLIC. La regresión de catálogo terminó con stage16_effective_grants_passed.
+
+Pendiente antes del cierre de etapa 16: prueba de adjuntos con Storage real y rutas publicadas; concurrencia remota de cupos; autorización SQL de correos históricos; repaso integral del resto de permisos/RPC y auditoría. No se declara etapa completa. Dominio Resend sigue pendiente para otros destinatarios.
