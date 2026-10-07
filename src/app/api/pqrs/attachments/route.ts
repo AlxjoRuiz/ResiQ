@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isValidDocument } from "@/lib/documents/validation";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const maximumSize = 10 * 1024 * 1024;
 
-function isExpectedSignature(bytes: Uint8Array, mimeType: string) {
-  const signatures: Record<string, number[]> = {
-    "application/pdf": [0x25, 0x50, 0x44, 0x46, 0x2d],
-    "image/jpeg": [0xff, 0xd8, 0xff],
-    "image/png": [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
-  };
-  return signatures[mimeType]?.every((value, index) => bytes[index] === value) ?? false;
-}
+
 
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
@@ -50,12 +45,12 @@ export async function POST(request: Request) {
     const { data: blob, error: downloadError } = await supabase.storage.from(document.bucket).download(document.object_path);
     if (downloadError || !blob) return NextResponse.json({ error: "No se encontró el archivo cargado." }, { status: 400 });
     const bytes = new Uint8Array(await blob.arrayBuffer());
-    const valid = bytes.length === Number(document.size_bytes) && bytes.length <= maximumSize && allowedTypes.has(document.mime_type) && isExpectedSignature(bytes, document.mime_type);
+    const valid = isValidDocument(bytes, document.mime_type, Number(document.size_bytes));
     if (!valid) {
       await supabase.rpc("reject_pqrs_document", { target_document_id: document.id, target_reason: "content_validation_failed" });
       return NextResponse.json({ error: "El contenido no coincide con un PDF, JPG o PNG válido." }, { status: 400 });
     }
-    const { error } = await supabase.rpc("complete_pqrs_document", { target_document_id: document.id });
+    const { error } = await createAdminClient().rpc("complete_verified_document", { target_document_id: document.id, target_actor_id: user.id, target_size_bytes: bytes.length, target_mime_type: document.mime_type });
     if (error) return NextResponse.json({ error: "No fue posible publicar el adjunto." }, { status: 400 });
     return NextResponse.json({ success: true });
   }
