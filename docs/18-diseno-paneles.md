@@ -16,4 +16,5 @@ Se conserva requirePropertyMember y la selección de perfiles por roles de la me
 
 ## Validación
 
-En curso: TypeScript, ESLint, compilación de producción y comprobación visual. Esta entrega no cierra la auditoría de seguridad ni la etapa 15 de notificaciones.
+TypeScript y ESLint correctos. Vercel confirmó la compilación y el despliegue de la rama del PR #12. La compilación local de producción está en su fase final. Comprobación visual autenticada pendiente: el navegador automatizado agotó el tiempo de espera. Esta entrega no cierra la auditoría de seguridad ni la etapa 15 de notificaciones.
+
