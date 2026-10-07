@@ -205,3 +205,4 @@ PR #9 fusionado por GitHub, Vercel success, worker actualizado y salud Cron/HTTP
 
 ### Diseño claro de paneles — 2026-10-07
 Alejandro aprobó aplicar la propuesta de verde salvia y tarjetas blancas a administración, residente y portería. Dashboard con navegación por rol, adaptación móvil y resúmenes reales acotados por RLS; sin migraciones ni cambios de permisos. Alcance y validación en docs/18-diseno-paneles.md. No cierra etapa 15 ni auditoría de etapa 16.
+Validación del diseño: TypeScript, ESLint y build local correctos; PR #12 fusionado y Vercel success. Vista residente comprobada en producción y a 388 px reales sin desbordamiento de página; navegación Paquetes/Panel correcta. Revisión visual de administración y portería con sesiones reales pendiente; sin cambios de permisos ni datos.

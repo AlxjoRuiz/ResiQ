@@ -16,5 +16,10 @@ Se conserva requirePropertyMember y la selección de perfiles por roles de la me
 
 ## Validación
 
-TypeScript y ESLint correctos. Vercel confirmó la compilación y el despliegue de la rama del PR #12. La compilación local de producción está en su fase final. Comprobación visual autenticada pendiente: el navegador automatizado agotó el tiempo de espera. Esta entrega no cierra la auditoría de seguridad ni la etapa 15 de notificaciones.
+TypeScript, ESLint y compilación local de producción con Next.js 16.4.0/Webpack correctos. PR #12 fusionado y despliegue de producción confirmado por Vercel.
 
+Revisión visual real con sesión residente: apartamento 101, único selector de perfil Residente, acceso a sus paquetes y PQRS, estados vacíos y navegación lateral hacia Paquetes y de regreso. Escritorio y ancho real de 388 px sin desbordamiento horizontal de la página; la navegación móvil tiene desplazamiento horizontal propio. Se restableció el tamaño del navegador al terminar.
+
+Capturas conservadas localmente en el directorio de visualizaciones de Codex: panel-residente-salvia-escritorio.png y panel-residente-salvia-movil.png. No se modificaron datos para estas pruebas. Administración y portería comparten los estilos y conservan sus módulos por rol; su comprobación visual con sesiones reales de esos perfiles queda pendiente.
+
+Esta entrega no cierra la auditoría de seguridad ni la etapa 15 de notificaciones.
