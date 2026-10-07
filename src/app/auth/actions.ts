@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/auth/safe-next";
 
 export type AuthState = { error?: string; success?: string } | undefined;
 export type InvitationState = { error?: string; invitationUrl?: string } | undefined;
@@ -11,9 +12,6 @@ function field(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
 }
 
-function safeNext(value: string) {
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/panel";
-}
 
 export async function signIn(_: AuthState, formData: FormData): Promise<AuthState> {
   const email = field(formData, "email").toLowerCase();
