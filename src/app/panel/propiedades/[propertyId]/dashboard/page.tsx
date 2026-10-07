@@ -3,13 +3,15 @@ import styles from "@/components/dashboard/dashboard.module.css";
 import { redirect } from "next/navigation";
 import { Banknote, Bell, BookOpenCheck, Boxes, Building2, CalendarDays, ChartNoAxesCombined, CircleParking, DoorOpen, FileWarning, House, KeyRound, MessageSquareText, Package, UsersRound, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DashboardModules, MetricCard, type DashboardModule } from "@/components/dashboard/role-dashboard";
+import { MetricCard, type DashboardModule } from "@/components/dashboard/role-dashboard";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 
 import { visitStatusLabel } from "@/lib/visitors/constants";
 import { packageStatusLabel } from "@/lib/packages/constants";
 import { statusLabel } from "@/lib/pqrs/constants";
 
+import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
+type FinanceSummary = { unit_id: string; building_name: string; unit_code: string; outstanding_balance: number | string; overdue_balance: number | string; account_status: string };
 type View = "residente" | "porteria" | "administracion";
 function residentModules(propertyId: string): DashboardModule[] { return [
   { title: "Paquetes", description: "Consulta paquetes recibidos y su estado de entrega.", icon: Package, href: `/panel/propiedades/${propertyId}/paquetes` }, { title: "Reservas", description: "Revisa zonas comunes, disponibilidad y reservas.", icon: CalendarDays, href: `/panel/propiedades/${propertyId}/reservas` }, { title: "Visitas", description: "Solicita visitas y servicios de mantenimiento.", icon: DoorOpen, href: `/panel/propiedades/${propertyId}/visitas` }, { title: "PQRS", description: "Crea solicitudes y sigue sus respuestas.", icon: MessageSquareText, href: `/panel/propiedades/${propertyId}/pqrs` }, { title: "Cartera", description: "Consulta la información financiera autorizada de tu unidad.", icon: Banknote, href: `/panel/propiedades/${propertyId}/cartera` }, { title: "Llamados", description: "Revisa llamados de atención dirigidos a ti.", icon: FileWarning, href: `/panel/propiedades/${propertyId}/llamados` }, { title: "Asambleas", description: "Consulta convocatorias y confirma asistencia.", icon: BookOpenCheck, href: `/panel/propiedades/${propertyId}/asambleas` }, { title: "Notificaciones", description: "Encuentra las novedades de tu comunidad.", icon: Bell },
@@ -36,16 +38,21 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     view === "administracion" ? supabase.from("property_members").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
     view === "residente" ? supabase.from("unit_memberships").select("relationship,units(code)").eq("property_id", propertyId).eq("member_id", membership.id).is("valid_to", null) : Promise.resolve({ data: [] }),
   ]);
-  const [visitSummary, packageSummary, requestSummary] = await Promise.all([
+  const [visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary] = await Promise.all([
     supabase.from("visitors").select("id,visitor_name,status").eq("property_id", propertyId).in("status", view === "porteria" ? ["authorized", "entered"] : ["pending", "authorized", "entered"]).order("scheduled_start", { ascending: false }).limit(5),
     supabase.from("packages").select("id,recipient_name,status").eq("property_id", propertyId).order("received_at", { ascending: false }).limit(5),
     view !== "porteria" ? supabase.from("pqrs").select("id,subject,status").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [], error: null }),
+    supabase.from("notifications").select("id,subject,body,read_at,occurred_at").eq("property_id", propertyId).eq("recipient_member_id", membership.id).order("occurred_at", { ascending: false }).limit(5),
+    view !== "porteria" ? supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }) : Promise.resolve({ data: [], error: null }),
   ]);
   const summaries = [
     { title: view === "administracion" ? "Solicitudes de visita" : "Visitas", path: "visitas", error: visitSummary.error, rows: (visitSummary.data ?? []).map((item) => ({ id: item.id, title: item.visitor_name, status: visitStatusLabel(item.status) })) },
     { title: view === "residente" ? "Mis paquetes" : "Paquetes recientes", path: "paquetes", error: packageSummary.error, rows: (packageSummary.data ?? []).map((item) => ({ id: item.id, title: item.recipient_name, status: packageStatusLabel(item.status) })) },
-    ...(view !== "porteria" ? [{ title: view === "residente" ? "Mis solicitudes" : "PQRS recientes", path: "pqrs", error: requestSummary.error, rows: (requestSummary.data ?? []).map((item) => ({ id: item.id, title: item.subject, status: statusLabel(item.status) })) }] : []),
+    ...(view !== "porteria" ? [{ title: view === "residente" ? "Estado de mis solicitudes" : "PQRS recientes", path: "pqrs", error: requestSummary.error, rows: (requestSummary.data ?? []).map((item) => ({ id: item.id, title: item.subject, status: statusLabel(item.status) })) }] : []),
   ];
+  const financeAccounts = (financeSummary.data ?? []) as FinanceSummary[];
+  const visibleBalance = financeAccounts.reduce((total, account) => total + Number(account.outstanding_balance), 0);
+  const visibleOverdue = financeAccounts.reduce((total, account) => total + Number(account.overdue_balance), 0);
   const units = ownUnits ?? [];
   const modules = view === "administracion" ? adminModules(propertyId) : view === "porteria" ? conciergeModules(propertyId) : residentModules(propertyId);
   const viewLabel = view === "administracion" ? "Administración" : view === "porteria" ? "Portería" : "Residente";
@@ -75,7 +82,10 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
           <MetricCard label={view === "administracion" ? "Miembros activos" : "Comunidad"} value={view === "administracion" ? memberCount ?? 0 : "Activa"} />
         </section>
         {view === "residente" && units.length > 0 && <section className={styles.units}><h2>Tus apartamentos</h2><div>{units.map((unit, index) => { const related = Array.isArray(unit.units) ? unit.units[0] : unit.units as { code?: string } | null; return <span key={`${related?.code}-${index}`}>{related?.code ?? "Unidad"} · {unit.relationship === "owner" ? "Propietario" : "Residente"}</span>; })}</div></section>}
-        <section aria-labelledby="dashboard-functions"><div className={styles.sectionHeading}><div><p>Todo lo que necesitas, en un lugar</p><h2 id="dashboard-functions">{view === "porteria" ? "Operación de portería" : view === "administracion" ? "Gestión de la comunidad" : "Mis servicios"}</h2></div><span>{viewLabel}</span></div><DashboardModules modules={modules} /></section>
+        <section className={styles.summaries} aria-label="Novedades y cartera">
+          <article className={styles.summary}><header><h2>Novedades</h2><Bell size={18} aria-hidden="true" /></header>{notificationSummary.error ? <p role="status" className={styles.empty}>No pudimos cargar tus novedades.</p> : !notificationSummary.data?.length ? <p className={styles.empty}>No tienes novedades recientes.</p> : <ul>{notificationSummary.data.map((notice) => <li key={notice.id} className={styles.notice}><div><h3>{notice.subject}</h3><span className={styles.status}>{notice.read_at ? "Leída" : "Sin leer"}</span></div><p>{notice.body}</p><time dateTime={notice.occurred_at}>{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: property.timezone }).format(new Date(notice.occurred_at))}</time></li>)}</ul>}</article>
+          {view !== "porteria" && <article className={styles.summary}><header><h2>{view === "residente" ? "Mi cartera" : "Resumen de cartera"}</h2><Link href={`/panel/propiedades/${propertyId}/cartera`}>Ver cartera →</Link></header>{financeSummary.error ? <p role="status" className={styles.empty}>No pudimos cargar la cartera. Abre el módulo para consultarla.</p> : !financeAccounts.length ? <p className={styles.empty}>{view === "residente" ? "No tienes acceso financiero habilitado para ningún apartamento." : "No hay cuentas visibles."}</p> : <><div className={styles.balance}><div><p>Saldo pendiente visible</p><strong>{formatCop(visibleBalance)}</strong></div><div><p>Saldo vencido</p><strong>{formatCop(visibleOverdue)}</strong></div></div><ul>{financeAccounts.slice(0, 5).map((account) => <li key={account.unit_id}><Link href={`/panel/propiedades/${propertyId}/cartera/${account.unit_id}`}><span>{account.building_name} · {account.unit_code}<small className={styles.accountBalance}>{formatCop(account.outstanding_balance)}</small></span><span className={styles.status}>{accountStatusLabel(account.account_status)}</span></Link></li>)}</ul>{financeAccounts.length > 5 && <p className={styles.empty}>Mostrando 5 de {financeAccounts.length} cuentas visibles.</p>}</>}</article>}
+        </section>
         <section className={styles.summaries} aria-label="Actividad reciente">{summaries.map((summary) => <article key={summary.path} className={styles.summary}><header><h2>{summary.title}</h2><Link href={`/panel/propiedades/${propertyId}/${summary.path}`}>Ver todo →</Link></header>{summary.error ? <p role="status" className={styles.empty}>No pudimos cargar este resumen. Puedes abrir el módulo para consultarlo.</p> : summary.rows.length === 0 ? <p className={styles.empty}>No hay registros visibles para tu cuenta.</p> : <ul>{summary.rows.map((row) => <li key={row.id}><Link href={`/panel/propiedades/${propertyId}/${summary.path}/${row.id}`}><span>{row.title}</span><span className={styles.status}>{row.status}</span></Link></li>)}</ul>}</article>)}</section>
       </div>
     </div>

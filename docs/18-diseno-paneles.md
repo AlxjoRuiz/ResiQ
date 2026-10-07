@@ -23,3 +23,10 @@ Revisión visual real con sesión residente: apartamento 101, único selector de
 Capturas conservadas localmente en el directorio de visualizaciones de Codex: panel-residente-salvia-escritorio.png y panel-residente-salvia-movil.png. No se modificaron datos para estas pruebas. Administración y portería comparten los estilos y conservan sus módulos por rol; su comprobación visual con sesiones reales de esos perfiles queda pendiente.
 
 Esta entrega no cierra la auditoría de seguridad ni la etapa 15 de notificaciones.
+
+## Resumen central sin accesos duplicados — 2026-10-07
+
+A petición de Alejandro, se retiraron las tarjetas centrales de servicios; los accesos permanecen en la barra lateral. El centro muestra novedades dirigidas a la membresía actual, cartera consultada mediante la RPC existente de cuentas autorizadas y estados de visitas, paquetes y PQRS. Portería no consulta cartera ni PQRS. No se marcan notificaciones como leídas, no se generan avisos y no cambian permisos. Este resumen de lectura no completa la etapa de centralización de notificaciones.
+
+Verificación: TypeScript y ESLint correctos; Vercel compiló correctamente la rama. Los resultados finales de compilación y revisión visual se registran en https://github.com/AlxjoRuiz/ResiQ/pull/14.
+
