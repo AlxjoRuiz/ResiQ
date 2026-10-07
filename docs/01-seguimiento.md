@@ -188,3 +188,7 @@ Validación del ajuste: TypeScript y ESLint correctos; prueba transaccional en S
 Solicitud de Alejandro implementada: Queja/Reclamo en Tipo de solicitud, por encima de Categoría del tema. Se incluye Petición/Sugerencia como tipos; las categorías conservan solo temas operativos. Listado y detalle muestran ambos valores. Migración aplicada y prueba transaccional PASS; TypeScript y ESLint correctos. Se conservan datos anteriores y los permisos de privacidad.
 
 Publicación confirmada en Vercel desde el perfil de residente: Tipo de solicitud encima de Categoría del tema, con selecciones obligatorias independientes. Captura del formulario guardada para revisión.
+
+### Diseño de vidrio para login — 2026-10-07
+
+Solicitado por Alejandro: fondo oscuro con luces verdes, tarjeta translúcida con desenfoque y borde suave, presentación de ResiQ en escritorio y formulario de una columna en móvil. Estilos aislados en `src/app/login/login.module.css`; campos, acciones, redirecciones, Google y flujo de invitación conservados. No hay cambios en Supabase ni permisos. TypeScript correcto. Verificación visual y compilación al cierre de la entrega.
