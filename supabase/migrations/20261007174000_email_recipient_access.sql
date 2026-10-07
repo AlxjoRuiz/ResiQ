@@ -1,7 +1,7 @@
 -- Recheck current recipient identity and target access just before provider submission.
 create or replace function public.authorize_email_job(target_job_id uuid,worker_name text)
 returns boolean language plpgsql security definer set search_path='' as $$
-declare j public.email_jobs%rowtype; n public.notifications%rowtype; actor_id uuid; target_unit uuid; permitted boolean:=false;
+declare j public.email_jobs%rowtype; n public.notifications%rowtype; actor_id uuid; permitted boolean:=false;
   previous_claims text:=current_setting('request.jwt.claims',true);
   previous_sub text:=current_setting('request.jwt.claim.sub',true);
   previous_role text:=current_setting('request.jwt.claim.role',true);
@@ -17,8 +17,7 @@ begin
     perform set_config('request.jwt.claim.role','authenticated',true);
     if private.is_active_member(j.property_id) then
       if n.type in ('receivable_created','receivable_voided','payment_recorded','payment_voided','delinquency_notice') then
-        if j.template_data->>'unit_id' ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' then target_unit:=(j.template_data->>'unit_id')::uuid; end if;
-        permitted:=private.can_access_unit_finance(j.property_id,target_unit);
+        permitted:=private.can_read_finance_notification(n.id);
       else
         permitted:=case n.target_type
           when 'pqrs' then private.can_read_pqrs(n.target_id)

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Wait for every previously issued two-hour upload capability to expire. */
 export async function cleanupRejectedDocuments(supabase: SupabaseClient): Promise<number> {

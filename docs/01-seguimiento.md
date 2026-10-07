@@ -192,3 +192,11 @@ Publicación confirmada en Vercel desde el perfil de residente: Tipo de solicitu
 ### Diseño de vidrio para login — 2026-10-07
 
 Solicitado por Alejandro: fondo oscuro con luces verdes, tarjeta translúcida con desenfoque y borde suave, presentación de ResiQ en escritorio y formulario de una columna en móvil. Estilos aislados en `src/app/login/login.module.css`; campos, acciones, redirecciones, Google y flujo de invitación conservados. No hay cambios en Supabase ni permisos. TypeScript, ESLint y build con webpack correctos. Publicación confirmada en Vercel; revisión visual de escritorio y móvil (ancho real 388 px, sin desbordamiento horizontal). Se verificaron campos requeridos email/password, redirección next y los dos botones conservados. No se ejecutó un inicio de sesión nuevo, ya que las acciones de autenticación no cambiaron.
+
+### Continuación funcional — 2026-10-07
+Alejandro solicitó retomar los pasos funcionales y posponer el diseño. Se preparó docs/16-notificaciones.md con el alcance de centralización y comunicaciones; pendiente de aprobación de decisiones antes de implementar. No se considera resuelta la entrega de correo a residentes sin dominio verificado. No se modificaron código, permisos ni datos remotos.
+
+### Revisión inicial de etapa 16 — 2026-10-07
+Alejandro aprobó el alcance de etapa 15 y después solicitó revisar los ocho PR del colaborador y continuar con paso 16. Etapa 15 sigue sin implementar. Se entregó docs/17-auditoria-seguridad.md con inventario, hallazgos de compatibilidad de correos históricos/invitaciones y requisitos de despliegue de archivos. Etapa 16 iniciada; no se integraron PR ni se ejecutaron migraciones remotas. Pruebas del autor distinguídas de comprobaciones propias.
+Etapa 16: revisión estática adicional de avisos, auditoría y colas; preparado stage16_security_catalog_readonly.sql para confirmar RLS y privilegios efectivos en remoto. Ejecución remota pendiente.
+Integración de seguridad preparada en codex/integracion-seguridad con ocho PR; seis regresiones Node, tres Deno y auditoría de producción correctas. Configuración privada de Vercel y pruebas SQL remotas pendientes; main aún no actualizado.
