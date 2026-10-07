@@ -46,3 +46,13 @@
 .status { flex-shrink: 0; border-radius: 20px; background: #edf3e9; padding: 5px 9px; color: #486142; font-size: 11px; }
 .empty { color: #617064; font-size: 13px; line-height: 1.7; padding: 12px 0; }
 @media (max-width: 1024px) { .summaries { grid-template-columns: minmax(0, 1fr); } }
+.notice { padding: 14px 0; }
+.notice > div { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.notice h3 { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.notice p { font-size: 13px; color: #617064; line-height: 1.6; margin: 8px 0; overflow-wrap: anywhere; }
+.notice time { font-size: 11px; color: #617064; }
+.balance { display: flex; flex-wrap: wrap; gap: 18px; padding: 16px; background: #edf3e9; border-radius: 16px; margin-bottom: 10px; }
+.balance > div { min-width: 0; }
+.balance p { color: #617064; font-size: 12px; margin-bottom: 6px; }
+.balance strong { font-size: 21px; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.accountBalance { display: block; font-size: 12px; color: #617064; margin-top: 4px; }
