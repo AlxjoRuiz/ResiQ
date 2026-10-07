@@ -208,3 +208,11 @@ Alejandro aprobó aplicar la propuesta de verde salvia y tarjetas blancas a admi
 Validación del diseño: TypeScript, ESLint y build local correctos; PR #12 fusionado y Vercel success. Vista residente comprobada en producción y a 388 px reales sin desbordamiento de página; navegación Paquetes/Panel correcta. Revisión visual de administración y portería con sesiones reales pendiente; sin cambios de permisos ni datos.
 Resumen central solicitado: retiradas tarjetas de servicios duplicadas, novedades de la membresía y cartera mediante RPC autorizada; estados de solicitudes y actividad visibles. Sin cambios de permisos ni datos. Evidencia final en PR #14.
 Diseño extendido por solicitud de Alejandro: marco y navegación compartidos para módulos de propiedad, formularios y detalles; superficie coherente en pantallas generales de /panel. Acciones y protección por página conservadas. Evidencia final en PR de codex/diseno-modulos.
+
+Continuación 2026-10-07: limpieza real del rechazo de asamblea confirmada (deleted, objeto ausente); rechazo de PQRS aún dentro del plazo seguro a las 17:08 Colombia. Regresión remota de visitas para residente/administrador/portería PASS con rollback; seis pruebas Node de seguridad PASS. Evidencia y límites en docs/17-auditoria-seguridad.md; etapa 16 sigue abierta.
+
+Etapa 16: prueba nueva de lectura del residente piloto entre comunidades y lectura anónima PASS en Supabase, begin read only/rollback; script stage16_pilot_tenant_readonly.sql. Logo diferido; cierre de limpieza de PQRS y resto de matriz siguen pendientes.
+
+2026-10-07 17:42 Colombia: worker confirmó limpieza de ambos rechazos sintéticos (deleted, sin objetos Storage); cupo PQRS recuperado a 4 restantes, comprobado por RPC con residente y pantalla administrativa. Pendiente de limpieza cerrado; etapa 16 continúa abierta por revisión restante.
+
+Etapa 16: corregido JSON null en tres API de adjuntos; validación de cuerpo objeto y dos regresiones nuevas. Revisión de rutas documentada; revisión integral de auditoría/formularios aún pendiente.

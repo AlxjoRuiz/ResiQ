@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isValidDocument } from "@/lib/documents/validation";
+import { readJsonObject } from "@/lib/documents/request-body";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Inicia sesión para continuar." }, { status: 401 });
 
   let payload: Record<string, unknown>;
-  try { payload = await request.json() as Record<string, unknown>; }
+  try { payload = await readJsonObject(request); }
   catch { return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 }); }
 
   if (payload.action === "prepare") {
@@ -57,3 +58,4 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ error: "Acción inválida." }, { status: 400 });
 }
+

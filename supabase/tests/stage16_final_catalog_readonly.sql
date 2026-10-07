@@ -1,0 +1,10 @@
+begin read only;
+select jsonb_build_object(
+'public_tables_without_rls',(select coalesce(jsonb_agg(c.relname),'[]') from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','p') and not c.relrowsecurity),
+'privileged_functions_without_fixed_path',(select coalesce(jsonb_agg(n.nspname||'.'||p.proname),'[]') from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.prosecdef and not exists(select 1 from unnest(coalesce(p.proconfig,array[]::text[])) s where s like 'search_path=%')),
+'internal_rpc_exposed',(select coalesce(jsonb_agg(n.nspname||'.'||p.proname),'[]') from pg_proc p join pg_namespace n on n.oid=p.pronamespace where ((n.nspname='private' and (p.proname like 'enqueue_%' or p.proname='write_property_audit')) or (n.nspname='public' and p.proname in ('claim_email_jobs','complete_email_job','fail_email_job','authorize_email_job','complete_verified_document','list_rejected_document_cleanup','complete_rejected_document_cleanup'))) and (has_function_privilege('anon',p.oid,'EXECUTE') or has_function_privilege('authenticated',p.oid,'EXECUTE'))),
+'notification_updatable_columns',(select jsonb_agg(a.attname) from pg_attribute a where a.attrelid='public.notifications'::regclass and a.attnum>0 and not a.attisdropped and has_column_privilege('authenticated','public.notifications',a.attname,'UPDATE')),
+'internal_table_write_policies',(select coalesce(jsonb_agg(jsonb_build_object('table',tablename,'policy',policyname,'command',cmd,'roles',roles)),'[]') from pg_policies where schemaname='public' and tablename in ('audit_logs','email_jobs','email_logs','documents') and permissive='PERMISSIVE' and cmd in ('ALL','INSERT','UPDATE','DELETE')),
+'browser_truncate_grants',(select coalesce(jsonb_agg(c.relname),'[]') from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','p') and (has_table_privilege('anon',c.oid,'TRUNCATE') or has_table_privilege('authenticated',c.oid,'TRUNCATE')))
+) as security_review;
+rollback;

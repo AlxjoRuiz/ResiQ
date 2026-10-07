@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isValidDocument } from "@/lib/documents/validation";
+import { readJsonObject } from "@/lib/documents/request-body";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]), allowedKinds = new Set(["convocation", "support", "minutes", "representation_evidence"]), maximumSize = 10 * 1024 * 1024;
@@ -9,7 +10,7 @@ const allowedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]), al
 export async function POST(request: Request) {
   const origin = request.headers.get("origin"); if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: "Origen no permitido." }, { status: 403 });
   const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); if (!user) return NextResponse.json({ error: "Inicia sesión para continuar." }, { status: 401 });
-  let payload: Record<string, unknown>; try { payload = await request.json() as Record<string, unknown>; } catch { return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 }); }
+  let payload: Record<string, unknown>; try { payload = await readJsonObject(request); } catch { return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 }); }
   if (payload.action === "prepare") {
     const assemblyId = String(payload.assemblyId ?? ""), representationId = String(payload.representationId ?? ""), kind = String(payload.kind ?? ""), name = String(payload.name ?? "").trim(), mimeType = String(payload.mimeType ?? ""), size = Number(payload.size);
     if (!uuidPattern.test(assemblyId) || (representationId && !uuidPattern.test(representationId)) || !allowedKinds.has(kind) || !name || name.length > 180 || !allowedTypes.has(mimeType) || !Number.isInteger(size) || size < 1 || size > maximumSize) return NextResponse.json({ error: "El archivo no cumple los requisitos." }, { status: 400 });
@@ -31,3 +32,4 @@ export async function POST(request: Request) {
   }
   return NextResponse.json({ error: "Acción inválida." }, { status: 400 });
 }
+
