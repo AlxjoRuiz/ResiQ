@@ -30,3 +30,11 @@ A petición de Alejandro, se retiraron las tarjetas centrales de servicios; los 
 
 Verificación: TypeScript y ESLint correctos; Vercel compiló correctamente la rama. Los resultados finales de compilación y revisión visual se registran en https://github.com/AlxjoRuiz/ResiQ/pull/14.
 
+
+## Diseño compartido de módulos — 2026-10-07
+
+Alejandro solicitó extender el diseño a paquetes, reservas y los demás módulos. Se añadió un layout de propiedad con marco visual compartido, navegación derivada de los mismos módulos por rol y sección activa en listados, formularios y detalles. El dashboard conserva su marco existente, sin anidar dos barras laterales. Las pantallas generales de /panel reciben la misma superficie salvia y tarjetas blancas.
+
+Las acciones, campos, enlaces, protección por página y consultas de cada módulo se conservan. El layout comprueba la membresía para presentar la navegación; no reemplaza las comprobaciones de autorización de páginas, RPC ni RLS. Al cambiar un rol, las páginas y acciones siguen comprobando permisos aunque un layout ya abierto mantenga su navegación hasta recargar.
+
+Verificaciones y capturas finales: registradas en el PR correspondiente a codex/diseno-modulos. No completa las etapas funcionales pendientes ni cambia permisos.

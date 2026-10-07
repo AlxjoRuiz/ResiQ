@@ -1,9 +1,10 @@
 import Link from "next/link";
 import styles from "@/components/dashboard/dashboard.module.css";
 import { redirect } from "next/navigation";
-import { Banknote, Bell, BookOpenCheck, Boxes, Building2, CalendarDays, ChartNoAxesCombined, CircleParking, DoorOpen, FileWarning, House, KeyRound, MessageSquareText, Package, UsersRound, Wrench } from "lucide-react";
+import { residentModules, conciergeModules, adminModules } from "@/components/dashboard/navigation";
+import { Bell, Building2, House } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MetricCard, type DashboardModule } from "@/components/dashboard/role-dashboard";
+import { MetricCard } from "@/components/dashboard/role-dashboard";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 
 import { visitStatusLabel } from "@/lib/visitors/constants";
@@ -13,16 +14,6 @@ import { statusLabel } from "@/lib/pqrs/constants";
 import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
 type FinanceSummary = { unit_id: string; building_name: string; unit_code: string; outstanding_balance: number | string; overdue_balance: number | string; account_status: string };
 type View = "residente" | "porteria" | "administracion";
-function residentModules(propertyId: string): DashboardModule[] { return [
-  { title: "Paquetes", description: "Consulta paquetes recibidos y su estado de entrega.", icon: Package, href: `/panel/propiedades/${propertyId}/paquetes` }, { title: "Reservas", description: "Revisa zonas comunes, disponibilidad y reservas.", icon: CalendarDays, href: `/panel/propiedades/${propertyId}/reservas` }, { title: "Visitas", description: "Solicita visitas y servicios de mantenimiento.", icon: DoorOpen, href: `/panel/propiedades/${propertyId}/visitas` }, { title: "PQRS", description: "Crea solicitudes y sigue sus respuestas.", icon: MessageSquareText, href: `/panel/propiedades/${propertyId}/pqrs` }, { title: "Cartera", description: "Consulta la información financiera autorizada de tu unidad.", icon: Banknote, href: `/panel/propiedades/${propertyId}/cartera` }, { title: "Llamados", description: "Revisa llamados de atención dirigidos a ti.", icon: FileWarning, href: `/panel/propiedades/${propertyId}/llamados` }, { title: "Asambleas", description: "Consulta convocatorias y confirma asistencia.", icon: BookOpenCheck, href: `/panel/propiedades/${propertyId}/asambleas` }, { title: "Notificaciones", description: "Encuentra las novedades de tu comunidad.", icon: Bell },
-]; }
-function conciergeModules(propertyId: string): DashboardModule[] { return [
-  { title: "Paquetes", description: "Registra recepciones y entregas.", icon: Package, href: `/panel/propiedades/${propertyId}/paquetes` }, { title: "Visitas", description: "Consulta visitantes autorizados.", icon: DoorOpen, href: `/panel/propiedades/${propertyId}/visitas` }, { title: "Mantenimiento", description: "Revisa servicios técnicos autorizados.", icon: Wrench, href: `/panel/propiedades/${propertyId}/visitas?tipo=maintenance` }, { title: "Ingresos", description: "Registra entradas con la autorización correspondiente.", icon: KeyRound, href: `/panel/propiedades/${propertyId}/visitas?estado=authorized` }, { title: "Salidas", description: "Completa el registro de salida.", icon: CircleParking, href: `/panel/propiedades/${propertyId}/visitas?estado=entered` }, { title: "Reservas", description: "Consulta reservas vigentes de zonas comunes.", icon: CalendarDays, href: `/panel/propiedades/${propertyId}/reservas` },
-]; }
-function adminModules(propertyId: string): DashboardModule[] { return [
-  { title: "Residentes", description: "Gestiona miembros, roles y vínculos con apartamentos.", icon: UsersRound, href: `/panel/propiedades/${propertyId}/miembros` }, { title: "Propiedad", description: "Administra los datos generales de la comunidad.", icon: Building2, href: `/panel/propiedades/${propertyId}` }, { title: "Apartamentos", description: "Gestiona torres, apartamentos, pisos y estados.", icon: House, href: `/panel/propiedades/${propertyId}/estructura` }, { title: "PQRS", description: "Gestiona solicitudes, responsables y estados.", icon: MessageSquareText, href: `/panel/propiedades/${propertyId}/pqrs` }, { title: "Paquetes", description: "Consulta recepciones, avisos y entregas.", icon: Package, href: `/panel/propiedades/${propertyId}/paquetes` }, { title: "Visitas", description: "Acepta o rechaza solicitudes y consulta su historial.", icon: DoorOpen, href: `/panel/propiedades/${propertyId}/visitas` }, { title: "Reservas", description: "Administra disponibilidad y solicitudes.", icon: CalendarDays, href: `/panel/propiedades/${propertyId}/reservas` }, { title: "Cartera", description: "Consulta y actualiza obligaciones autorizadas.", icon: Banknote, href: `/panel/propiedades/${propertyId}/cartera` }, { title: "Llamados", description: "Registra y gestiona llamados de atención.", icon: FileWarning, href: `/panel/propiedades/${propertyId}/llamados` }, { title: "Asambleas", description: "Publica convocatorias y administra asistencia.", icon: BookOpenCheck, href: `/panel/propiedades/${propertyId}/asambleas` }, { title: "Zonas", description: "Configura zonas comunes y horarios.", icon: Boxes, href: `/panel/propiedades/${propertyId}/zonas` }, { title: "Reportes", description: "Consulta indicadores operativos de la propiedad.", icon: ChartNoAxesCombined },
-]; }
-
 export default async function PropertyDashboardPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ vista?: string }> }) {
   const { propertyId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
