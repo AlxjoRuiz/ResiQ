@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -54,6 +54,7 @@ type PreparedUpload = { documentId: string; path: string; token: string };
 export function AttachmentUpload({ pqrsId, availableSlots }: { pqrsId: string; availableSlots: number }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [refreshing, startRefresh] = useTransition();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>();
 
@@ -74,11 +75,11 @@ export function AttachmentUpload({ pqrsId, availableSlots }: { pqrsId: string; a
         if (!completedResponse.ok) throw new Error(completed.error ?? "El archivo no superó la validación.");
       }
       if (inputRef.current) inputRef.current.value = "";
-      setMessage("Adjunto cargado y validado."); router.refresh();
+      setMessage("Adjunto cargado y validado.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "No se pudo cargar el archivo."); }
-    finally { setBusy(false); }
+    finally { if (inputRef.current) inputRef.current.value = ""; startRefresh(() => router.refresh()); setBusy(false); }
   }
 
-  if (availableSlots < 1) return <p className="text-sm text-muted-foreground">Ya alcanzaste el máximo de 5 adjuntos.</p>;
-  return <div className="grid gap-3"><input ref={inputRef} type="file" multiple accept="application/pdf,image/jpeg,image/png" disabled={busy} className="block w-full text-sm" /><p className="text-xs text-muted-foreground">Máximo {availableSlots} archivo(s) restante(s), 10 MB cada uno. Solo PDF, JPG y PNG.</p><div className="flex items-center gap-4"><Button type="button" variant="outline" onClick={upload} disabled={busy}>{busy ? "Validando…" : "Subir adjuntos"}</Button>{message && <p role="status" className="text-sm">{message}</p>}</div></div>;
+  if (availableSlots < 1) return <div className="grid gap-3"><p className="text-sm text-muted-foreground">Ya alcanzaste el máximo de 5 adjuntos. Los archivos pendientes o rechazados mantienen su cupo hasta que se complete su limpieza.</p>{message && <p role="status" className="text-sm">{message}</p>}</div>;
+  return <div className="grid gap-3"><input ref={inputRef} type="file" multiple accept="application/pdf,image/jpeg,image/png" disabled={busy || refreshing} className="block w-full text-sm" /><p className="text-xs text-muted-foreground">Máximo {availableSlots} archivo(s) restante(s), 10 MB cada uno. Solo PDF, JPG y PNG.</p><div className="flex items-center gap-4"><Button type="button" variant="outline" onClick={upload} disabled={busy || refreshing}>{busy || refreshing ? "Validando…" : "Subir adjuntos"}</Button>{message && <p role="status" className="text-sm">{message}</p>}</div></div>;
 }
