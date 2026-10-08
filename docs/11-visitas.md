@@ -11,11 +11,11 @@ Cada autorización contiene visitante, apartamento, anfitrión, tipo, cantidad d
 1. `pending`: solicitud pendiente de administración.
 2. `authorized`: administración aceptó la solicitud.
 3. `rejected`: administración rechazó con motivo obligatorio.
-4. `entered`: portería registró el ingreso dentro de la ventana aceptada.
+4. `entered`: portería registró el ingreso de una visita aceptada, con la hora real.
 5. `exited`: portería cerró el movimiento con fecha y actor.
 6. `cancelled`: el residente canceló su solicitud pendiente o aceptada antes del ingreso.
 
-Una autorización permite un solo ingreso. No hay reingreso implícito. Cada nuevo acceso requiere una autorización nueva. La ventana dura como máximo 24 horas y la base de datos rechaza ingresos fuera de ella.
+Una autorización permite un solo ingreso. No hay reingreso implícito. Cada nuevo acceso requiere una autorización nueva. El horario planificado dura como máximo 24 horas y sirve como referencia. Una visita aceptada puede ingresar antes o después de ese horario, sin tolerancia fija. Portería registra la hora real; pendientes, rechazadas, canceladas y visitas ya ingresadas o finalizadas no admiten otro ingreso.
 
 ## Seguridad y privacidad
 
@@ -53,3 +53,6 @@ Una autorización permite un solo ingreso. No hay reingreso implícito. Cada nue
 Migración `20261006230000_visit_requests.sql` aplicada. Se conserva el estado y el historial de las visitas anteriores; las nuevas comienzan pendientes. Rechazo con motivo obligatorio, aceptación solo antes del fin de la visita y decisión única protegida por bloqueo transaccional. La prueba en Supabase verificó creación por residente, rechazo de creación por administrador y portería, rechazo de revisión por residente y portería, rechazo de ingreso por administrador y de visita rechazada, aceptación, rechazo e ingreso/salida por portería. Todo se revirtió al finalizar, incluidos los avisos.
 
 TypeScript, ESLint y build de producción con webpack correctos. Publicación verificada en Vercel: listado del administrador con solicitudes pendientes/aceptadas y sin botón de creación. Las decisiones y movimientos se comprobaron mediante las RPC en la prueba transaccional; no se ejecutó una solicitud real nueva desde las tres sesiones de usuario.
+
+## Cambio aprobado — 2026-10-08 (pendiente de aplicar en Supabase)
+Alejandro aprobó que el horario sea una referencia: Portería puede registrar el ingreso de una visita aceptada antes del inicio o después del fin, sin tolerancia fija. Se conserva la hora real, el actor, un solo ingreso por autorización y el bloqueo de pendientes/rechazadas/canceladas. La migración 20261008220000_visit_entry_reference_schedule.sql incluye auditoría del horario planificado y su relación con el ingreso real. La prueba transaccional visit_entry_reference_schedule_transaction.sql está preparada, aún sin ejecutar. El acceso automatizado al panel fue rechazado por la política del navegador; se requiere ejecución manual de la migración. Lint de la pantalla modificada PASS; el texto nuevo de interfaz permanece pendiente de publicación hasta aplicar la migración.
