@@ -33,7 +33,7 @@ begin
  perform public.refresh_reservations(p);
  if not exists(select 1 from public.reservations where id=reservation and status='expired' and blocks_slot=false and hold_expires_at is null) then raise exception 'expired_slot_not_released'; end if;
  if (select count(*) from public.activity_events where reservation_id=reservation and event_type='reservation_expired')<>1 then raise exception 'expiration_event_missing_or_duplicated'; end if;
- if (select count(*) from public.audit_logs where entity_id=reservation and action='reservation.expired' and property_id=p and actor_id is null)<>1 then raise exception 'expiration_audit_missing_or_duplicated'; end if;
+ if (select count(*) from public.audit_logs where entity_id=reservation and action='reservation.expired' and property_id=p and actor_id=resident)<>1 then raise exception 'expiration_audit_missing_or_duplicated'; end if;
  perform public.refresh_reservations(p);
  if (select count(*) from public.activity_events where reservation_id=reservation and event_type='reservation_expired')<>1 then raise exception 'expiration_not_idempotent'; end if;
  perform set_config('request.jwt.claims',jsonb_build_object('sub',admin,'role','authenticated')::text,true);
