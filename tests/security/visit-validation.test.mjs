@@ -1,6 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validVisitDocument, visitTimeToIso, visitWindowError, visitErrorMessage } from "../../src/lib/visitors/validation.ts";
+import { validVisitDocument, visitTimeToIso, visitWindowError, visitErrorMessage, visitDateFormatter } from "../../src/lib/visitors/validation.ts";
+
+test("visit display retains Colombia's date and time across UTC midnight", () => {
+  const formatter = visitDateFormatter("America/Bogota");
+  for (const [local, hour, minute] of [["2026-10-08T16:45", "4", "45"], ["2026-10-08T22:00", "10", "00"]]) {
+    const stored = visitTimeToIso(local, "America/Bogota");
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(stored)).map(({ type, value }) => [type, value]));
+    assert.equal(parts.day, "8");
+    assert.equal(parts.hour, hour);
+    assert.equal(parts.minute, minute);
+    assert.match(parts.dayPeriod, /p/);
+  }
+});
 
 test("visit document suffixes accept repeated digits and retain leading zeros", () => {
   for (const value of ["", "11", "1111", "5050", "000000"]) assert.equal(validVisitDocument(value), true, value);

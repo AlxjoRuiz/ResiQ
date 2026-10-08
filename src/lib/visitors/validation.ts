@@ -1,5 +1,9 @@
 const localDateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/;
 
+export function visitDateFormatter(timeZone: string) {
+  return new Intl.DateTimeFormat("es-CO", { timeZone, dateStyle: "medium", timeStyle: "short" });
+}
+
 export function validVisitDocument(value: string) {
   return value === "" || /^[0-9]{2,6}$/.test(value);
 }
