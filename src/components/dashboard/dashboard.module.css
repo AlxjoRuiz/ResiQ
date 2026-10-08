@@ -1,6 +1,6 @@
-.canvas { min-height: 100vh; background: #dceade; padding: 28px; color: #202c25; }
-.shell { display: grid; grid-template-columns: 218px minmax(0, 1fr); max-width: 1480px; margin: auto; border: 1px solid #ffffffa6; border-radius: 28px; background: #edf2e9; box-shadow: 0 18px 60px #314f3810; overflow: hidden; }
-.sidebar { background: #e4ece0; padding: 30px 18px; display: flex; flex-direction: column; }
+.canvas { min-height: 100vh; background: #ffffff; padding: 28px; color: #202c25; }
+.shell { display: grid; grid-template-columns: 218px minmax(0, 1fr); max-width: 1480px; margin: auto; border: 1px solid #e5ebe2; border-radius: 28px; background: #ffffff; box-shadow: 0 18px 60px #314f3810; overflow: hidden; }
+.sidebar { background: #f8fbf8; padding: 30px 18px; display: flex; flex-direction: column; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #254a36; font-size: 24px; font-weight: 700; letter-spacing: -1px; }
 .sidebarLabel { margin: 30px 12px 12px; color: #536b59; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
 .navigation { display: grid; gap: 5px; }
@@ -66,8 +66,8 @@
 .moduleContent thead { background-color: #e8efdf; }
 .moduleContent th, .moduleContent td { border-color: #e5ebe2; }
 .moduleContent h1 { font-size: clamp(25px, 3vw, 34px); }
-.panelSurface { background: #dceade; min-height: 100vh; color: #202c25; }
-.panelSurface > main:not(.canvas) { background: #edf2e9; border: 1px solid #ffffffa6; border-radius: 28px; }
+.panelSurface { background: #ffffff; min-height: 100vh; color: #202c25; }
+.panelSurface > main:not(.canvas) { background: #ffffff; border: 1px solid #e5ebe2; border-radius: 28px; }
 .panelSurface > main [data-slot="card"] { border-radius: 22px; border-color: #e5ebe2; box-shadow: 0 4px 20px #344a3406; }
 @media (max-width: 700px) { .moduleContent header { gap: 14px; } .moduleContent input, .moduleContent select, .moduleContent textarea { max-width: 100%; } .panelSurface > main:not(.canvas) { border-radius: 22px; } }
 .communityLink { padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease, color 150ms ease; }
