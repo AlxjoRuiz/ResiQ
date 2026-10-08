@@ -248,3 +248,5 @@ Ante el reporte de rechazo al repetir dígitos, se verificó que la validación 
 
 
 2026-10-08: Alejandro ejecutó en Supabase la prueba transaccional visit_entry_reference_schedule_transaction.sql. Captura del editor: `PASS: ingreso antes/después, rol, hora real, auditoría y movimiento único; datos revertidos`. Se cierra este pendiente específico de visitas de la etapa 16. Correo a residentes continúa aplazado hasta comprar y verificar dominio; la etapa 16 sigue abierta por sus demás límites.
+
+Etapa 16: revisión estática del vencimiento de reservas; prueba transaccional con rollback preparada en stage16_reservation_expiration_transaction.sql, aún no ejecutada. Se distingue liberación al refrescar/operar de un vencimiento impulsado por proceso periódico, que no se comprobó. Correo a residentes sigue pospuesto.
