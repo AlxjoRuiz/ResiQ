@@ -1,4 +1,5 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
+import { cleanupRejectedDocuments } from "./cleanup-documents.ts";
 
 type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string };
 const jsonHeaders = { "content-type": "application/json" };
@@ -72,13 +73,18 @@ export default {
   const appUrl = (Deno.env.get("APP_URL") ?? "http://localhost:3000").replace(/\/$/, "");
   if (!supabaseUrl || !serviceKey || !resendKey || !from) return new Response(JSON.stringify({ error: "missing_configuration" }), { status: 500, headers: jsonHeaders });
   const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  const cleanedDocuments = await cleanupRejectedDocuments(supabase);
   const workerName = crypto.randomUUID();
   const { data, error } = await supabase.rpc("claim_email_jobs", { worker_name: workerName, batch_size: 10 });
   if (error) return new Response(JSON.stringify({ error: "queue_unavailable" }), { status: 500, headers: jsonHeaders });
   const results = [];
   for (const job of (data ?? []) as EmailJob[]) {
-    const content = emailContent(job, appUrl);
+    let content = { subject: "", html: "", text: "" };
     try {
+      const authorization = await supabase.rpc("authorize_email_job", { target_job_id: job.id, worker_name: workerName });
+      if (authorization.error) throw new Error("email_authorization_unavailable");
+      if (authorization.data !== true) { results.push({ id: job.id, status: "cancelled" }); continue; }
+      content = emailContent(job, appUrl);
       const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": job.dedupe_key }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text }) });
       const responseBody = await response.json() as { id?: string; message?: string; name?: string };
       if (!response.ok || !responseBody.id) throw new Error(responseBody.message ?? responseBody.name ?? `http_${response.status}`);
@@ -90,6 +96,6 @@ export default {
       results.push({ id: job.id, status: "failed" });
     }
   }
-  return new Response(JSON.stringify({ processed: results.length, results }), { headers: jsonHeaders });
+  return new Response(JSON.stringify({ processed: results.length, cleanedDocuments, results }), { headers: jsonHeaders });
   },
 };

@@ -22,7 +22,7 @@ Actualizado: 2026-10-05. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 13 | Llamados de atención | Aprobada por el usuario el 2026-10-05 después de confirmar la recepción real del correo |
 | 14 | Asambleas | Implementada y validada; pendiente de aprobación funcional del usuario |
 | 15 | Notificaciones y comunicaciones | No iniciada |
-| 16 | Auditoría integral y seguridad | No iniciada |
+| 16 | Auditoría integral y seguridad | En curso: PR de seguridad integrados, migraciones y auditoría de permisos aplicadas; cierre pendiente |
 | 17 | Testing integral | No iniciada |
 | 18 | Responsive y UX integral | No iniciada |
 | 19 | Deploy | No iniciada |
@@ -192,3 +192,27 @@ Publicación confirmada en Vercel desde el perfil de residente: Tipo de solicitu
 ### Diseño de vidrio para login — 2026-10-07
 
 Solicitado por Alejandro: fondo oscuro con luces verdes, tarjeta translúcida con desenfoque y borde suave, presentación de ResiQ en escritorio y formulario de una columna en móvil. Estilos aislados en `src/app/login/login.module.css`; campos, acciones, redirecciones, Google y flujo de invitación conservados. No hay cambios en Supabase ni permisos. TypeScript, ESLint y build con webpack correctos. Publicación confirmada en Vercel; revisión visual de escritorio y móvil (ancho real 388 px, sin desbordamiento horizontal). Se verificaron campos requeridos email/password, redirección next y los dos botones conservados. No se ejecutó un inicio de sesión nuevo, ya que las acciones de autenticación no cambiaron.
+
+### Continuación funcional — 2026-10-07
+Alejandro solicitó retomar los pasos funcionales y posponer el diseño. Se preparó docs/16-notificaciones.md con el alcance de centralización y comunicaciones; pendiente de aprobación de decisiones antes de implementar. No se considera resuelta la entrega de correo a residentes sin dominio verificado. No se modificaron código, permisos ni datos remotos.
+
+### Revisión inicial de etapa 16 — 2026-10-07
+Alejandro aprobó el alcance de etapa 15 y después solicitó revisar los ocho PR del colaborador y continuar con paso 16. Etapa 15 sigue sin implementar. Se entregó docs/17-auditoria-seguridad.md con inventario, hallazgos de compatibilidad de correos históricos/invitaciones y requisitos de despliegue de archivos. Etapa 16 iniciada; no se integraron PR ni se ejecutaron migraciones remotas. Pruebas del autor distinguídas de comprobaciones propias.
+Etapa 16: revisión estática adicional de avisos, auditoría y colas; preparado stage16_security_catalog_readonly.sql para confirmar RLS y privilegios efectivos en remoto. Ejecución remota pendiente.
+Integración de seguridad preparada en codex/integracion-seguridad con ocho PR; seis regresiones Node, tres Deno y auditoría de producción correctas. Configuración privada de Vercel y pruebas SQL remotas pendientes; main aún no actualizado.
+Etapa 16: lint y compilación integrados correctos; clave privada guardada según Alejandro; cinco migraciones aplicadas y RLS con rollback correcto. Revisión automática rechazó push directo a main; falta fusionar PR #9 y desplegar worker. Los adjuntos requieren rutas nuevas tras revocar finalización antigua.
+PR #9 fusionado por GitHub, Vercel success, worker actualizado y salud Cron/HTTP 200 comprobada. Auditoría remota detectó grants heredados; migración adicional restringe notificaciones a read_at y retira TRUNCATE de roles navegador. Regresión effective_grants PASS. Etapa 16 sigue abierta por pruebas de archivos/concurrencia/correo y revisión restante.
+
+### Diseño claro de paneles — 2026-10-07
+Alejandro aprobó aplicar la propuesta de verde salvia y tarjetas blancas a administración, residente y portería. Dashboard con navegación por rol, adaptación móvil y resúmenes reales acotados por RLS; sin migraciones ni cambios de permisos. Alcance y validación en docs/18-diseno-paneles.md. No cierra etapa 15 ni auditoría de etapa 16.
+Validación del diseño: TypeScript, ESLint y build local correctos; PR #12 fusionado y Vercel success. Vista residente comprobada en producción y a 388 px reales sin desbordamiento de página; navegación Paquetes/Panel correcta. Revisión visual de administración y portería con sesiones reales pendiente; sin cambios de permisos ni datos.
+Resumen central solicitado: retiradas tarjetas de servicios duplicadas, novedades de la membresía y cartera mediante RPC autorizada; estados de solicitudes y actividad visibles. Sin cambios de permisos ni datos. Evidencia final en PR #14.
+Diseño extendido por solicitud de Alejandro: marco y navegación compartidos para módulos de propiedad, formularios y detalles; superficie coherente en pantallas generales de /panel. Acciones y protección por página conservadas. Evidencia final en PR de codex/diseno-modulos.
+
+Continuación 2026-10-07: limpieza real del rechazo de asamblea confirmada (deleted, objeto ausente); rechazo de PQRS aún dentro del plazo seguro a las 17:08 Colombia. Regresión remota de visitas para residente/administrador/portería PASS con rollback; seis pruebas Node de seguridad PASS. Evidencia y límites en docs/17-auditoria-seguridad.md; etapa 16 sigue abierta.
+
+Etapa 16: prueba nueva de lectura del residente piloto entre comunidades y lectura anónima PASS en Supabase, begin read only/rollback; script stage16_pilot_tenant_readonly.sql. Logo diferido; cierre de limpieza de PQRS y resto de matriz siguen pendientes.
+
+2026-10-07 17:42 Colombia: worker confirmó limpieza de ambos rechazos sintéticos (deleted, sin objetos Storage); cupo PQRS recuperado a 4 restantes, comprobado por RPC con residente y pantalla administrativa. Pendiente de limpieza cerrado; etapa 16 continúa abierta por revisión restante.
+
+Etapa 16: corregido JSON null en tres API de adjuntos; validación de cuerpo objeto y dos regresiones nuevas. Revisión de rutas documentada; revisión integral de auditoría/formularios aún pendiente.

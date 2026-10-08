@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { readSheet, type CellValue } from "read-excel-file/node";
 import { createClient } from "@/lib/supabase/server";
+import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
+import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 
 export type FinanceState = { error?: string; success?: string } | undefined;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -86,13 +88,15 @@ function textValue(value: CellValue | null) { return String(value??"").trim(); }
 export async function importReceivables(_: FinanceState, data: FormData): Promise<FinanceState> {
   const propertyId=field(data,"propertyId"),file=data.get("file");
   if(!uuidPattern.test(propertyId)||!(file instanceof File)||file.size===0||file.size>2*1024*1024||!file.name.toLowerCase().endsWith(".xlsx"))return{error:"Selecciona un archivo .xlsx de máximo 2 MB."};
+  const { supabase } = await requirePropertyAdmin(propertyId);
   try {
-    const rows=await readSheet(Buffer.from(await file.arrayBuffer()));
+    const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()));
+    const rows=await readSheet(Buffer.from(archive));
     if(rows.length<2||rows.length>501)return{error:"El archivo debe contener encabezados y entre 1 y 500 filas."};
     const headers=rows[0].map(normalizeHeader);const required=["torre","apartamento","concepto","valor","fecha_emision","fecha_vencimiento","referencia","tipo"];
     if(required.some((name)=>!headers.includes(name)))return{error:`Faltan columnas. Usa la plantilla: ${required.join(", ")}.`};
     const index=Object.fromEntries(headers.map((name,position)=>[name,position]));
-    const supabase=await createClient();const {data:units,error:unitError}=await supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active");if(unitError)return{error:friendlyError(unitError.message)};
+    const {data:units,error:unitError}=await supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active");if(unitError)return{error:friendlyError(unitError.message)};
     const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[`${String(building?.name??"").trim().toLowerCase()}|${unit.code.trim().toLowerCase()}`,unit.id];}));
     const parsed=[] as {unit_id:string;concept:string;amount:number;issued_on:string;due_on:string;external_reference:string;source:string}[];const rowErrors:string[]=[];
     rows.slice(1).forEach((row,offset)=>{const line=offset+2,building=textValue(row[index.torre]),unitCode=textValue(row[index.apartamento]),concept=textValue(row[index.concepto]),amount=Number(row[index.valor]),issued=dateValue(row[index.fecha_emision]),due=dateValue(row[index.fecha_vencimiento]),reference=textValue(row[index.referencia]),kind=normalizeHeader(row[index.tipo]);const unitId=unitMap.get(`${building.toLowerCase()}|${unitCode.toLowerCase()}`);const source=kind==="saldo_inicial"?"opening_balance":kind==="obligacion"||kind==="import"?"import":"";if(!unitId||concept.length<2||concept.length>180||!Number.isFinite(amount)||amount<=0||!issued||!due||due<issued||!reference||reference.length>120||!source){rowErrors.push(`Fila ${line}`);return;}parsed.push({unit_id:unitId,concept,amount,issued_on:issued,due_on:due,external_reference:reference,source});});

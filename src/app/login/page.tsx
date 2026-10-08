@@ -1,10 +1,11 @@
 import { Building2, ShieldCheck } from "lucide-react";
 import styles from "./login.module.css";
 import { LoginForm } from "./login-form";
+import { safeNext } from "@/lib/auth/safe-next";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const params = await searchParams;
-  const next = params.next?.startsWith("/") && !params.next.startsWith("//") ? params.next : "/panel";
+  const next = safeNext(params.next);
   const invitationToken = next.startsWith("/invitacion?") ? new URL(next, "http://localhost").searchParams.get("token") ?? undefined : undefined;
   return (
     <main className={styles.page}>
