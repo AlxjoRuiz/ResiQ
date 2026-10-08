@@ -4,25 +4,27 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { visitKinds } from "@/lib/visitors/constants";
+import { requirePropertyMember } from "@/lib/auth/require-property-member";
+import { validVisitDocument, visitTimeToIso, visitWindowError, visitErrorMessage as friendlyError } from "@/lib/visitors/validation";
 
 export type VisitState = { error?: string; success?: string } | undefined;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
-function friendlyError(message?: string) {
-  if (message?.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
-  if (message?.includes("authorization_evidence_required")) return "Indica cómo se confirmó la autorización con el residente.";
-  if (message?.includes("invalid_host")) return "El anfitrión ya no está vinculado a ese apartamento.";
-  if (message?.includes("outside_authorized_window")) return "El ingreso está fuera de la ventana autorizada.";
-  if (message?.includes("service_required")) return "Especifica el tipo de servicio de mantenimiento.";
-  if (message?.includes("invalid_transition")) return "La visita ya no admite ese cambio.";
-  return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
-}
 
 export async function createVisit(_: VisitState, data: FormData): Promise<VisitState> {
   const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),hostMemberId=field(data,"hostMemberId"),visitorName=field(data,"visitorName"),documentLastDigits=field(data,"documentLastDigits"),kind=field(data,"kind"),company=field(data,"company"),serviceType=field(data,"serviceType"),scheduledStart=field(data,"scheduledStart"),scheduledEnd=field(data,"scheduledEnd"),notes=field(data,"notes"),authorizationNote=field(data,"authorizationNote");
-  const peopleCount=Number(field(data,"peopleCount")); const start=new Date(scheduledStart),end=new Date(scheduledEnd);
-  if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||(hostMemberId&&!uuidPattern.test(hostMemberId))||visitorName.length<2||visitorName.length>120||!visitKinds.some(([value])=>value===kind)||!Number.isInteger(peopleCount)||peopleCount<1||peopleCount>20||Number.isNaN(start.valueOf())||Number.isNaN(end.valueOf())||end<=start||documentLastDigits.length>6||notes.length>1000)return{error:"Completa los campos con información válida."};
-  const supabase=await createClient(); const result=await supabase.rpc("create_visit",{target_property_id:propertyId,target_unit_id:unitId,target_host_member_id:hostMemberId||null,target_visitor_name:visitorName,target_document_last_digits:documentLastDigits||null,target_kind:kind,target_company:company,target_service_type:serviceType,target_scheduled_start:start.toISOString(),target_scheduled_end:end.toISOString(),target_people_count:peopleCount,target_notes:notes,target_authorization_note:authorizationNote});
+  const peopleCount=Number(field(data,"peopleCount"));
+  if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||(hostMemberId&&!uuidPattern.test(hostMemberId))||visitorName.length<2||visitorName.length>120||!visitKinds.some(([value])=>value===kind)||!Number.isInteger(peopleCount)||peopleCount<1||peopleCount>20||notes.length>1000)return{error:"Completa los campos con información válida."};
+  if (!validVisitDocument(documentLastDigits)) return { error: friendlyError("invalid_document") };
+  if (company.length > 120 || serviceType.length > 120) return { error: "La empresa y el servicio admiten máximo 120 caracteres." };
+  if (kind === "maintenance" && !serviceType) return { error: friendlyError("service_required") };
+  const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  if (!membership.roles.includes("member") || membership.roles.some((role: string) => role === "administrator" || role === "concierge")) return { error: friendlyError("not_authorized") };
+  const start = visitTimeToIso(scheduledStart, property.timezone), end = visitTimeToIso(scheduledEnd, property.timezone);
+  if (!start || !end) return { error: "Selecciona una fecha y hora válidas en la zona horaria del conjunto." };
+  const windowError = visitWindowError(start, end);
+  if (windowError) return { error: windowError };
+  const result=await supabase.rpc("create_visit",{target_property_id:propertyId,target_unit_id:unitId,target_host_member_id:hostMemberId||null,target_visitor_name:visitorName,target_document_last_digits:documentLastDigits||null,target_kind:kind,target_company:company,target_service_type:serviceType,target_scheduled_start:start,target_scheduled_end:end,target_people_count:peopleCount,target_notes:notes,target_authorization_note:authorizationNote});
   if(result.error||!result.data)return{error:friendlyError(result.error?.message)}; revalidatePath(`/panel/propiedades/${propertyId}/visitas`); redirect(`/panel/propiedades/${propertyId}/visitas/${result.data}?created=1`);
 }
 
