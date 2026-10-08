@@ -1,6 +1,6 @@
 # Seguimiento del proyecto
 
-Actualizado: 2026-10-05. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
+Actualizado: 2026-10-08. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
 
 ## Estado de etapas
 
@@ -21,7 +21,7 @@ Actualizado: 2026-10-05. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 12 | Cartera | Aprobada por el usuario al solicitar continuar el 2026-10-03 |
 | 13 | Llamados de atención | Aprobada por el usuario el 2026-10-05 después de confirmar la recepción real del correo |
 | 14 | Asambleas | Implementada y validada; pendiente de aprobación funcional del usuario |
-| 15 | Notificaciones y comunicaciones | No iniciada |
+| 15 | Notificaciones y comunicaciones | Alcance preparado; correo a residentes pospuesto hasta contar con dominio verificado |
 | 16 | Auditoría integral y seguridad | En curso: PR de seguridad integrados, migraciones y auditoría de permisos aplicadas; cierre pendiente |
 | 17 | Testing integral | No iniciada |
 | 18 | Responsive y UX integral | No iniciada |
@@ -216,3 +216,35 @@ Etapa 16: prueba nueva de lectura del residente piloto entre comunidades y lectu
 2026-10-07 17:42 Colombia: worker confirmó limpieza de ambos rechazos sintéticos (deleted, sin objetos Storage); cupo PQRS recuperado a 4 restantes, comprobado por RPC con residente y pantalla administrativa. Pendiente de limpieza cerrado; etapa 16 continúa abierta por revisión restante.
 
 Etapa 16: corregido JSON null en tres API de adjuntos; validación de cuerpo objeto y dos regresiones nuevas. Revisión de rutas documentada; revisión integral de auditoría/formularios aún pendiente.
+
+Etapa 16: auditoría de visitas verificada en Supabase con actores, propiedad, motivo y número de eventos; PASS y rollback. Nuevo script stage16_visit_audit_transaction.sql. Sin cambios productivos; auditoría de los demás módulos sigue pendiente.
+
+Etapa 16: tres regresiones remotas de auditoría PASS con rollback para PQRS/creación-anulación de obligación, convocatoria/RSVP/asistencia de asamblea y solicitud-aprobación-cancelación de reserva. Scripts y cobertura en docs/17-auditoria-seguridad.md. Sin cambios productivos; no se declara etapa completa.
+
+Etapa 16: pagos/saldos/idempotencia/permisos/auditoría PASS con rollback. Revisadas muestras hospedadas Supabase Edge Function 5xx (60 min sin resultados) y Vercel (30 min, cinco GET 200 y contadores de consola en cero). Cobertura limitada documentada; falta importación financiera y consolidación final.
+
+Etapa 16: importación financiera PASS con rollback (autorización, duplicados, atomicidad y auditoría del lote). Matriz consolidada en docs/17-auditoria-seguridad.md distingue evidencia de límites y pendientes; siguiente entrega propuesta: recorrido visual por rol y carga Excel. Sin cambios productivos; etapa 16 sigue abierta.
+
+Etapa 16: recorrido visual residente en producción comprobado (dashboard, cartera solo 101, ruta importar devuelve 404, visitas propias sin decisiones ni movimientos administrativos). Sin escrituras. Carga Excel administrativa y vista portería requieren sus sesiones; no se cambiaron roles.
+
+Etapa 16: sesión administrativa confirmada; plantilla Excel descargada, archivo vacío bloqueado en cliente y fila sintética con monto negativo rechazada por servidor. Evidencia guardada, sin código/permisos modificados. Importación válida por interfaz y portería siguen pendientes.
+
+
+## Importación Excel válida y reversión — 2026-10-08
+Alejandro confirmó que la importación administrativa de una fila sintética terminó con `?imported=1` y que la cuenta quedó bien después de revisar la cartera. La prueba usó Torre 1 · 101, $1.000 COP, referencia `RESIQ-PRUEBA-CARTERA-20261008-01`, concepto de prueba, emisión 2026-10-08 y vencimiento 2026-10-23; se preparó una copia aparte y el original permaneció intacto. La pantalla no fue inspeccionada independientemente. La obligación quedó anulada según la confirmación funcional; la RPC de anulación conserva auditoría y encola un aviso al residente, cuya entrega no fue comprobada. No se modificó código ni permisos. Etapa 16 sigue abierta para el recorrido visual de portería y la consolidación restante.
+
+## Portería y diagnóstico de solicitudes de visita — 2026-10-08
+Capturas aportadas por Alejandro muestran Portería en el listado de visitas, sin creación ni decisiones administrativas, y una visita rechazada con historial sin ingreso/salida. Falta revisar una visita autorizada y sus movimientos en pantalla.
+
+Ante el reporte de rechazo al repetir dígitos, se verificó que la validación permite valores como 1111 y no exige unicidad del sufijo. Se detectó que createVisit interpretaba datetime-local con la zona del servidor en lugar de la del conjunto; se corrigió usando properties.timezone, se añadieron mensajes concretos para documento/ventana y se conservaron campos al devolver un error. Las 12 pruebas Node de seguridad y typecheck pasaron. El caso exacto del usuario no fue reproducido en producción; cambio local pendiente de despliegue y repetición por interfaz. Etapa 16 continúa abierta.
+
+2026-10-08: por solicitud de Alejandro, listado de Visitas ordenado por created_at descendente, con id como desempate estable, para mostrar solicitudes nuevas primero en todos los roles y filtros. Cambio local en visitas/page.tsx, pendiente de publicación.
+
+2026-10-08: Alejandro confirmó en sesión real de Portería el registro de salida de una visita aceptada y la visualización de hora de ingreso y salida en el detalle. Evidencia informada por usuario, sin inspección remota independiente. Pendiente la prueba transaccional de la nueva regla de horario y auditoría remota; etapa 16 abierta.
+
+2026-10-08: captura de Portería confirma visita «Salió», horas de ingreso y salida y secuencia completa en historial. El ingreso coincide con el inicio previsto; la excepción de entrada antes/después aún requiere una prueba específica. Etapa 16 continúa abierta.
+
+2026-10-08: revisión estática de seguridad de ingreso fuera del horario PASS en código: portería activa, estado autorizado, bloqueo transaccional, movimiento único, RLS de lectura y auditoría conservados. La regresión SQL de llegada anticipada/posterior aún no se ejecutó en Supabase. Alejandro pospuso dominio y entrega de correo a residentes; continúa etapa 16 sin declarar su cierre.
+
+
+2026-10-08: Alejandro ejecutó en Supabase la prueba transaccional visit_entry_reference_schedule_transaction.sql. Captura del editor: `PASS: ingreso antes/después, rol, hora real, auditoría y movimiento único; datos revertidos`. Se cierra este pendiente específico de visitas de la etapa 16. Correo a residentes continúa aplazado hasta comprar y verificar dominio; la etapa 16 sigue abierta por sus demás límites.
