@@ -26,6 +26,14 @@ Cada operación genera un evento funcional y un registro de auditoría. La entre
 
 Cuando hay destinatario asociado, la operación crea una notificación interna y un trabajo de correo idempotente. `process-email-jobs` genera el mensaje de paquete y `complete_email_job` cambia el estado a `notified` solo si Resend devuelve un identificador aceptado. El envío real requiere los secretos documentados en `09-pqrs.md`.
 
+## Recibos físicos de servicios públicos — 2026-10-09
+
+Portería también puede registrar un recibo físico de luz, gas o agua desde «Registrar llegada». Comparte el control de destinatario, privacidad, historial y retiro de paquetes. Se distingue por `packages.kind='utility_bill'` y `utility_service`; los paquetes anteriores conservan `kind='package'`.
+
+Si se elige un residente con vínculo vigente, se crea **un aviso interno** específico («Recibo de agua en portería», por ejemplo), visible solo para esa cuenta. Si no aparece en el directorio, el recibo queda pendiente de asociar y no genera aviso; asociarlo más adelante crea el aviso una sola vez. Los recibos no generan trabajos de correo hasta que el dominio y la plantilla de envío estén listos. El flujo de correo de paquetes permanece como estaba.
+
+La migración `20261009180000_utility_bills_at_concierge.sql` debe aplicarse **antes** de publicar la interfaz que consulta `kind` y `utility_service`. La regresión `utility_bill_reception_transaction.sql` prueba recepción, aviso, asociación posterior y aislamiento con `BEGIN/ROLLBACK`.
+
 ## Archivos principales
 
 - `supabase/migrations/20261001100000_packages.sql`

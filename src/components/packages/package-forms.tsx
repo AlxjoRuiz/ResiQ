@@ -14,18 +14,21 @@ export function RegisterPackageForm({ propertyId, directory }: { propertyId: str
   const [state, action, pending] = useActionState(registerPackage, undefined as PackageState);
   const [unitId, setUnitId] = useState("");
   const [memberId, setMemberId] = useState("");
+  const [itemKind, setItemKind] = useState("package");
   const units = useMemo(() => Array.from(new Map(directory.map((row) => [row.unit_id, { id: row.unit_id, label: `${row.building_name} · ${row.unit_code}` }])).values()), [directory]);
   const members = directory.filter((row) => row.unit_id === unitId && row.member_id && row.display_name);
   return <form action={action} className="grid gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
+    <label className={labelClass}>¿Qué llegó a portería?<select className={inputClass} name="itemKind" value={itemKind} onChange={(event) => setItemKind(event.target.value)}><option value="package">Paquete</option><option value="utility_bill">Recibo de servicio público</option></select></label>
+    {itemKind === "utility_bill" && <label className={labelClass}>Servicio<select className={inputClass} name="utilityService" defaultValue="" required><option value="" disabled>Selecciona</option><option value="electricity">Luz</option><option value="gas">Gas</option><option value="water">Agua</option></select></label>}
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" value={unitId} onChange={(event) => { setUnitId(event.target.value); setMemberId(""); }} required><option value="" disabled>Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></label>
     <label className={labelClass}>Destinatario asociado<select className={inputClass} name="recipientMemberId" value={memberId} onChange={(event) => setMemberId(event.target.value)} disabled={!unitId}><option value="">No aparece / aún sin cuenta</option>{members.map((member) => <option key={member.member_id!} value={member.member_id!}>{member.display_name}</option>)}</select></label>
-    {!memberId && <label className={labelClass}>Nombre que aparece en el paquete<input className={inputClass} name="recipientName" required minLength={2} maxLength={120} /></label>}
-    <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Transportadora<input className={inputClass} name="carrier" maxLength={100} placeholder="Servientrega, Coordinadora…" /></label><label className={labelClass}>Número de guía<input className={inputClass} name="trackingNumber" maxLength={100} /></label></div>
+    {!memberId && <label className={labelClass}>Nombre del destinatario<input className={inputClass} name="recipientName" required minLength={2} maxLength={120} /></label>}
+    {itemKind === "package" && <><div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Transportadora<input className={inputClass} name="carrier" maxLength={100} placeholder="Servientrega, Coordinadora…" /></label><label className={labelClass}>Número de guía<input className={inputClass} name="trackingNumber" maxLength={100} /></label></div>
     <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Remitente<input className={inputClass} name="senderName" maxLength={120} placeholder="Persona o comercio" /></label><label className={labelClass}>Origen<input className={inputClass} name="origin" maxLength={120} placeholder="Ciudad o lugar de envío" /></label></div>
-    <label className={labelClass}>Descripción<input className={inputClass} name="description" required minLength={3} maxLength={500} placeholder="Caja mediana, sobre, bolsa…" /></label>
+    <label className={labelClass}>Descripción<input className={inputClass} name="description" required minLength={3} maxLength={500} placeholder="Caja mediana, sobre, bolsa…" /></label></>}
     <label className={labelClass}>Observaciones<textarea className={areaClass} name="notes" maxLength={1000} placeholder="Estado del empaque u otra novedad" /></label>
-    <div className="flex items-center gap-4"><Button disabled={pending || !unitId}>{pending ? "Registrando…" : "Registrar paquete"}</Button><Result state={state} /></div>
+    <div className="flex items-center gap-4"><Button disabled={pending || !unitId}>{pending ? "Registrando…" : itemKind === "package" ? "Registrar paquete" : "Registrar recibo"}</Button><Result state={state} /></div>
   </form>;
 }
 

@@ -8,7 +8,7 @@ import { MetricCard } from "@/components/dashboard/role-dashboard";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 
 import { visitStatusLabel } from "@/lib/visitors/constants";
-import { packageStatusLabel } from "@/lib/packages/constants";
+import { packageStatusLabel, receivedItemLabel } from "@/lib/packages/constants";
 import { statusLabel } from "@/lib/pqrs/constants";
 
 import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
@@ -36,14 +36,14 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   ]);
   const [visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary] = await Promise.all([
     supabase.from("visitors").select("id,visitor_name,status").eq("property_id", propertyId).in("status", view === "porteria" ? ["authorized", "entered"] : ["pending", "authorized", "entered"]).order("scheduled_start", { ascending: false }).limit(5),
-    supabase.from("packages").select("id,recipient_name,status").eq("property_id", propertyId).order("received_at", { ascending: false }).limit(5),
+    supabase.from("packages").select("id,kind,utility_service,recipient_name,status").eq("property_id", propertyId).order("received_at", { ascending: false }).limit(5),
     view !== "porteria" ? supabase.from("pqrs").select("id,subject,status").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(5) : Promise.resolve({ data: [], error: null }),
     supabase.from("notifications").select("id,subject,body,read_at,occurred_at").eq("property_id", propertyId).eq("recipient_member_id", membership.id).order("occurred_at", { ascending: false }).limit(5),
     view !== "porteria" ? supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }) : Promise.resolve({ data: [], error: null }),
   ]);
   const summaries = [
     { title: view === "administracion" ? "Solicitudes de visita" : "Visitas", path: "visitas", error: visitSummary.error, rows: (visitSummary.data ?? []).map((item) => ({ id: item.id, title: item.visitor_name, status: visitStatusLabel(item.status) })) },
-    { title: view === "residente" ? "Mis paquetes" : "Paquetes recientes", path: "paquetes", error: packageSummary.error, rows: (packageSummary.data ?? []).map((item) => ({ id: item.id, title: item.recipient_name, status: packageStatusLabel(item.status) })) },
+    { title: view === "residente" ? "Mis paquetes y recibos" : "Paquetes y recibos recientes", path: "paquetes", error: packageSummary.error, rows: (packageSummary.data ?? []).map((item) => ({ id: item.id, title: `${receivedItemLabel(item.kind, item.utility_service)} · ${item.recipient_name}`, status: packageStatusLabel(item.status) })) },
     ...(view !== "porteria" ? [{ title: view === "residente" ? "Estado de mis solicitudes" : "PQRS recientes", path: "pqrs", error: requestSummary.error, rows: (requestSummary.data ?? []).map((item) => ({ id: item.id, title: item.subject, status: statusLabel(item.status) })) }] : []),
   ];
   const financeAccounts = (financeSummary.data ?? []) as FinanceSummary[];
