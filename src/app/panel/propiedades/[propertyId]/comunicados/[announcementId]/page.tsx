@@ -21,7 +21,7 @@ export default async function AnnouncementDetailPage({ params, searchParams }: {
     const { data: audience } = await supabase.from("announcement_recipients").select("member_id").eq("property_id", propertyId).eq("announcement_id", announcementId);
     const ids = (audience ?? []).map((row) => row.member_id);
     if (ids.length) {
-      const { data: members } = await supabase.from("property_members").select("id,profiles(display_name)").eq("property_id", propertyId).in("id", ids);
+      const { data: members } = await supabase.from("property_members").select("id,profiles!property_members_user_id_fkey(display_name)").eq("property_id", propertyId).in("id", ids);
       recipientNames = ((members ?? []) as MemberRow[]).map((row) => (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles)?.display_name ?? "Miembro");
     }
   }

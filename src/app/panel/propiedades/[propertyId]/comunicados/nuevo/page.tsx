@@ -8,7 +8,7 @@ export default async function NewAnnouncementPage({ params }: { params: Promise<
   const { propertyId } = await params;
   const { supabase, property } = await requirePropertyAdmin(propertyId);
   const { data, error } = await supabase.from("property_members")
-    .select("id,roles,profiles(display_name)").eq("property_id", propertyId).eq("status", "active").order("joined_at");
+    .select("id,roles,profiles!property_members_user_id_fkey(display_name)").eq("property_id", propertyId).eq("status", "active").order("joined_at");
   if (error) throw new Error("No se pudo cargar el directorio de miembros.");
   const recipients: AnnouncementRecipient[] = ((data ?? []) as MemberRow[]).map((row) => ({
     id: row.id, name: (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles)?.display_name ?? "Miembro", roles: row.roles,

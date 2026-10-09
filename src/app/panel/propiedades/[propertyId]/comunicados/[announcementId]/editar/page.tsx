@@ -11,7 +11,7 @@ export default async function EditAnnouncementPage({ params }: { params: Promise
   const [{ data: draft }, { data: audience }, { data: memberData, error }] = await Promise.all([
     supabase.from("announcements").select("id,subject,body,status").eq("property_id", propertyId).eq("id", announcementId).maybeSingle(),
     supabase.from("announcement_recipients").select("member_id").eq("property_id", propertyId).eq("announcement_id", announcementId),
-    supabase.from("property_members").select("id,roles,profiles(display_name)").eq("property_id", propertyId).eq("status", "active").order("joined_at"),
+    supabase.from("property_members").select("id,roles,profiles!property_members_user_id_fkey(display_name)").eq("property_id", propertyId).eq("status", "active").order("joined_at"),
   ]);
   if (!draft || draft.status !== "draft") notFound();
   if (error) throw new Error("No se pudo cargar el directorio de miembros.");
