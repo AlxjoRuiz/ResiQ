@@ -71,8 +71,11 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
           <div className={styles.roleSwitcher} aria-label="Seleccionar perfil">{views.map((allowedView) => <Button key={allowedView} asChild size="sm" variant={allowedView === view ? "default" : "outline"}><Link href={`/panel/propiedades/${propertyId}/dashboard?vista=${allowedView}`} aria-current={allowedView === view ? "page" : undefined}>{allowedView === "administracion" ? "Administración" : allowedView === "porteria" ? "Portería" : "Residente"}</Link></Button>)}</div>
         </header>
         <section className={styles.welcome}>
-          <span className={styles.welcomeIcon}><House size={29} aria-hidden="true" /></span>
-          <div><p className={styles.eyebrow}>Tu comunidad, conectada</p><h1>Panel de {viewLabel.toLowerCase()}</h1><p>{[property.address, property.city].filter(Boolean).join(" · ") || property.name}</p></div>
+          <p className={styles.eyebrow}>Tu comunidad, conectada</p>
+          <div className={styles.welcomeMain}>
+            <span className={styles.welcomeIcon}><House size={29} aria-hidden="true" /></span>
+            <div><h1>Panel de {viewLabel.toLowerCase()}</h1><p>{[property.address, property.city].filter(Boolean).join(" · ") || property.name}</p></div>
+          </div>
         </section>
         <section aria-label="Resumen del perfil" className={styles.metrics}>
           <MetricCard label={view === "residente" ? "Apartamentos vinculados" : "Apartamentos activos"} value={view === "residente" ? units.length : unitCount ?? 0} />
