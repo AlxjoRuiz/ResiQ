@@ -7,8 +7,8 @@ Esta lista permite cerrar lo que las pruebas SQL y HTTP sin sesión no demuestra
 | Sin sesión | `/panel` | Redirige a `/login?next=%2Fpanel`. | PASS local sin sesión |
 | Sin sesión | `/plataforma` | Redirige a login. | PASS local sin sesión |
 | Portería | `/panel/propiedades/{propiedad}/paquetes/nuevo` | Abre el formulario de recepción de paquetes. | Pendiente |
-| Portería | `/panel/propiedades/{propiedad}/visitas` | Muestra solicitudes y movimientos, sin crear ni aprobar solicitudes. | Pendiente |
-| Portería | `/panel/propiedades/{propiedad}/visitas/nueva` | 404. | Pendiente |
+| Portería | `/panel/propiedades/{propiedad}/visitas` | Muestra solicitudes y movimientos, sin crear ni aprobar solicitudes. | Parcial: captura muestra listado sin botón de creación; falta comprobar controles de decisión en un detalle pendiente. |
+| Portería | `/panel/propiedades/{propiedad}/visitas/nueva` | 404. | PASS 2026-10-09: captura de la ruta directa con 404. |
 | Portería | `/panel/propiedades/{propiedad}/cartera` y `/miembros` | 404 en ambas rutas. | Pendiente |
 | Residente | `/panel/propiedades/{propiedad}/visitas/nueva` y `/pqrs/nuevo` | Abre los formularios si tiene apartamento activo. | Pendiente |
 | Residente | `/panel/propiedades/{propiedad}/paquetes/nuevo` y `/miembros` | 404 en ambas rutas. | Pendiente |
