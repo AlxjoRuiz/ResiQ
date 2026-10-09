@@ -34,7 +34,7 @@ Si se elige un residente con vínculo vigente, se crea **un aviso interno** espe
 
 La migración `20261009180000_utility_bills_at_concierge.sql` debe aplicarse **antes** de publicar la interfaz que consulta `kind` y `utility_service`. La regresión `utility_bill_reception_transaction.sql` prueba recepción, aviso, asociación posterior y aislamiento con `BEGIN/ROLLBACK`.
 
-**Validación 2026-10-09:** Alejandro aplicó la migración corregida en Supabase y mostró `Success. No rows returned`. La primera ejecución falló por un nombre de restricción duplicado y no dejó columnas ni función instaladas; se corrigió el nombre y se añadió una transacción. Después ejecutó la regresión y mostró `utility_bill_reception_notice_passed_rollback`. Esto acredita el flujo transaccional en la base; el recorrido visual con una sesión real queda pendiente.
+**Validación 2026-10-09:** Alejandro aplicó la migración corregida en Supabase y mostró `Success. No rows returned`. La primera ejecución falló por un nombre de restricción duplicado y no dejó columnas ni función instaladas; se corrigió el nombre y se añadió una transacción. Después ejecutó la regresión y mostró `utility_bill_reception_notice_passed_rollback`. Confirmó también que pudo registrar un recibo desde Portería y ver el aviso con la cuenta del residente elegido. Esta última comprobación fue informada por el usuario; su sesión no se inspeccionó independientemente.
 
 ## Archivos principales
 
