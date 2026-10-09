@@ -29,6 +29,14 @@ La migración `supabase/migrations/20261009200000_announcements.sql` agrega comu
 ## Verificación prevista
 TypeScript, ESLint y compilación; pruebas transaccionales con rollback de aislamiento entre propiedades y destinatarios, denegación a roles no autorizados, lectura propia idempotente, publicación única y preservación de historial. Revisión visual con las sesiones administrativas y residentes disponibles. No enviar correos reales de prueba sin destinatarios autorizados.
 
+## Comprobación funcional pendiente en la app
+1. Administración crea un borrador dirigido solo a su propia cuenta y confirma asunto, texto y destinatario antes de publicar.
+2. Administración publica el borrador una vez. El detalle debe mostrar «Publicado» y no ofrecer edición.
+3. La misma cuenta abre Notificaciones, ve un único aviso del comunicado, lo marca como leído y comprueba que el enlace abre el detalle.
+4. Una cuenta sin membresía en esa propiedad no debe poder abrir el comunicado por URL directa. No usar datos ni destinatarios reales ajenos en esta prueba.
+
+La prueba SQL transaccional ya aprobó las reglas de permisos y publicación única; estos pasos pendientes comprueban específicamente la experiencia visible en el navegador.
+
 ## Pendientes externos
 Para enviar a alejoruizm11@gmail.com u otros destinatarios falta un dominio verificado en Resend y un remitente autorizado. El remitente de pruebas solo permite el correo propietario de la cuenta. APP_URL del worker debe verificarse y actualizarse a https://resi-q.vercel.app. La falta de dominio no impide desarrollar y probar la bandeja con rollback, pero impide cerrar la recepción real de correo a otros usuarios.
 
