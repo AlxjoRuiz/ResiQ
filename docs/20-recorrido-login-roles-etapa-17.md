@@ -12,8 +12,8 @@ Esta lista permite cerrar lo que las pruebas SQL y HTTP sin sesión no demuestra
 | Portería | `/panel/propiedades/{propiedad}/cartera` y `/miembros` | 404 en ambas rutas. | PASS informado por Alejandro 2026-10-09; sin captura inspeccionada de estos dos enlaces. |
 | Residente | `/panel/propiedades/{propiedad}/visitas/nueva` y `/pqrs/nuevo` | Abre los formularios si tiene apartamento activo. | PASS informado por Alejandro 2026-10-09: ambos formularios abren con sesión de Residente. |
 | Residente | `/panel/propiedades/{propiedad}/paquetes/nuevo` y `/miembros` | 404 en ambas rutas. | PASS informado por Alejandro 2026-10-09: ambas rutas muestran 404 en el perfil de Residente. |
-| Administración | `/panel/propiedades/{propiedad}/miembros` y `/cartera` | Abre las vistas administrativas. | Miembros: PASS informado por Alejandro 2026-10-09 («Miembros y apartamentos» abre). Cartera: pendiente. |
-| Administración | `/panel/propiedades/{propiedad}/visitas/nueva` | 404; las solicitudes las crea el residente. | Pendiente |
+| Administración | `/panel/propiedades/{propiedad}/miembros` y `/cartera` | Abre las vistas administrativas. | PASS informado por Alejandro 2026-10-09: ambas vistas abren. |
+| Administración | `/panel/propiedades/{propiedad}/visitas/nueva` | 404; las solicitudes las crea el residente. | PASS informado por Alejandro 2026-10-09: 404. |
 | Cada rol | `/panel/propiedades/{otraPropiedad}/dashboard` con un ID donde esa cuenta no tiene membresía | 404, sin contenido del otro conjunto. | Pendiente |
 | Cada rol | Salir y volver a abrir `/panel` | Muestra login; tras ingresar de nuevo, vuelve al panel autorizado. | Pendiente |
 
