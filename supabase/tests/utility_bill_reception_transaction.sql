@@ -25,7 +25,6 @@ select set_config('stage17.bill_water',public.register_utility_bill('17b10000-00
 do $test$
 begin
  if not exists(select 1 from public.packages where id=current_setting('stage17.bill_water')::uuid and kind='utility_bill' and utility_service='water' and recipient_member_id='17b20000-0000-4000-8000-000000000002' and status='received') then raise exception 'utility_bill_not_registered'; end if;
- if (select count(*) from public.notifications where target_type='package' and target_id=current_setting('stage17.bill_water')::uuid and recipient_member_id='17b20000-0000-4000-8000-000000000002' and subject='Recibo de agua en portería' and body like '%recibo de agua%')<>1 then raise exception 'resident_notice_missing_or_duplicated'; end if;
  begin
   perform public.register_utility_bill('17b10000-0000-4000-8000-000000000001','17b40000-0000-4000-8000-000000000001',null,'Resident','internet','');
   raise exception 'invalid_service_accepted';
@@ -34,17 +33,23 @@ end $test$;
 
 -- A physical bill without an associated account stays private until Portería links one.
 select set_config('stage17.bill_gas',public.register_utility_bill('17b10000-0000-4000-8000-000000000001','17b40000-0000-4000-8000-000000000001',null,'Test resident','gas','')::text,true);
+reset role;
 do $test$
 begin
  if exists(select 1 from public.notifications where target_id=current_setting('stage17.bill_gas')::uuid) then raise exception 'unassigned_bill_notified'; end if;
+end $test$;
+set local role authenticated;
+do $test$
+begin
  perform public.assign_package_recipient(current_setting('stage17.bill_gas')::uuid,'17b20000-0000-4000-8000-000000000002');
- if (select count(*) from public.notifications where target_id=current_setting('stage17.bill_gas')::uuid and recipient_member_id='17b20000-0000-4000-8000-000000000002' and subject='Recibo de gas en portería')<>1 then raise exception 'late_assignment_notice_missing'; end if;
 end $test$;
 reset role;
 
 -- The SQL Editor owner can inspect the private queue; clients cannot.
 do $test$
 begin
+ if (select count(*) from public.notifications where target_type='package' and target_id=current_setting('stage17.bill_water')::uuid and recipient_member_id='17b20000-0000-4000-8000-000000000002' and subject='Recibo de agua en portería' and body like '%recibo de agua%')<>1 then raise exception 'resident_notice_missing_or_duplicated'; end if;
+ if (select count(*) from public.notifications where target_id=current_setting('stage17.bill_gas')::uuid and recipient_member_id='17b20000-0000-4000-8000-000000000002' and subject='Recibo de gas en portería')<>1 then raise exception 'late_assignment_notice_missing'; end if;
  if exists(select 1 from public.email_jobs ej join public.notifications n on n.id=ej.notification_id where n.target_id in (current_setting('stage17.bill_water')::uuid,current_setting('stage17.bill_gas')::uuid)) then raise exception 'utility_email_job_before_domain_setup'; end if;
 end $test$;
 
