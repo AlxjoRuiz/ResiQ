@@ -1,6 +1,6 @@
 # Etapa 15 — Notificaciones y comunicaciones
 
-Estado al 2026-10-09: bandeja interna y comunicados administrativos implementados en código; migración y prueba transaccional preparadas para aplicar y verificar en Supabase. Correo externo pendiente de dominio verificado.
+Estado al 2026-10-09: bandeja interna y comunicados administrativos publicados; migración aplicada en Supabase y prueba transaccional aprobada con `stage15_announcements_passed_rollback`. Correo externo pendiente de dominio verificado.
 
 ## Objetivo
 Centralizar los avisos existentes sin cambiar el diseño actual ni duplicar las colas. El correo electrónico sigue siendo el único canal externo; la bandeja interna permite consultar el historial dentro de ResiQ.
