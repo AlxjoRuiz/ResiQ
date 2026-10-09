@@ -15,7 +15,7 @@ Esta lista permite cerrar lo que las pruebas SQL y HTTP sin sesión no demuestra
 | Administración | `/panel/propiedades/{propiedad}/miembros` y `/cartera` | Abre las vistas administrativas. | PASS informado por Alejandro 2026-10-09: ambas vistas abren. |
 | Administración | `/panel/propiedades/{propiedad}/visitas/nueva` | 404; las solicitudes las crea el residente. | PASS informado por Alejandro 2026-10-09: 404. |
 | Cada rol | `/panel/propiedades/{otraPropiedad}/dashboard` con un ID donde esa cuenta no tiene membresía | 404, sin contenido del otro conjunto. | Pendiente |
-| Cada rol | Salir y volver a abrir `/panel` | Muestra login; tras ingresar de nuevo, vuelve al panel autorizado. | Pendiente |
+| Cada rol | Salir y volver a abrir `/panel` | Muestra login; tras ingresar de nuevo, vuelve al panel autorizado. | Portería: salida y redirección a `/login?next=%2Fpanel` PASS informado por Alejandro 2026-10-09. Reingreso y otros roles pendientes. |
 
 Para login, comprobar por separado una cuenta invitada con correo/contraseña y otra con Google. Una contraseña incorrecta debe mostrar un error genérico sin crear sesión. Si la cuenta no tiene contraseña, marcar ese caso como no aplicable; la recuperación por correo sigue aplazada hasta contar con dominio verificado.
 
