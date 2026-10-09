@@ -33,3 +33,29 @@ test("OAuth callback without a code returns to login with an error", async () =>
   assert.equal(destination.pathname, "/login");
   assert.equal(destination.searchParams.get("error"), "callback");
 });
+
+test("private document download endpoints reject requests without a session", async () => {
+  const documentId = "a8d16b73-5b83-4b8e-9c22-a2e404541008";
+  for (const area of ["pqrs", "assemblies", "attention-calls"]) {
+    const response = await fetch(new URL(`/api/${area}/documents/${documentId}`, baseUrl), {
+      redirect: "manual",
+      signal: AbortSignal.timeout(120000),
+    });
+    assert.equal(response.status, 401, `${area} should reject an anonymous download`);
+    assert.equal(response.headers.get("content-type")?.includes("application/json"), true);
+  }
+});
+
+test("private document upload endpoints reject requests without a session", async () => {
+  for (const area of ["pqrs", "assemblies", "attention-calls"]) {
+    const response = await fetch(new URL(`/api/${area}/attachments`, baseUrl), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "prepare" }),
+      redirect: "manual",
+      signal: AbortSignal.timeout(120000),
+    });
+    assert.equal(response.status, 401, `${area} should reject an anonymous upload`);
+    assert.equal(response.headers.get("content-type")?.includes("application/json"), true);
+  }
+});
