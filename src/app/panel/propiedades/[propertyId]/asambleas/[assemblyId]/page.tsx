@@ -20,6 +20,7 @@ function unitName(value: UnitRelation) { const unit = one(value), building = one
 
 export default async function AssemblyDetailPage({ params, searchParams }: { params: Promise<{ propertyId: string; assemblyId: string }>; searchParams: Promise<{ created?: string }> }) {
   const { propertyId, assemblyId } = await params; const { supabase, membership, property } = await requirePropertyMember(propertyId); const isAdmin = membership.roles.includes("administrator");
+  if (!isAdmin && !membership.roles.includes("member")) notFound();
   const [{ data: item }, { data: agendaData }, { data: attendeeData }, { data: representationData }, { data: documentData }, { data: eventData }, { data: ownUnitData }, { data: optionData }] = await Promise.all([
     supabase.from("assemblies").select("id,property_id,type,title,description,starts_at,location,status,published_at,finished_at,cancelled_at,cancellation_reason,created_at").eq("property_id", propertyId).eq("id", assemblyId).maybeSingle(),
     supabase.from("assembly_agenda").select("id,position,title,description").eq("property_id", propertyId).eq("assembly_id", assemblyId).order("position"),

@@ -16,7 +16,7 @@ export async function requirePropertyAdmin(propertyId: string) {
   if (!membership?.roles.includes("administrator")) notFound();
 
   const { data: property } = await supabase.from("properties")
-    .select("id,name,slug,address,city,timezone,status").eq("id", propertyId).maybeSingle();
+    .select("id,name,slug,address,city,timezone,status").eq("id", propertyId).eq("status", "active").maybeSingle();
   if (!property) notFound();
   return { supabase, user, membership, property };
 }

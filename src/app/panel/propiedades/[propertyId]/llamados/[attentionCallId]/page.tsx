@@ -15,6 +15,7 @@ const eventLabels: Record<string, string> = { attention_call_created: "Llamado c
 export default async function AttentionCallDetailPage({ params, searchParams }: { params: Promise<{ propertyId: string; attentionCallId: string }>; searchParams: Promise<{ created?: string }> }) {
   const { propertyId, attentionCallId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  if (!membership.roles.includes("administrator") && !membership.roles.includes("member")) notFound();
   const [{ data: item }, { data: documents }, { data: events }] = await Promise.all([
     supabase.from("attention_calls").select("id,property_id,unit_id,category,reason,description,issued_at,status,close_note,closed_at,created_at,units(code,buildings(name)),attention_call_recipients(member_id,read_at,property_members(profiles(display_name)))").eq("property_id", propertyId).eq("id", attentionCallId).maybeSingle(),
     supabase.from("documents").select("id,original_name,mime_type,size_bytes,status,created_at").eq("property_id", propertyId).eq("attention_call_id", attentionCallId).eq("status", "available").order("created_at"),

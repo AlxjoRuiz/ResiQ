@@ -11,6 +11,7 @@ function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? un
 export default async function PqrsDetailPage({ params, searchParams }: { params: Promise<{ propertyId: string; pqrsId: string }>; searchParams: Promise<{ created?: string }> }) {
   const { propertyId, pqrsId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  if (!membership.roles.includes("administrator") && !membership.roles.includes("member")) notFound();
   const [{ data: request }, { data: messages }, { data: documents }, { data: slotsUsed, error: slotsError }, { data: events }] = await Promise.all([
     supabase.from("pqrs").select("id,property_id,unit_id,author_member_id,request_type,category,subject,description,status,created_at,closed_at,units(code,buildings(name))").eq("property_id", propertyId).eq("id", pqrsId).maybeSingle(),
     supabase.from("pqrs_messages").select("id,author_member_id,body,created_at").eq("property_id", propertyId).eq("pqrs_id", pqrsId).order("created_at"),
