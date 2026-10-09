@@ -240,3 +240,9 @@ La matriz anterior era una fotografía del 7 de octubre. Estado actualizado tras
 | Operación periódica | Cron de reservas con cuatro ejecuciones consecutivas `succeeded`; transición de vencimiento validada con rollback | `0 rows` no acredita una expiración real por cron |
 
 `npm.cmd run test:security` pasó 13/13 regresiones locales el 8 de octubre; aparecieron advertencias informativas de Node sobre type stripping y detección de módulos, sin fallos. No se cambió código productivo en esta consolidación. La etapa 16 permanece abierta para decidir la recuperación de contraseña con correo verificado y, si se exige evidencia de extremo a extremo del cron, observar una expiración real controlada. La etapa 17 no se inicia sin aprobación de Alejandro.
+
+## Acciones del servidor y prueba del cron aplazada — 2026-10-08
+
+Alejandro pospuso la prueba de una expiración real causada por cron; queda anotada para una sesión posterior. Las cuatro ejecuciones `succeeded` y la regresión transaccional siguen siendo la evidencia actual, sin presentar la prueba diferida como realizada.
+
+Repaso estático de las nueve unidades `actions.ts`: 46 llamadas RPC distintas, todas con definición en las migraciones. Los cambios de datos de negocio pasan por esas RPC; la única actualización directa observada en las acciones es el nombre del perfil propio, filtrado por `user.id` y protegido por `profiles_update_own`. La lectura directa adicional de unidades en la importación Excel ocurre después de `requirePropertyAdmin` y filtra por propiedad. `createClient` usa la clave publicable y las cookies de la sesión, no una clave de servicio. Este inventario no demuestra por sí solo que cada rama interna de las 46 RPC sea correcta; las regresiones por módulo y el catálogo remoto documentados arriba aportan la comprobación de escenarios y permisos. No se encontró una escritura de negocio directa desde estas acciones ni se modificó código productivo.
