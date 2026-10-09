@@ -10,8 +10,8 @@ Esta lista permite cerrar lo que las pruebas SQL y HTTP sin sesión no demuestra
 | Portería | `/panel/propiedades/{propiedad}/visitas` | Muestra solicitudes y movimientos, sin crear ni aprobar solicitudes. | Parcial: captura muestra listado sin botón de creación; falta comprobar controles de decisión en un detalle pendiente. |
 | Portería | `/panel/propiedades/{propiedad}/visitas/nueva` | 404. | PASS 2026-10-09: captura de la ruta directa con 404. |
 | Portería | `/panel/propiedades/{propiedad}/cartera` y `/miembros` | 404 en ambas rutas. | PASS informado por Alejandro 2026-10-09; sin captura inspeccionada de estos dos enlaces. |
-| Residente | `/panel/propiedades/{propiedad}/visitas/nueva` y `/pqrs/nuevo` | Abre los formularios si tiene apartamento activo. | Pendiente |
-| Residente | `/panel/propiedades/{propiedad}/paquetes/nuevo` y `/miembros` | 404 en ambas rutas. | Pendiente |
+| Residente | `/panel/propiedades/{propiedad}/visitas/nueva` y `/pqrs/nuevo` | Abre los formularios si tiene apartamento activo. | PASS informado por Alejandro 2026-10-09: ambos formularios abren con sesión de Residente. |
+| Residente | `/panel/propiedades/{propiedad}/paquetes/nuevo` y `/miembros` | 404 en ambas rutas. | Miembros: PASS informado por Alejandro 2026-10-09 (404). Registrar paquete: pendiente; Alejandro aclaró que aún no hizo esta prueba. |
 | Administración | `/panel/propiedades/{propiedad}/miembros` y `/cartera` | Abre las vistas administrativas. | Pendiente |
 | Administración | `/panel/propiedades/{propiedad}/visitas/nueva` | 404; las solicitudes las crea el residente. | Pendiente |
 | Cada rol | `/panel/propiedades/{otraPropiedad}/dashboard` con un ID donde esa cuenta no tiene membresía | 404, sin contenido del otro conjunto. | Pendiente |
