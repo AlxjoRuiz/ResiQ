@@ -1,8 +1,10 @@
 -- Physical utility bills received at the concierge desk share the package handoff flow.
+begin;
+
 alter table public.packages
   add column kind text not null default 'package' check (kind in ('package','utility_bill')),
   add column utility_service text check (utility_service in ('electricity','gas','water')),
-  add constraint packages_utility_service_check check (
+  add constraint packages_kind_service_consistency_check check (
     (kind='package' and utility_service is null) or
     (kind='utility_bill' and utility_service is not null)
   );
@@ -51,3 +53,5 @@ $$;
 
 revoke all on function public.register_utility_bill(uuid,uuid,uuid,text,text,text) from public,anon;
 grant execute on function public.register_utility_bill(uuid,uuid,uuid,text,text,text) to authenticated;
+
+commit;
