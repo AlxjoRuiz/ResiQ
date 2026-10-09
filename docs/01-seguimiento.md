@@ -258,3 +258,5 @@ Etapa 16: revisión estática del vencimiento de reservas; prueba transaccional 
 2026-10-08: Alejandro ejecutó en Supabase la migración del cron de reservas; captura con resultado `schedule = 2`. Programación aceptada. Pendiente comprobar trabajo activo y ejecuciones `succeeded` mediante `reservation_refresh_cron_check.sql`; no se declara aún probada la ejecución periódica.
 
 2026-10-08: captura de verificación muestra cuatro ejecuciones del cron de reservas por minuto, todas `succeeded` y `0 rows` (sin reservas vencidas que procesar). Programación y ejecución periódica confirmadas. La transición de vencimiento ya pasó prueba transaccional con rollback; no se ha observado una expiración real causada por cron. Etapa 16 continúa por el repaso restante.
+
+2026-10-08: matriz de auditoría de etapa 16 actualizada con evidencias posteriores de roles, archivos, Excel, cron y auditoría. Regresiones locales de seguridad 13/13 PASS. Hallazgo funcional para decidir: la app permite cuenta por contraseña con invitación, pero no ofrece recuperación de contraseña; la entrega de correo sigue diferida por dominio. Cron sin expiración real observada. No se inicia etapa 17.

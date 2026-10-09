@@ -222,3 +222,21 @@ Alejandro aportó captura del SQL Editor de producción ResiQ con resultado `res
 Alejandro ejecutó la migración en el SQL Editor de Supabase y aportó una captura con resultado `schedule = 2`; esto confirma que `cron.schedule` aceptó la definición. Falta comprobar `reservation_refresh_cron_check.sql`: trabajo activo y ejecuciones `succeeded`. Hasta esa verificación no se declara probado el vencimiento periódico en producción. El cambio puede tardar hasta la siguiente ejecución de un minuto; los accesos interactivos siguen refrescando antes de consultar o decidir. La entrega externa de correo permanece diferida hasta verificar el dominio.
 
 Verificación posterior aportada por Alejandro: `reservation_refresh_cron_check.sql` muestra cuatro ejecuciones consecutivas `succeeded` (22:43–22:46 UTC) con `return_message = 0 rows`. Esto confirma que el trabajo programado se ejecuta cada minuto sin error; no había propiedades vencidas que procesar en esas cuatro corridas. La transición de vencimiento, liberación e idempotencia se había comprobado por separado con fixture transaccional y rollback. No se ha observado todavía una expiración real impulsada por cron; queda como límite de la evidencia, no como fallo conocido.
+
+## Consolidación de etapa 16 — 2026-10-08
+
+La matriz anterior era una fotografía del 7 de octubre. Estado actualizado tras las pruebas posteriores:
+
+| Área | Evidencia cerrada | Límite vigente |
+| --- | --- | --- |
+| RLS y aislamiento | Catálogo SQL, lectura anónima y entre propiedades, suspensión y revocación con rollback | Pruebas de escenario, no demostración formal de toda combinación futura |
+| Roles y permisos | Residente, administrador y Portería revisados con sesiones reales o capturas; denegaciones SQL en módulos sensibles | La revisión visual no sustituye pruebas de todas las rutas directas |
+| Archivos | Storage real, revocación de lectura, cuota concurrente, limpieza de rechazados y recuperación del cupo | Enlaces firmados ya emitidos conservan hasta cinco minutos de vigencia |
+| Formularios y API | Revisión de rutas, cuerpos JSON inválidos, límites de Excel e importación válida con anulación posterior | Formularios revisados por muestra; faltan variantes completas de interacción |
+| Autenticación | Redirección local segura, acceso privado e invitación por correo/contraseña o Google | No hay flujo de recuperación de contraseña en la app; entrega de correo diferida por dominio |
+| Multi-tenancy | Lectura ajena y anónima denegada; referencias compuestas y RLS comprobadas en catálogo | La cobertura remota corresponde al piloto y fixtures indicados |
+| Logs | Muestras hospedadas de Vercel y Supabase sin errores en ventanas acotadas | No certifica todo el historial ni metadatos |
+| Auditoría | Regresiones transaccionales de visitas, PQRS, asambleas, reservas, cartera, pagos e importaciones | No cubre cada transición automática; cron ejecuta, pero sin expiración real observada |
+| Operación periódica | Cron de reservas con cuatro ejecuciones consecutivas `succeeded`; transición de vencimiento validada con rollback | `0 rows` no acredita una expiración real por cron |
+
+`npm.cmd run test:security` pasó 13/13 regresiones locales el 8 de octubre; aparecieron advertencias informativas de Node sobre type stripping y detección de módulos, sin fallos. No se cambió código productivo en esta consolidación. La etapa 16 permanece abierta para decidir la recuperación de contraseña con correo verificado y, si se exige evidencia de extremo a extremo del cron, observar una expiración real controlada. La etapa 17 no se inicia sin aprobación de Alejandro.
