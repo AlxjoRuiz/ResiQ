@@ -32,7 +32,7 @@ TypeScript, ESLint y compilación; pruebas transaccionales con rollback de aisla
 ## Comprobación funcional en la app
 El 2026-10-09 Alejandro confirmó en producción que el borrador muestra asunto, texto y su propia cuenta como destinataria; pudo publicarlo, recibió exactamente un aviso, lo marcó como leído y el enlace «Abrir sección relacionada» abrió el comunicado tras la corrección `f20ad77`. La verificación fue informada por el usuario; no se inspeccionó su sesión de forma independiente. La prueba SQL transaccional ya aprobó las reglas de permisos y publicación única.
 
-Pendiente visual: confirmar que una cuenta sin membresía en esa propiedad no pueda abrir el comunicado por URL directa. No usar datos ni destinatarios reales ajenos en esta prueba.
+El 2026-10-09 Alejandro abrió desde Portería la URL directa del comunicado dirigido solo a su cuenta de Administración: recibió 404 y no vio el contenido. Esta prueba confirma en la interfaz la restricción por destinatario dentro de la misma propiedad. La prueba visual de una cuenta sin membresía en esa propiedad sigue pendiente; el aislamiento entre propiedades del residente piloto ya se comprobó por otras rutas.
 
 ## Pendientes externos
 Para enviar a alejoruizm11@gmail.com u otros destinatarios falta un dominio verificado en Resend y un remitente autorizado. El remitente de pruebas solo permite el correo propietario de la cuenta. APP_URL del worker debe verificarse y actualizarse a https://resi-q.vercel.app. La falta de dominio no impide desarrollar y probar la bandeja con rollback, pero impide cerrar la recepción real de correo a otros usuarios.
