@@ -21,7 +21,7 @@ Actualizado: 2026-10-08. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 12 | Cartera | Aprobada por el usuario al solicitar continuar el 2026-10-03 |
 | 13 | Llamados de atención | Aprobada por el usuario el 2026-10-05 después de confirmar la recepción real del correo |
 | 14 | Asambleas | Implementada y validada; pendiente de aprobación funcional del usuario |
-| 15 | Notificaciones y comunicaciones | Alcance preparado; correo a residentes pospuesto hasta contar con dominio verificado |
+| 15 | Notificaciones y comunicaciones | Bandeja y comunicados internos implementados en código; migración de Supabase pendiente de aplicación y prueba. Correo externo pospuesto hasta contar con dominio verificado |
 | 16 | Auditoría integral y seguridad | En curso: PR de seguridad integrados, migraciones y auditoría de permisos aplicadas; cierre pendiente |
 | 17 | Testing integral | No iniciada |
 | 18 | Responsive y UX integral | No iniciada |

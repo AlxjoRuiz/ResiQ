@@ -1,6 +1,6 @@
 # Etapa 15 — Notificaciones y comunicaciones
 
-Estado: propuesta de alcance preparada el 2026-10-07; pendiente de aprobación de decisiones antes de implementar.
+Estado al 2026-10-09: bandeja interna y comunicados administrativos implementados en código; migración y prueba transaccional preparadas para aplicar y verificar en Supabase. Correo externo pendiente de dominio verificado.
 
 ## Objetivo
 Centralizar los avisos existentes sin cambiar el diseño actual ni duplicar las colas. El correo electrónico sigue siendo el único canal externo; la bandeja interna permite consultar el historial dentro de ResiQ.
@@ -12,7 +12,7 @@ notifications conserva destinatario, propiedad, asunto, cuerpo, contexto y read_
 1. Bandeja personal paginada con filtros por propiedad autorizada, tipo y lectura; detalle y enlace al módulo original.
 2. Marcar un aviso propio como leído mediante operación segura e idempotente, sin modificar destinatario, contenido ni propiedad.
 3. Comunicados creados únicamente por administración activa de su propiedad, inicialmente en borrador, con asunto, texto y destinatarios explícitos. Revisión antes de publicar; sin destinatarios agregados automáticamente.
-4. Publicación transaccional: una notificación y un trabajo de correo por destinatario, con deduplicación y auditoría. Sin eliminación física ni edición silenciosa de mensajes publicados; una corrección será un comunicado nuevo.
+4. Publicación transaccional: una notificación interna por destinatario, con deduplicación y auditoría. Sin eliminación física ni edición silenciosa de mensajes publicados; una corrección será un comunicado nuevo. El trabajo de correo se incorporará cuando el dominio esté listo.
 5. Plantillas reutilizables y enlaces al dominio desplegado. Estado aceptado por el proveedor separado de entregado; no afirmar recepción sin evidencia.
 6. Estado operativo de envíos para administración de su propiedad, con errores resumidos y sin exponer secretos. No permitir consultar contenido privado de otros módulos mediante esta vista ni reenvíos masivos sin una operación explícita.
 
@@ -23,8 +23,8 @@ notifications conserva destinatario, propiedad, asunto, cuerpo, contexto y read_
 - No se conceden escrituras directas amplias sobre notifications. Validación en servidor, RPC y RLS para las operaciones sensibles.
 - Texto de comunicados escapado al generar HTML; sin HTML libre, adjuntos nuevos ni listas de correos visibles para residentes en esta primera entrega.
 
-## Datos previstos
-Antes de crear la migración se describirán tablas de comunicados y su audiencia explícita, con property_id y relaciones consistentes. Se extenderán los tipos de notifications y las plantillas existentes cuando corresponda; no se creará una segunda cola.
+## Datos y puesta en marcha
+La migración `supabase/migrations/20261009200000_announcements.sql` agrega comunicados y audiencia explícita por propiedad, amplía los tipos de `notifications` y restringe la lectura con RLS. Ejecutarla antes de publicar la interfaz. Luego ejecutar `supabase/tests/stage15_announcements_transaction.sql`, que debe devolver `stage15_announcements_passed_rollback`. La prueba revierte sus datos.
 
 ## Verificación prevista
 TypeScript, ESLint y compilación; pruebas transaccionales con rollback de aislamiento entre propiedades y destinatarios, denegación a roles no autorizados, lectura propia idempotente, publicación única y preservación de historial. Revisión visual con las sesiones administrativas y residentes disponibles. No enviar correos reales de prueba sin destinatarios autorizados.
