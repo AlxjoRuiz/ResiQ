@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className={styles.cardBrand}><span className={styles.brandIcon}><Building2 size={24} strokeWidth={1.7} /></span><div><p className="font-semibold">ResiQ</p><p className={styles.subtitle}>Acceso de la comunidad</p></div></div>
           <h1 id="login-title" className={styles.title}>Bienvenido de nuevo</h1>
           <p className={styles.welcome}>Ingresa con la cuenta asociada a tu invitación.</p>
-          {params.error && <p role="alert" className={styles.error}>No pudimos completar el acceso. Intenta nuevamente.</p>}
+          {params.error && <p role="alert" className={styles.error}>{params.error === "no_invitation" ? "Esta cuenta no tiene una invitación aceptada o un acceso activo a ResiQ." : params.error === "access_check" ? "No pudimos verificar tu acceso. Intenta nuevamente." : "No pudimos completar el acceso. Intenta nuevamente."}</p>}
           <LoginForm next={next} invitationToken={invitationToken} />
           <p className={styles.security}><ShieldCheck size={16} aria-hidden="true" />Acceso protegido para miembros autorizados.</p>
         </section>

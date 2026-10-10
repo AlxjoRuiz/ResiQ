@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAppAccessStatus } from "@/lib/auth/app-access";
 import { safeNext } from "@/lib/auth/safe-next";
 
 export type AuthState = { error?: string; success?: string } | undefined;
@@ -20,8 +21,15 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
   if (!email.includes("@") || password.length < 8) return { error: "Revisa el correo y la contraseña." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "No pudimos iniciar sesión con esos datos." };
+  if (!next.startsWith("/invitacion?")) {
+    const access = data.user ? await getAppAccessStatus(supabase, data.user.id) : "error";
+    if (access !== "authorized") {
+      await supabase.auth.signOut({ scope: "local" });
+      return { error: access === "unauthorized" ? "Esta cuenta no tiene una invitación aceptada o un acceso activo a ResiQ." : "No pudimos verificar tu acceso. Intenta nuevamente." };
+    }
+  }
   redirect(next);
 }
 
