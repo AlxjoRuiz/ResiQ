@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -19,15 +19,36 @@ function Result({ state }: { state: PqrsState }) {
 
 export function CreatePqrsForm({ propertyId, units }: { propertyId: string; units: { id: string; label: string }[] }) {
   const [state, action, pending] = useActionState(createPqrs, undefined as PqrsState);
-  return <form action={action} className="grid gap-5">
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const handledCreation = useRef(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState<string>();
+
+  useEffect(() => {
+    if (!state?.createdId || handledCreation.current) return;
+    handledCreation.current = true;
+    const detailUrl = `/panel/propiedades/${propertyId}/pqrs/${state.createdId}`;
+    if (!selectedFiles.length) { router.replace(`${detailUrl}?created=1`); return; }
+    void uploadPqrsFiles(state.createdId, selectedFiles)
+      .then(() => router.replace(`${detailUrl}?created=1`))
+      .catch((error: unknown) => setFileError(`La PQRS se creó, pero no se pudo adjuntar el archivo: ${error instanceof Error ? error.message : "Error desconocido."} Abre la solicitud para intentarlo de nuevo.`));
+  }, [propertyId, router, selectedFiles, state?.createdId]);
+
+  return <form action={action} className="grid gap-5" onSubmit={(event) => {
+    if (selectedFiles.length > 5 || selectedFiles.some((file) => !["application/pdf", "image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > 10 * 1024 * 1024 || file.name.length > 180)) {
+      event.preventDefault();
+      setFileError("Selecciona hasta 5 archivos PDF, JPG o PNG de máximo 10 MB cada uno.");
+    }
+  }}>
     <input type="hidden" name="propertyId" value={propertyId} />
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" defaultValue="" required><option value="" disabled>Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></label>
     <label className={labelClass}>Tipo de solicitud<select className={inputClass} name="requestType" defaultValue="" required><option value="" disabled>Selecciona qué deseas presentar</option>{pqrsRequestTypes.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
     <label className={labelClass}>Categoría del tema<select className={inputClass} name="category" defaultValue="" required><option value="" disabled>Selecciona el tema</option>{pqrsCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label className={labelClass}>Asunto<input className={inputClass} name="subject" required minLength={4} maxLength={140} placeholder="Describe brevemente tu solicitud" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" required minLength={10} maxLength={5000} placeholder="Incluye la información necesaria para atender tu solicitud." /></label>
-    <p className="text-xs text-muted-foreground">Primero crea la PQRS. En la página siguiente podrás seleccionar y subir hasta 5 archivos PDF, JPG o PNG.</p>
-    <div className="flex items-center gap-4"><Button disabled={pending}>{pending ? "Creando…" : "Crear PQRS"}</Button><Result state={state} /></div>
+    <div className="grid gap-2"><p className="text-sm font-medium">Adjuntos opcionales</p><input ref={inputRef} type="file" multiple accept="application/pdf,image/jpeg,image/png" className="sr-only" disabled={pending || Boolean(state?.createdId)} onChange={(event) => { setSelectedFiles(Array.from(event.target.files ?? [])); setFileError(undefined); }} /><div className="flex flex-wrap items-center gap-3"><Button type="button" variant="outline" disabled={pending || Boolean(state?.createdId)} onClick={() => inputRef.current?.click()}>Seleccionar archivos</Button><span className="text-sm text-muted-foreground" aria-live="polite">{selectedFiles.length ? selectedFiles.map((file) => file.name).join(", ") : "Ningún archivo seleccionado"}</span></div><p className="text-xs text-muted-foreground">Hasta 5 archivos PDF, JPG o PNG de máximo 10 MB cada uno. Se subirán al crear la PQRS.</p></div>
+    <div className="flex flex-wrap items-center gap-4"><Button disabled={pending || Boolean(state?.createdId)}>{pending ? "Creando…" : state?.createdId ? selectedFiles.length ? "Subiendo adjuntos…" : "Abriendo PQRS…" : "Crear PQRS"}</Button><Result state={state} />{fileError && <p role="alert" className="text-sm text-destructive">{fileError}</p>}{state?.createdId && fileError && <a href={`/panel/propiedades/${propertyId}/pqrs/${state.createdId}`} className="text-sm font-medium text-primary underline">Abrir PQRS creada</a>}</div>
   </form>;
 }
 
@@ -51,6 +72,20 @@ export function PqrsStatusForm({ propertyId, pqrsId, currentStatus }: { property
 
 type PreparedUpload = { documentId: string; path: string; token: string };
 
+async function uploadPqrsFiles(pqrsId: string, files: File[]) {
+  for (const file of files) {
+    const preparedResponse = await fetch("/api/pqrs/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", pqrsId, name: file.name, mimeType: file.type, size: file.size }) });
+    const prepared = await preparedResponse.json() as PreparedUpload & { error?: string };
+    if (!preparedResponse.ok) throw new Error(prepared.error ?? "No se pudo preparar el archivo.");
+    const supabase = createClient();
+    const { error: uploadError } = await supabase.storage.from("private-documents").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type });
+    if (uploadError) throw new Error("No se pudo subir el archivo.");
+    const completedResponse = await fetch("/api/pqrs/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "finalize", documentId: prepared.documentId }) });
+    const completed = await completedResponse.json() as { error?: string };
+    if (!completedResponse.ok) throw new Error(completed.error ?? "El archivo no superó la validación.");
+  }
+}
+
 export function AttachmentUpload({ pqrsId, availableSlots }: { pqrsId: string; availableSlots: number }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,17 +99,7 @@ export function AttachmentUpload({ pqrsId, availableSlots }: { pqrsId: string; a
     if (!files.length || files.length > availableSlots) return setMessage(`Selecciona entre 1 y ${availableSlots} archivo(s).`);
     setBusy(true); setMessage(undefined);
     try {
-      for (const file of files) {
-        const preparedResponse = await fetch("/api/pqrs/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", pqrsId, name: file.name, mimeType: file.type, size: file.size }) });
-        const prepared = await preparedResponse.json() as PreparedUpload & { error?: string };
-        if (!preparedResponse.ok) throw new Error(prepared.error ?? "No se pudo preparar el archivo.");
-        const supabase = createClient();
-        const { error: uploadError } = await supabase.storage.from("private-documents").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type });
-        if (uploadError) throw new Error("No se pudo subir el archivo.");
-        const completedResponse = await fetch("/api/pqrs/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "finalize", documentId: prepared.documentId }) });
-        const completed = await completedResponse.json() as { error?: string };
-        if (!completedResponse.ok) throw new Error(completed.error ?? "El archivo no superó la validación.");
-      }
+      await uploadPqrsFiles(pqrsId, files);
       if (inputRef.current) inputRef.current.value = "";
       setMessage("Adjunto cargado y validado.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "No se pudo cargar el archivo."); }
