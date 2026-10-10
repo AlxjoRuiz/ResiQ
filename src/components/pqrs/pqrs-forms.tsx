@@ -26,7 +26,7 @@ export function CreatePqrsForm({ propertyId, units }: { propertyId: string; unit
     <label className={labelClass}>Categoría del tema<select className={inputClass} name="category" defaultValue="" required><option value="" disabled>Selecciona el tema</option>{pqrsCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     <label className={labelClass}>Asunto<input className={inputClass} name="subject" required minLength={4} maxLength={140} placeholder="Describe brevemente tu solicitud" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" required minLength={10} maxLength={5000} placeholder="Incluye la información necesaria para atender tu solicitud." /></label>
-    <p className="text-xs text-muted-foreground">Después de crear la PQRS podrás adjuntar hasta 5 archivos PDF, JPG o PNG.</p>
+    <p className="text-xs text-muted-foreground">Primero crea la PQRS. En la página siguiente podrás seleccionar y subir hasta 5 archivos PDF, JPG o PNG.</p>
     <div className="flex items-center gap-4"><Button disabled={pending}>{pending ? "Creando…" : "Crear PQRS"}</Button><Result state={state} /></div>
   </form>;
 }
@@ -57,9 +57,10 @@ export function AttachmentUpload({ pqrsId, availableSlots }: { pqrsId: string; a
   const [refreshing, startRefresh] = useTransition();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>();
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   async function upload() {
-    const files = Array.from(inputRef.current?.files ?? []);
+    const files = selectedFiles;
     if (!files.length || files.length > availableSlots) return setMessage(`Selecciona entre 1 y ${availableSlots} archivo(s).`);
     setBusy(true); setMessage(undefined);
     try {
@@ -77,9 +78,9 @@ export function AttachmentUpload({ pqrsId, availableSlots }: { pqrsId: string; a
       if (inputRef.current) inputRef.current.value = "";
       setMessage("Adjunto cargado y validado.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "No se pudo cargar el archivo."); }
-    finally { if (inputRef.current) inputRef.current.value = ""; startRefresh(() => router.refresh()); setBusy(false); }
+    finally { if (inputRef.current) inputRef.current.value = ""; setSelectedFiles([]); startRefresh(() => router.refresh()); setBusy(false); }
   }
 
   if (availableSlots < 1) return <div className="grid gap-3"><p className="text-sm text-muted-foreground">Ya alcanzaste el máximo de 5 adjuntos. Los archivos pendientes o rechazados mantienen su cupo hasta que se complete su limpieza.</p>{message && <p role="status" className="text-sm">{message}</p>}</div>;
-  return <div className="grid gap-3"><input ref={inputRef} type="file" multiple accept="application/pdf,image/jpeg,image/png" disabled={busy || refreshing} className="block w-full text-sm" /><p className="text-xs text-muted-foreground">Máximo {availableSlots} archivo(s) restante(s), 10 MB cada uno. Solo PDF, JPG y PNG.</p><div className="flex items-center gap-4"><Button type="button" variant="outline" onClick={upload} disabled={busy || refreshing}>{busy || refreshing ? "Validando…" : "Subir adjuntos"}</Button>{message && <p role="status" className="text-sm">{message}</p>}</div></div>;
+  return <div className="grid gap-3"><p className="text-sm font-medium">Adjuntar archivos</p><input ref={inputRef} type="file" multiple accept="application/pdf,image/jpeg,image/png" disabled={busy || refreshing} className="sr-only" onChange={(event) => { setSelectedFiles(Array.from(event.target.files ?? [])); setMessage(undefined); }} /><div className="flex flex-wrap items-center gap-3"><Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={busy || refreshing}>1. Seleccionar archivos</Button><span className="text-sm text-muted-foreground" aria-live="polite">{selectedFiles.length ? selectedFiles.map((file) => file.name).join(", ") : "Ningún archivo seleccionado"}</span></div><p className="text-xs text-muted-foreground">Máximo {availableSlots} archivo(s) restante(s), 10 MB cada uno. Solo PDF, JPG y PNG.</p><div className="flex items-center gap-4"><Button type="button" onClick={upload} disabled={busy || refreshing || selectedFiles.length === 0 || selectedFiles.length > availableSlots}>{busy || refreshing ? "Validando…" : "2. Subir adjuntos"}</Button>{message && <p role="status" className="text-sm">{message}</p>}</div></div>;
 }
