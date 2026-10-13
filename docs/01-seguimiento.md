@@ -1,6 +1,6 @@
 # Seguimiento del proyecto
 
-Actualizado: 2026-10-09. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación.
+Actualizado: 2026-10-13. Fuente de autoridad: `00-prompt-maestro.md` y aprobaciones explícitas del usuario en esta conversación. Estado operativo y dependencias actuales: `21-plan-de-cierre.md`.
 
 ## Estado de etapas
 
@@ -21,11 +21,11 @@ Actualizado: 2026-10-09. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 12 | Cartera | Aprobada por el usuario al solicitar continuar el 2026-10-03 |
 | 13 | Llamados de atención | Aprobada por el usuario el 2026-10-05 después de confirmar la recepción real del correo |
 | 14 | Asambleas | Implementada y validada; pendiente de aprobación funcional del usuario |
-| 15 | Notificaciones y comunicaciones | Bandeja y comunicados internos publicados; migración aplicada y prueba transaccional aprobada. Correo externo pospuesto hasta contar con dominio verificado |
-| 16 | Auditoría integral y seguridad | En curso: PR de seguridad integrados, migraciones y auditoría de permisos aplicadas; cierre pendiente |
-| 17 | Testing integral | No iniciada |
-| 18 | Responsive y UX integral | No iniciada |
-| 19 | Deploy | No iniciada |
+| 15 | Notificaciones y comunicaciones | Bandeja y comunicados internos publicados y probados; correo externo pospuesto hasta contar con dominio verificado |
+| 16 | Auditoría integral y seguridad | Cerrada con límites documentados en `17-auditoria-seguridad.md`; pruebas diferidas de correo y expiración real por cron |
+| 17 | Testing integral | En curso; matriz y pendientes en `19-pruebas-etapa-17.md` y `21-plan-de-cierre.md` |
+| 18 | Responsive y UX integral | No iniciada formalmente; ajustes puntuales de interfaz ya publicados |
+| 19 | Deploy | Piloto publicado en Vercel; preparación formal de producción y dominio pendientes |
 | 20 | Preparación comercial SaaS | No iniciada |
 
 ## Revisión contra el prompt maestro — 2026-09-29
@@ -303,3 +303,4 @@ Etapa 16: revisión estática del vencimiento de reservas; prueba transaccional 
 2026-10-10: Alejandro mostró captura de una PQRS creada desde el nuevo formulario con `resiq-prueba-adjunto.png` visible y el evento «Adjunto añadido»: carga real del residente PASS según esa evidencia. Solicitó quitar la duplicación de adjuntos y mostrar solo confirmación tras el envío. Se preparó la vista de confirmación para `?created=1`; al consultar el detalle normal, se listan los archivos sin volver a mostrar el cargador. La carga posterior solo aparece en el enlace de recuperación cuando falla una subida inicial. Pendiente comprobar esta simplificación en la aplicación publicada.
 2026-10-10: Alejandro confirmó que la pantalla simplificada de confirmación de PQRS se ve bien. A petición suya se añadieron botones visibles «Volver al inicio» (dashboard de la comunidad) y «Ver mis PQRS» en esa pantalla. Pendiente confirmar visualmente los botones en la aplicación publicada.
 2026-10-10: corregido el acceso de cuentas Google sin invitación aceptada ni membresía activa. El callback OAuth, el inicio con contraseña y el proxy de rutas privadas comprueban una membresía de propiedad o rol activo de plataforma; una cuenta no autorizada cierra su sesión local y vuelve a login con un error específico. El flujo `/invitacion?token=...` permanece disponible para aceptar una invitación. `/panel` ya no muestra «Acceso pendiente» a cuentas sin acceso. Prueba local de decisiones de acceso y suite de seguridad 15/15 PASS; typecheck, lint y build PASS. Pendiente prueba real en producción con una cuenta sin invitación y otra autorizada.
+2026-10-13: revisión global de pendientes consolidada en `docs/21-plan-de-cierre.md`. Alejandro confirmó que la cuenta Google sin invitación no pasa del login tras el arreglo; se registra como PASS informado por el usuario. Falta confirmar explícitamente el acceso de una cuenta autorizada después del cambio. Se repitieron las 15 pruebas locales de seguridad y los 5 casos HTTP locales sin sesión sobre el build de producción; todos pasaron. No se ejecutaron pruebas autenticadas ni consultas remotas a Supabase.
