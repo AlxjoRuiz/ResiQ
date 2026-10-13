@@ -27,7 +27,7 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
     const access = data.user ? await getAppAccessStatus(supabase, data.user.id) : "error";
     if (access !== "authorized") {
       await supabase.auth.signOut({ scope: "local" });
-      return { error: access === "unauthorized" ? "Esta cuenta no tiene una invitación aceptada o un acceso activo a ResiQ." : "No pudimos verificar tu acceso. Intenta nuevamente." };
+      return { error: access === "unauthorized" ? "Tu cuenta aún no tiene acceso. Si recibiste una invitación, abre su enlace y acéptala con este mismo correo antes de iniciar sesión." : "No pudimos verificar tu acceso. Intenta nuevamente." };
     }
   }
   redirect(next);
