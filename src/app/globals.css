@@ -45,12 +45,15 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-inter), Arial, Helvetica, sans-serif;
+  --font-heading: var(--font-manrope), var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground antialiased; }
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
+  button, input, select, textarea { font: inherit; }
   html { scroll-behavior: smooth; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 }
