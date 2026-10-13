@@ -11,6 +11,7 @@ export function LoginForm({ next, invitationToken }: { next: string; invitationT
   const [registerState, registerAction, registerPending] = useActionState(registerWithInvitation, initialState);
   return (
     <div className="space-y-5">
+      {invitationToken && <p className="text-sm text-muted-foreground">Puedes aceptar la invitación con Google o crear tu cuenta con el correo invitado y una contraseña.</p>}
       <form action={action} className="space-y-4">
         <input type="hidden" name="next" value={next} />
         <label className="block text-sm font-medium">Correo

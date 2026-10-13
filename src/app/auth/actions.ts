@@ -27,7 +27,7 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
     const access = data.user ? await getAppAccessStatus(supabase, data.user.id) : "error";
     if (access !== "authorized") {
       await supabase.auth.signOut({ scope: "local" });
-      return { error: access === "unauthorized" ? "Tu cuenta aún no tiene acceso. Si recibiste una invitación, abre su enlace y acéptala con este mismo correo antes de iniciar sesión." : "No pudimos verificar tu acceso. Intenta nuevamente." };
+      return { error: access === "unauthorized" ? "No has sido invitado o aún no has aceptado tu invitación. Si recibiste un enlace, ábrelo y acéptalo con el correo invitado." : "No pudimos verificar tu acceso. Intenta nuevamente." };
     }
   }
   redirect(next);
@@ -94,8 +94,26 @@ export async function acceptInvitation(_: AuthState, formData: FormData): Promis
   const token = field(formData, "token");
   if (!token) return { error: "La invitación no contiene un token válido." };
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Inicia sesión con el correo invitado para continuar." };
   const { error } = await supabase.rpc("accept_invitation", { invitation_token: token });
   if (error) return { error: "La invitación es inválida, venció o pertenece a otro correo." };
+  redirect(user.identities?.some((identity) => identity.provider === "google") && !user.identities.some((identity) => identity.provider === "email") ? "/invitacion/contrasena" : "/panel?invitation=accepted");
+}
+
+export async function createInvitedPassword(_: AuthState, formData: FormData): Promise<AuthState> {
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "");
+  if (password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres." };
+  if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (await getAppAccessStatus(supabase, user.id) !== "authorized" || !user.identities?.some((identity) => identity.provider === "google") || user.identities.some((identity) => identity.provider === "email")) {
+    return { error: "No pudimos verificar tu invitación. Vuelve a abrir el enlace recibido." };
+  }
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: "No pudimos guardar la contraseña. Intenta nuevamente." };
   redirect("/panel?invitation=accepted");
 }
 
