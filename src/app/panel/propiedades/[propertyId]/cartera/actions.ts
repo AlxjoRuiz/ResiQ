@@ -18,6 +18,7 @@ function friendlyError(message?: string) {
   if (message?.includes("duplicate_reference")) return "Ya existe una obligación con una de esas referencias.";
   if (message?.includes("duplicate_payment")) return "El pago ya fue registrado.";
   if (message?.includes("payment_overallocated")) return "La distribución supera el valor del pago.";
+  if (message?.includes("receivable_has_active_payment")) return "Anula primero los pagos aplicados antes de anular esta obligación.";
   if (message?.includes("receivable_overallocated")) return "La distribución supera el saldo de una obligación.";
   if (message?.includes("invalid_receivable")) return "Una obligación seleccionada ya no está disponible.";
   if (message?.includes("inactive_membership")) return "El vínculo ya no está vigente.";
