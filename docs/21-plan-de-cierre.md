@@ -12,7 +12,7 @@ Este documento separa trabajo pendiente de evidencia pendiente. La referencia de
 | 4 | Catálogo de seguridad tras migraciones recientes | Cerrado el 13 de octubre: después de aplicar `20261013223000_revoke_announcement_truncate.sql`, Alejandro repitió el catálogo y confirmó vacías las listas de tablas sin RLS, funciones privilegiadas sin `search_path`, RPC internas expuestas, políticas internas de escritura y permisos `TRUNCATE` de roles de navegador. `notifications` solo permite actualizar `read_at`. Resultado informado por el usuario. |
 | 5 | Recorrido E2E repetible por módulos | La matriz SQL de etapa 17 pasó para los módulos principales. PQRS y Paquetes completaron un recorrido funcional entre perfiles con cuentas reales de prueba, según confirmaciones de Alejandro. Queda consolidar los recorridos de visitas, reservas, cartera, llamados, asambleas y avisos con la evidencia ya reunida, sin crear obligaciones ni mensajes destinados a personas ajenas. Las pruebas unitarias no reemplazan esta comprobación. |
 
-El 13 de octubre se repitieron las pruebas locales: `npm run test:security` dio 15/15 PASS y el servidor local de producción devolvió 5/5 PASS en `tests/e2e/unauthenticated-routes.test.mjs`. Ninguna de ellas usa una sesión autenticada real.
+El 13 de octubre se repitieron las pruebas locales: `npm run test:security` dio 15/15 PASS, también después de los cambios de Paquetes y Notificaciones; el servidor local de producción devolvió 5/5 PASS en `tests/e2e/unauthenticated-routes.test.mjs` antes de esos cambios de interfaz. Ninguna de ellas usa una sesión autenticada real.
 
 ## Aplazado por una dependencia conocida
 
