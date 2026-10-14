@@ -41,7 +41,7 @@ export async function saveAmenity(_: ReservationState, data: FormData): Promise<
     const opensAt = field(data, `opens_${weekday}`), closesAt = field(data, `closes_${weekday}`);
     return opensAt && closesAt ? [{ weekday, opens_at: opensAt, closes_at: closesAt }] : [];
   });
-  if (!uuidPattern.test(propertyId) || (amenityId && !uuidPattern.test(amenityId)) || name.length < 2 || name.length > 100 || !Number.isInteger(capacity) || capacity < 1 || capacity > 10000 || !Number.isInteger(slotMinutes) || slotMinutes < 15 || slotMinutes > 1440 || description.length > 1000 || rules.length > 3000 || !["active", "inactive"].includes(status) || hours.length === 0) return { error: "Completa la zona y al menos un horario válido." };
+  if (!uuidPattern.test(propertyId) || (amenityId && !uuidPattern.test(amenityId)) || name.length < 2 || name.length > 100 || !Number.isInteger(capacity) || capacity < 1 || capacity > 10000 || !Number.isInteger(slotMinutes) || slotMinutes < 60 || slotMinutes > 1440 || slotMinutes % 60 !== 0 || description.length > 1000 || rules.length > 3000 || !["active", "inactive"].includes(status) || hours.length === 0) return { error: "Completa la zona, elige bloques de 1 a 24 horas y configura al menos un horario válido." };
   const supabase = await createClient();
   const result = await supabase.rpc("save_amenity", { target_property_id: propertyId, target_amenity_id: amenityId || null, target_name: name, target_description: description, target_capacity: capacity, target_requires_approval: requiresApproval, target_rules: rules, target_slot_minutes: slotMinutes, target_status: status, target_hours: hours });
   if (result.error) return { error: friendlyError(result.error.message) };
