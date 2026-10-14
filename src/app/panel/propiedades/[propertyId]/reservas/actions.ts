@@ -12,12 +12,13 @@ function friendlyError(message?: string) {
   if (message?.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
   if (message?.includes("amenity_name_exists")) return "Ya existe una zona con ese nombre.";
   if (message?.includes("hours_required")) return "Configura al menos un día y horario.";
+  if (message?.includes("slot_exceeds_hours")) return "Configura al menos un horario tan largo como el bloque elegido.";
   if (message?.includes("overlapping_hours") || message?.includes("invalid_hours")) return "Los horarios se cruzan o no son válidos.";
   if (message?.includes("active_reservations_exist")) return "Hay reservas activas en ese periodo. Resuélvelas antes de continuar.";
   if (message?.includes("blackout_conflict")) return "Ese cierre se cruza con otro cierre existente.";
   if (message?.includes("reservation_conflict")) return "El horario acaba de ser ocupado. Selecciona otro intervalo.";
   if (message?.includes("amenity_closed")) return "La zona está cerrada durante ese intervalo.";
-  if (message?.includes("outside_amenity_hours")) return "El intervalo debe quedar dentro del horario configurado para ese día.";
+  if (message?.includes("outside_amenity_hours")) return "El intervalo debe quedar dentro del horario configurado para la zona.";
   if (message?.includes("invalid_slot")) return "La hora y duración deben respetar los bloques configurados para la zona.";
   if (message?.includes("amenity_unavailable")) return "La zona ya no está disponible.";
   if (message?.includes("reservation_blocked_by_debt")) return "No puedes realizar reservas en este momento porque tu cuenta presenta un saldo pendiente. Comunícate con la administración para obtener información sobre tu cartera.";
