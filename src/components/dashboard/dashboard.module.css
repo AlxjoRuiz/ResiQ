@@ -1,6 +1,6 @@
 .canvas { min-height: 100vh; background: #ffffff; padding: 12px; color: #202c25; }
-.shell { display: grid; grid-template-columns: 198px minmax(0, 1fr); width: 100%; min-height: calc(100vh - 24px); border: 1px solid #e5ebe2; border-radius: 22px; background: #ffffff; box-shadow: 0 18px 60px #314f3810; overflow: hidden; }
-.sidebar { background: #f8fbf8; padding: 22px 14px; display: flex; flex-direction: column; }
+.shell { display: grid; grid-template-columns: 198px minmax(0, 1fr); width: 100%; min-height: calc(100vh - 24px); border: 1px solid #e5ebe2; border-radius: 22px; background: #ffffff; box-shadow: 0 18px 60px #314f3810; overflow: clip; }
+.sidebar { position: sticky; top: 12px; align-self: start; height: calc(100vh - 24px); overflow-y: auto; background: #f8fbf8; padding: 22px 14px; display: flex; flex-direction: column; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #254a36; font-size: 24px; font-weight: 700; letter-spacing: -1px; }
 .sidebarLabel { margin: 30px 12px 12px; color: #405b49; font-size: 13px; line-height: 20px; letter-spacing: 0; font-weight: 700; }
 .navigation { display: grid; gap: 5px; }
@@ -55,7 +55,7 @@
 .balance strong { font-size: 21px; letter-spacing: -.02em; overflow-wrap: anywhere; }
 .accountBalance { display: block; font-size: 12px; color: #617064; margin-top: 4px; }
 @media (min-width: 1300px) { .activitySummaries { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); } .sidebar { padding: 16px 18px 12px; } .brand { padding: 0; } .sidebarLabel { margin: 10px 0 6px; } .navigation { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 5px; } .navigation a { flex-shrink: 0; padding: 9px 11px; } .communityLink { margin-top: 0; padding: 8px 0 0; } .content { padding: 18px; } }
+@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); } .sidebar { top: 0; z-index: 1; height: auto; overflow-y: visible; padding: 16px 18px 12px; border-bottom: 1px solid #e5ebe2; } .brand { padding: 0; } .sidebarLabel { margin: 10px 0 6px; } .navigation { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 5px; } .navigation a { flex-shrink: 0; padding: 9px 11px; } .communityLink { margin-top: 0; padding: 8px 0 0; } .content { padding: 18px; } }
 @media (max-width: 560px) { .canvas { padding: 6px; } .shell { min-height: calc(100vh - 12px); border-radius: 18px; } .content { padding: 16px; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; } .welcomeMain { align-items: flex-start; gap: 12px; } .welcomeIcon { width: 44px; height: 44px; } .metrics, .summaries { grid-template-columns: minmax(0, 1fr); } .metrics > div > div { flex-direction: row; align-items: center; justify-content: space-between; padding: 16px; } .metrics p:last-child { max-width: 55%; } .sectionHeading > span { display: none; } }
 .profileLink { display: flex; align-items: center; gap: 8px; padding: 9px 15px; background: white; color: #405b49; border-radius: 24px; font-size: 13px; }
 .moduleContent { min-width: 0; }
