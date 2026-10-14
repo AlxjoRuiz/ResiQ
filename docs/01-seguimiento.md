@@ -320,3 +320,4 @@ Etapa 16: revisión estática del vencimiento de reservas; prueba transaccional 
 2026-10-13: Residente respondió «Confirmación técnica de prueba» en esa PQRS y Administración confirmó que el mensaje aparece una sola vez. La conversación bidireccional queda comprobada según su reporte; falta el cambio de estado entre sesiones.
 2026-10-13: Administración cambió la PQRS técnica de «En revisión» a «En proceso»; Alejandro confirmó que Residente ve el nuevo estado y un solo evento en «Historial». Falta comprobar «Respondida» y el cierre final.
 2026-10-13: Administración cambió la misma PQRS técnica a «Respondida». Alejandro confirmó que Residente ve el estado correcto y los mensajes permanecen únicos. Falta comprobar el cierre final.
+2026-10-13: Administración cerró esa PQRS técnica. Alejandro confirmó que Residente ve «Cerrada» y que desaparece el formulario «Nueva respuesta». El recorrido funcional básico de PQRS queda completo según sus verificaciones.
