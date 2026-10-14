@@ -17,13 +17,21 @@ export default async function AttentionCallDetailPage({ params, searchParams }: 
   const { propertyId, attentionCallId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
   if (!membership.roles.includes("administrator") && !membership.roles.includes("member")) notFound();
-  const [{ data: item, error: itemError }, { data: documents }, { data: events }] = await Promise.all([
-    supabase.from("attention_calls").select("id,property_id,unit_id,category,reason,description,issued_at,status,close_note,closed_at,created_at,units(code,buildings(name)),attention_call_recipients(member_id,read_at)").eq("property_id", propertyId).eq("id", attentionCallId).maybeSingle(),
+  const [{ data: visibleCalls, error: callsError }, { data: documents }, { data: events }] = await Promise.all([
+    supabase.from("attention_calls").select("id,category,reason,status,issued_at,units(code,buildings(name)),attention_call_recipients(member_id,read_at)").eq("property_id", propertyId).order("issued_at", { ascending: false }),
     supabase.from("documents").select("id,original_name,mime_type,size_bytes,status,created_at").eq("property_id", propertyId).eq("attention_call_id", attentionCallId).eq("status", "available").order("created_at"),
     supabase.from("activity_events").select("id,event_type,previous_state,new_state,description,occurred_at").eq("property_id", propertyId).eq("attention_call_id", attentionCallId).order("occurred_at", { ascending: false }),
   ]);
-  if (itemError) throw new Error("No pudimos cargar el detalle del llamado.");
-  if (!item) notFound();
+  if (callsError) throw new Error("No pudimos cargar el listado de llamados.");
+  const visibleCall = visibleCalls?.find((call) => call.id === attentionCallId);
+  if (!visibleCall) notFound();
+  const { data: details, error: detailsError } = await supabase.from("attention_calls")
+    .select("description,close_note")
+    .eq("property_id", propertyId)
+    .eq("id", attentionCallId)
+    .maybeSingle();
+  if (detailsError || !details) throw new Error("No pudimos cargar el contenido del llamado.");
+  const item = { ...visibleCall, ...details };
   const isAdmin = membership.roles.includes("administrator"), isClosed = item.status === "closed";
   const recipients = (item.attention_call_recipients ?? []) as Recipient[];
   const { data: memberData } = recipients.length
