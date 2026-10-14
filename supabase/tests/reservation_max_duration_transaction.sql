@@ -21,7 +21,7 @@ select set_config('request.jwt.claims','{"sub":"19000000-0000-4000-8000-00000000
 select set_config('request.jwt.claim.sub','19000000-0000-4000-8000-000000000001',true);
 set local role authenticated;
 select set_config('reservation_max.amenity',public.save_amenity(
-  '19100000-0000-4000-8000-000000000001',null,'Test room',10,true,'',600,'active',
+  '19100000-0000-4000-8000-000000000001',null,'Test room','',10,true,'',600,'active',
   (select jsonb_agg(jsonb_build_object('weekday',day,'opens_at','08:00','closes_at','13:00')) from generate_series(1,7) day)
 )::text,true);
 reset role;
@@ -48,7 +48,7 @@ reset role;
 select set_config('request.jwt.claims','{"sub":"19000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 select set_config('request.jwt.claim.sub','19000000-0000-4000-8000-000000000001',true);
 set local role authenticated;
-select public.save_amenity('19100000-0000-4000-8000-000000000001',current_setting('reservation_max.amenity')::uuid,'Test room',10,true,'',600,'active',
+select public.save_amenity('19100000-0000-4000-8000-000000000001',current_setting('reservation_max.amenity')::uuid,'Test room','',10,true,'',600,'active',
   (select jsonb_agg(jsonb_build_object('weekday',day,'opens_at','17:00','closes_at','03:00')) from generate_series(1,7) day));
 reset role;
 
