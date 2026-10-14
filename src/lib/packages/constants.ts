@@ -1,5 +1,5 @@
 export const packageStatuses = [
-  ["received", "Recibido"],
+  ["received", "En portería"],
   ["notified", "Notificado"],
   ["delivered", "Entregado"],
 ] as const;
