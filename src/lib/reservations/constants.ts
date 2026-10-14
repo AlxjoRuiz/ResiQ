@@ -13,3 +13,8 @@ export const weekdayLabels = [
 ] as const;
 
 export const weekdayShortLabel = (weekday: number) => weekdayLabels.find(([value]) => value === weekday)?.[1] ?? `Día ${weekday}`;
+
+export const slotDurationHoursLabel = (minutes: number) => {
+  const hours = minutes / 60;
+  return `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }).format(hours)} ${hours === 1 ? "hora" : "horas"}`;
+};
