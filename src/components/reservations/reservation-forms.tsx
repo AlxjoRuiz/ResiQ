@@ -45,7 +45,7 @@ export function AmenityForm({ propertyId, amenity }: { propertyId: string; ameni
 
 export function ReservationPolicyForm({ propertyId, pendingHoldMinutes }: { propertyId: string; pendingHoldMinutes: number }) {
   const [state, action, pending] = useActionState(updateReservationPolicy, undefined as ReservationState);
-  return <form action={action} className="flex flex-wrap items-end gap-4"><input type="hidden" name="propertyId" value={propertyId}/><label className={labelClass}>Vigencia de solicitudes pendientes (minutos)<input className={`${inputClass} w-56`} name="pendingHoldMinutes" type="number" min={60} max={2880} step={30} defaultValue={pendingHoldMinutes} required/></label><Button disabled={pending}>{pending?"Guardando…":"Guardar política"}</Button><Result state={state}/></form>;
+  return <form action={action} className="flex flex-wrap items-end gap-4"><input type="hidden" name="propertyId" value={propertyId}/><label className={labelClass}>Vigencia de solicitudes pendientes (horas)<input className={`${inputClass} w-56`} name="pendingHoldHours" type="number" min={1} max={48} step={0.5} defaultValue={pendingHoldMinutes / 60} required/></label><Button disabled={pending}>{pending?"Guardando…":"Guardar política"}</Button><Result state={state}/></form>;
 }
 
 export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; amenityId: string }) {

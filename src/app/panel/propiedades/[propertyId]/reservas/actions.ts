@@ -49,8 +49,9 @@ export async function saveAmenity(_: ReservationState, data: FormData): Promise<
 }
 
 export async function updateReservationPolicy(_: ReservationState, data: FormData): Promise<ReservationState> {
-  const propertyId = field(data, "propertyId"), minutes = Number(field(data, "pendingHoldMinutes"));
-  if (!uuidPattern.test(propertyId) || !Number.isInteger(minutes) || minutes < 60 || minutes > 2880) return { error: "La vigencia debe estar entre 60 minutos y 48 horas." };
+  const propertyId = field(data, "propertyId"), hours = Number(field(data, "pendingHoldHours"));
+  if (!uuidPattern.test(propertyId) || !Number.isInteger(hours * 2) || hours < 1 || hours > 48) return { error: "La vigencia debe estar entre 1 y 48 horas, en incrementos de media hora." };
+  const minutes = hours * 60;
   const supabase = await createClient(); const result = await supabase.rpc("update_reservation_policy", { target_property_id: propertyId, target_pending_hold_minutes: minutes });
   if (result.error) return { error: friendlyError(result.error.message) };
   revalidatePath(amenityPath(propertyId)); return { success: "Política actualizada." };
