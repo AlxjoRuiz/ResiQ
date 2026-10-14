@@ -22,7 +22,7 @@ La migración `20261001190000_reservations.sql` crea:
 - RLS y funciones que derivan actor y propiedad desde `auth.uid()`.
 - Eventos, auditoría, notificaciones internas y trabajos de correo idempotentes.
 
-Las horas capturadas en la interfaz se convierten en PostgreSQL usando la zona horaria de la propiedad. El servidor valida vínculo vigente con el apartamento, capacidad, bloques, horario semanal, cierres, cruces y transición de estado.
+Las horas capturadas en la interfaz se convierten en PostgreSQL usando la zona horaria de la propiedad. El servidor valida vínculo vigente con el apartamento, capacidad, duración máxima, horario semanal, cierres, cruces y transición de estado. La administración configura un máximo de 1 a 24 horas por reserva; el residente puede solicitar cualquier duración positiva menor o igual a ese máximo, siempre dentro del horario configurado, incluso si termina al día siguiente. Solo administración crea o modifica zonas.
 
 ## Interfaz por rol
 

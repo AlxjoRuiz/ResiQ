@@ -19,7 +19,7 @@ function friendlyError(message?: string) {
   if (message?.includes("reservation_conflict")) return "El horario acaba de ser ocupado. Selecciona otro intervalo.";
   if (message?.includes("amenity_closed")) return "La zona está cerrada durante ese intervalo.";
   if (message?.includes("outside_amenity_hours")) return "El intervalo debe quedar dentro del horario configurado para la zona.";
-  if (message?.includes("invalid_slot")) return "La hora y duración deben respetar los bloques configurados para la zona.";
+  if (message?.includes("reservation_too_long")) return "La reserva debe durar más de 0 minutos y no superar el máximo de la zona.";
   if (message?.includes("amenity_unavailable")) return "La zona ya no está disponible.";
   if (message?.includes("reservation_blocked_by_debt")) return "No puedes realizar reservas en este momento porque tu cuenta presenta un saldo pendiente. Comunícate con la administración para obtener información sobre tu cartera.";
   if (message?.includes("debt_policy_unavailable")) return "La política de cartera todavía no está disponible.";
