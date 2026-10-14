@@ -65,6 +65,7 @@ Los pagos se registran manualmente en el MVP. La administración distribuye el v
 - Resumen de cartera con saldo total, vencido, unidades al día, pendientes y en mora.
 - Tabla por apartamento con filtros de torre, estado, vencimiento y búsqueda.
 - Detalle de cuenta con obligaciones, pagos, aplicaciones y saldo vivo.
+- Obligaciones y pagos en orden de registro más reciente primero. Cada obligación activa admite un comprobante privado PDF, JPG o PNG (máximo 5 MB) por persona autorizada; Administración puede abrirlo desde la misma cuenta. El comprobante es evidencia para revisión y no registra un pago ni modifica el saldo.
 - Formularios para obligación, pago, anulación y distribución de pago.
 - Importador de Excel con descarga de plantilla, vista previa, errores por fila y confirmación de lote.
 - Configuración del umbral y activación de restricción de reservas.
