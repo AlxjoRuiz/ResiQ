@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { assemblyStatusLabels, assemblyTypeLabel, rsvpLabels } from "@/lib/assemblies/constants";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
+import { dateTimeFormatter } from "@/lib/time-zone";
 
 type Attendee = { member_id: string; rsvp: string };
-const formatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" });
 
 export default async function AssembliesPage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params; const { supabase, membership, property } = await requirePropertyMember(propertyId); const isAdmin = membership.roles.includes("administrator");
+  const formatter = dateTimeFormatter(property.timezone);
   if (!isAdmin && !membership.roles.includes("member")) notFound();
   const { data } = await supabase.from("assemblies").select("id,type,title,starts_at,location,status,published_at,assembly_attendees(member_id,rsvp)").eq("property_id", propertyId).order("starts_at", { ascending: false });
   const assemblies = data ?? [];

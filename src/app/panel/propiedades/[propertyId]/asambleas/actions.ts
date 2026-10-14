@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { assemblyTypes } from "@/lib/assemblies/constants";
 import { createClient } from "@/lib/supabase/server";
+import { visitTimeToIso } from "@/lib/visitors/validation";
 
 export type AssemblyActionState = { error?: string; success?: string } | undefined;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -21,23 +22,21 @@ function friendlyError(message?: string) {
   return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
 }
 
-function validDate(value: string) {
-  const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
-}
-
 export async function createAssembly(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
   const propertyId = field(data, "propertyId"), type = field(data, "type"), title = field(data, "title");
-  const description = field(data, "description"), location = field(data, "location"), startsAt = validDate(field(data, "startsAt"));
+  const description = field(data, "description"), location = field(data, "location"), localStartsAt = field(data, "startsAt");
   const agenda = field(data, "agenda").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => ({ title: line }));
   const audience = Array.from(new Set(data.getAll("audience").map(String))).map((value) => {
     const [member_id, unit_id] = value.split("|"); return { member_id, unit_id };
   }).filter((item) => uuidPattern.test(item.member_id) && uuidPattern.test(item.unit_id));
   if (!uuidPattern.test(propertyId) || !assemblyTypes.some(([value]) => value === type) || title.length < 4 || title.length > 180
-    || location.length < 3 || location.length > 240 || !startsAt || new Date(startsAt) <= new Date() || agenda.length < 1 || agenda.length > 100 || audience.length < 1 || audience.length > 500) {
+    || location.length < 3 || location.length > 240 || agenda.length < 1 || agenda.length > 100 || audience.length < 1 || audience.length > 500) {
     return { error: "Completa la fecha futura, el lugar, la agenda y al menos un convocado." };
   }
   const supabase = await createClient();
+  const { data: property } = await supabase.from("properties").select("timezone").eq("id", propertyId).maybeSingle();
+  const startsAt = property ? visitTimeToIso(localStartsAt, property.timezone) : null;
+  if (!startsAt || new Date(startsAt) <= new Date()) return { error: "Completa una fecha y hora futuras de la comunidad." };
   const result = await supabase.rpc("create_assembly", { target_property_id: propertyId, target_type: type, target_title: title, target_description: description || null, target_starts_at: startsAt, target_location: location, target_agenda: agenda, target_audience: audience });
   if (result.error || !result.data) return { error: friendlyError(result.error?.message) };
   revalidatePath(`/panel/propiedades/${propertyId}/asambleas`);
@@ -54,9 +53,13 @@ export async function publishAssembly(_: AssemblyActionState, data: FormData): P
 }
 
 export async function updateAssembly(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
-  const propertyId = field(data, "propertyId"), assemblyId = field(data, "assemblyId"), title = field(data, "title"), description = field(data, "description"), location = field(data, "location"), startsAt = validDate(field(data, "startsAt"));
-  if (!uuidPattern.test(propertyId) || !uuidPattern.test(assemblyId) || title.length < 4 || location.length < 3 || !startsAt) return { error: "Completa los datos válidos de la asamblea." };
-  const supabase = await createClient(); const result = await supabase.rpc("update_assembly", { target_assembly_id: assemblyId, target_title: title, target_description: description || null, target_starts_at: startsAt, target_location: location });
+  const propertyId = field(data, "propertyId"), assemblyId = field(data, "assemblyId"), title = field(data, "title"), description = field(data, "description"), location = field(data, "location"), localStartsAt = field(data, "startsAt");
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(assemblyId) || title.length < 4 || location.length < 3) return { error: "Completa los datos válidos de la asamblea." };
+  const supabase = await createClient();
+  const { data: property } = await supabase.from("properties").select("timezone").eq("id", propertyId).maybeSingle();
+  const startsAt = property ? visitTimeToIso(localStartsAt, property.timezone) : null;
+  if (!startsAt) return { error: "Completa una fecha y hora válidas de la comunidad." };
+  const result = await supabase.rpc("update_assembly", { target_assembly_id: assemblyId, target_title: title, target_description: description || null, target_starts_at: startsAt, target_location: location });
   if (result.error) return { error: friendlyError(result.error.message) };
   revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`); revalidatePath(`/panel/propiedades/${propertyId}/asambleas`);
   return { success: "Información actualizada." };

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FilePicker } from "@/components/ui/file-picker";
 import { assemblyTypes } from "@/lib/assemblies/constants";
 import { createClient } from "@/lib/supabase/client";
+import { dateTimeInputValue } from "@/lib/time-zone";
 
 export type AssemblyDirectoryRow = { unit_id: string; unit_code: string; building_name: string; member_id: string; display_name: string };
 const inputClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -14,11 +15,11 @@ const areaClass = "mt-2 min-h-28 w-full rounded-lg border bg-white px-3 py-3 tex
 const labelClass = "block text-sm font-medium";
 function Result({ state }: { state: AssemblyActionState }) { if (state?.error) return <p role="alert" className="text-sm text-destructive">{state.error}</p>; if (state?.success) return <p role="status" className="text-sm text-primary">{state.success}</p>; return null; }
 
-export function CreateAssemblyForm({ propertyId, directory }: { propertyId: string; directory: AssemblyDirectoryRow[] }) {
+export function CreateAssemblyForm({ propertyId, directory, timeZone }: { propertyId: string; directory: AssemblyDirectoryRow[]; timeZone: string }) {
   const [state, action, pending] = useActionState(createAssembly, undefined as AssemblyActionState);
   const grouped = useMemo(() => Array.from(new Map(directory.map((row) => [row.unit_id, { unitId: row.unit_id, label: `${row.building_name} · ${row.unit_code}`, members: directory.filter((item) => item.unit_id === row.unit_id) }])).values()), [directory]);
   return <form action={action} className="grid gap-5"><input type="hidden" name="propertyId" value={propertyId} />
-    <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Tipo<select className={inputClass} name="type" defaultValue="ordinary">{assemblyTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className={labelClass}>Fecha y hora<input className={inputClass} type="datetime-local" name="startsAt" required /></label></div>
+    <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Tipo<select className={inputClass} name="type" defaultValue="ordinary">{assemblyTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className={labelClass}>Fecha y hora de la comunidad<input className={inputClass} type="datetime-local" name="startsAt" required /><span className="mt-1 block text-xs text-muted-foreground">{timeZone}</span></label></div>
     <label className={labelClass}>Título<input className={inputClass} name="title" minLength={4} maxLength={180} required placeholder="Asamblea general ordinaria" /></label>
     <label className={labelClass}>Lugar o enlace<input className={inputClass} name="location" minLength={3} maxLength={240} required placeholder="Salón comunal" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" maxLength={5000} placeholder="Información adicional para los convocados." /></label>
@@ -36,10 +37,9 @@ function SimpleAction({ action, propertyId, assemblyId, children, hidden }: { ac
 export function PublishAssemblyForm(props: { propertyId: string; assemblyId: string }) { return <SimpleAction action={publishAssembly} {...props}>Publicar convocatoria</SimpleAction>; }
 export function RsvpForm({ propertyId, assemblyId }: { propertyId: string; assemblyId: string }) { const [state, action, pending] = useActionState(setAssemblyRsvp, undefined as AssemblyActionState); return <form action={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="assemblyId" value={assemblyId} /><Button name="rsvp" value="yes" disabled={pending}>Asistiré</Button><Button name="rsvp" value="no" variant="outline" disabled={pending}>No asistiré</Button><Result state={state} /></form>; }
 
-export function UpdateAssemblyForm({ propertyId, assembly }: { propertyId: string; assembly: { id: string; title: string; description: string | null; starts_at: string; location: string } }) {
+export function UpdateAssemblyForm({ propertyId, assembly, timeZone }: { propertyId: string; assembly: { id: string; title: string; description: string | null; starts_at: string; location: string }; timeZone: string }) {
   const [state, action, pending] = useActionState(updateAssembly, undefined as AssemblyActionState);
-  const localDate = new Date(assembly.starts_at); localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
-  return <form action={action} className="grid gap-4"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="assemblyId" value={assembly.id} /><label className={labelClass}>Título<input className={inputClass} name="title" defaultValue={assembly.title} required /></label><div className="grid gap-4 sm:grid-cols-2"><label className={labelClass}>Fecha y hora<input className={inputClass} type="datetime-local" name="startsAt" defaultValue={localDate.toISOString().slice(0, 16)} required /></label><label className={labelClass}>Lugar<input className={inputClass} name="location" defaultValue={assembly.location} required /></label></div><label className={labelClass}>Descripción<textarea className={areaClass} name="description" defaultValue={assembly.description ?? ""} /></label><div className="flex items-center gap-4"><Button variant="outline" disabled={pending}>{pending ? "Actualizando…" : "Guardar cambios"}</Button><Result state={state} /></div></form>;
+  return <form action={action} className="grid gap-4"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="assemblyId" value={assembly.id} /><label className={labelClass}>Título<input className={inputClass} name="title" defaultValue={assembly.title} required /></label><div className="grid gap-4 sm:grid-cols-2"><label className={labelClass}>Fecha y hora<input className={inputClass} type="datetime-local" name="startsAt" defaultValue={dateTimeInputValue(new Date(assembly.starts_at), timeZone)} required /></label><label className={labelClass}>Lugar<input className={inputClass} name="location" defaultValue={assembly.location} required /></label></div><label className={labelClass}>Descripción<textarea className={areaClass} name="description" defaultValue={assembly.description ?? ""} /></label><div className="flex items-center gap-4"><Button variant="outline" disabled={pending}>{pending ? "Actualizando…" : "Guardar cambios"}</Button><Result state={state} /></div></form>;
 }
 
 export function AssemblyStatusForm({ propertyId, assemblyId, status }: { propertyId: string; assemblyId: string; status: string }) {

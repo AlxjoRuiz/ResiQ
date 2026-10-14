@@ -4,14 +4,15 @@ import { notFound } from "next/navigation";
 import { AttachmentUpload, PqrsMessageForm, PqrsStatusForm } from "@/components/pqrs/pqrs-forms";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { categoryLabel, requestTypeLabel, statusLabel } from "@/lib/pqrs/constants";
+import { dateTimeFormatter } from "@/lib/time-zone";
 
-const formatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" });
 type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
 function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
 
 export default async function PqrsDetailPage({ params, searchParams }: { params: Promise<{ propertyId: string; pqrsId: string }>; searchParams: Promise<{ created?: string; retryUpload?: string }> }) {
   const { propertyId, pqrsId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const formatter = dateTimeFormatter(property.timezone);
   if (!membership.roles.includes("administrator") && !membership.roles.includes("member")) notFound();
   const [{ data: request }, { data: messages }, { data: documents }, { data: slotsUsed, error: slotsError }, { data: events }] = await Promise.all([
     supabase.from("pqrs").select("id,property_id,unit_id,author_member_id,request_type,category,subject,description,status,created_at,closed_at,units(code,buildings(name))").eq("property_id", propertyId).eq("id", pqrsId).maybeSingle(),

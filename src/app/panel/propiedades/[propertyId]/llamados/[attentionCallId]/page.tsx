@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 import { AttentionCallAttachmentUpload, AttentionCallStatusForm, MarkAttentionCallRead } from "@/components/attention-calls/attention-call-forms";
 import { attentionCategoryLabel, attentionStatusLabel } from "@/lib/attention-calls/constants";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
+import { dateTimeFormatter as makeDateTimeFormatter } from "@/lib/time-zone";
 
-const dateFormatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" });
-const dateTimeFormatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" });
 type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
 type Recipient = { member_id: string; read_at: string | null };
 function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
@@ -16,6 +15,8 @@ const eventLabels: Record<string, string> = { attention_call_created: "Llamado c
 export default async function AttentionCallDetailPage({ params, searchParams }: { params: Promise<{ propertyId: string; attentionCallId: string }>; searchParams: Promise<{ created?: string }> }) {
   const { propertyId, attentionCallId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const dateFormatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: property.timezone });
+  const dateTimeFormatter = makeDateTimeFormatter(property.timezone);
   if (!membership.roles.includes("administrator") && !membership.roles.includes("member")) notFound();
   const [{ data: visibleCalls, error: callsError }, { data: documents }, { data: events }] = await Promise.all([
     supabase.from("attention_calls").select("id,category,reason,status,issued_at,units(code,buildings(name)),attention_call_recipients(member_id,read_at)").eq("property_id", propertyId).order("issued_at", { ascending: false }),

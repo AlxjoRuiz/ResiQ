@@ -7,11 +7,11 @@ import { requirePropertyMember } from "@/lib/auth/require-property-member";
 type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
 type Recipient = { member_id: string; read_at: string | null };
 function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
-const formatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" });
 
 export default async function AttentionCallsPage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const formatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: property.timezone });
   const isAdmin = membership.roles.includes("administrator");
   if (!isAdmin && !membership.roles.includes("member")) notFound();
   const { data: calls } = await supabase.from("attention_calls").select("id,category,reason,status,issued_at,units(code,buildings(name)),attention_call_recipients(member_id,read_at)").eq("property_id", propertyId).order("issued_at", { ascending: false });

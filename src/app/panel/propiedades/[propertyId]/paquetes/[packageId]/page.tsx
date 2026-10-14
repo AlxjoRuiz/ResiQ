@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { AssignRecipientForm, DeliverPackageForm, type PackageDirectoryRow } from "@/components/packages/package-forms";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { packageStatusLabel, receivedItemLabel } from "@/lib/packages/constants";
+import { dateTimeFormatter } from "@/lib/time-zone";
 
-const formatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short" });
 type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
 function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
 const eventLabel: Record<string, string> = { package_received: "Recibido en portería", package_recipient_assigned: "Destinatario asociado", package_notified: "Correo aceptado por el proveedor", package_delivered: "Entregado" };
@@ -12,6 +12,7 @@ const eventLabel: Record<string, string> = { package_received: "Recibido en port
 export default async function PackageDetailPage({ params, searchParams }: { params: Promise<{ propertyId: string; packageId: string }>; searchParams: Promise<{ created?: string }> }) {
   const { propertyId, packageId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const formatter = dateTimeFormatter(property.timezone);
   const [{ data: item }, { data: events }] = await Promise.all([
     supabase.from("packages").select("id,property_id,unit_id,kind,utility_service,recipient_member_id,recipient_name,carrier,tracking_number,sender_name,origin,description,notes,status,received_at,notified_at,delivered_at,collected_by_name,units(code,buildings(name))").eq("property_id", propertyId).eq("id", packageId).maybeSingle(),
     supabase.from("activity_events").select("id,event_type,previous_state,new_state,description,occurred_at").eq("property_id", propertyId).eq("package_id", packageId).order("occurred_at", { ascending: false }),

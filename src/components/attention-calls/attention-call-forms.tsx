@@ -4,6 +4,7 @@ import { startTransition, useActionState, useEffect, useMemo, useRef, useState }
 import { useRouter } from "next/navigation";
 import { changeAttentionCallStatus, createAttentionCall, markAttentionCallRead, type AttentionCallState } from "@/app/panel/propiedades/[propertyId]/llamados/actions";
 import { Button } from "@/components/ui/button";
+import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { FilePicker } from "@/components/ui/file-picker";
 import { attentionCallCategories } from "@/lib/attention-calls/constants";
 import { createClient } from "@/lib/supabase/client";
@@ -23,7 +24,7 @@ export function CreateAttentionCallForm({ propertyId, directory }: { propertyId:
     <input type="hidden" name="propertyId" value={propertyId} />
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" value={unitId} onChange={(event) => setUnitId(event.target.value)} required><option value="" disabled>Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></label>
     <fieldset className="rounded-xl border p-4"><legend className="px-2 text-sm font-medium">Destinatarios explícitos</legend>{!unitId ? <p className="text-sm text-muted-foreground">Selecciona primero el apartamento.</p> : members.length ? <div className="grid gap-3">{members.map((member) => <label key={member.member_id!} className="flex items-center gap-3 text-sm"><input type="checkbox" name="recipientIds" value={member.member_id!} className="size-4 accent-primary" />{member.display_name}</label>)}</div> : <p className="text-sm text-muted-foreground">Este apartamento no tiene miembros vigentes.</p>}</fieldset>
-    <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Categoría<select className={inputClass} name="category" defaultValue="coexistence">{attentionCallCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className={labelClass}>Fecha<input className={inputClass} type="date" name="issuedOn" defaultValue={new Date().toISOString().slice(0, 10)} required /></label></div>
+    <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Categoría<select className={inputClass} name="category" defaultValue="coexistence">{attentionCallCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className={labelClass}>Fecha<input className={inputClass} type="date" name="issuedOn" defaultValue={dateInputValue(new Date(), COLOMBIA_TIME_ZONE)} required /></label></div>
     <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={4} maxLength={180} required placeholder="Resumen concreto del llamado" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" minLength={10} maxLength={5000} required placeholder="Describe los hechos con información verificable." /></label>
     <p className="text-xs text-muted-foreground">Después de crear el llamado podrás adjuntar hasta cinco evidencias PDF, JPG o PNG.</p>
