@@ -28,7 +28,7 @@ Las horas capturadas en la interfaz se convierten en PostgreSQL usando la zona h
 
 - **Administración:** `/panel/propiedades/[propertyId]/zonas` configura zonas, horarios, reglas, cierres y vigencia de solicitudes. `/reservas` aprueba, rechaza y cancela.
 - **Residente:** `/reservas/nueva` muestra horarios, reglas e intervalos ocupados anónimos de los próximos 30 días; crea reservas para apartamentos vinculados y cancela las propias antes del inicio.
-- **Portería:** `/reservas` muestra zona, horario, apartamento, solicitante, asistentes y estado en modo de consulta.
+- **Portería:** `/reservas` muestra zona, horario, apartamento, solicitante, asistentes y estado en modo de consulta. Recibe un aviso interno al aprobarse una reserva (incluidas las de confirmación automática), con zona, apartamento, horario y número de asistentes; si se cancela después de la aprobación, recibe otro aviso. No puede aprobar, cancelar ni modificar reservas.
 - Los dashboards enlazan estas rutas según los roles activos.
 
 ## Privacidad y seguridad
@@ -37,6 +37,7 @@ Las horas capturadas en la interfaz se convierten en PostgreSQL usando la zona h
 - Las claves operativas incluyen `property_id` y las relaciones compuestas impiden referencias entre propiedades.
 - Residentes ajenos no reciben nombre, apartamento, asistentes ni motivos: `get_amenity_availability` sólo devuelve rango y tipo de ocupación.
 - Portería usa `list_operational_reservations`, que omite correo, teléfono, cartera y motivos administrativos.
+- Los avisos de Portería se dirigen únicamente a miembros activos con ese rol en la misma propiedad; una clave única evita duplicados. No generan correo externo.
 - Cierres y zonas sólo pueden ser modificados por administración.
 
 ## Validación realizada
