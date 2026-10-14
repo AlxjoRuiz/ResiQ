@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileCheck2, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FilePicker } from "@/components/ui/file-picker";
 
 export function PaymentEvidenceUpload({ receivableId }: { receivableId: string }) {
   const router = useRouter();
@@ -32,12 +32,7 @@ export function PaymentEvidenceUpload({ receivableId }: { receivableId: string }
 
   return <div className="mt-4 grid gap-3 rounded-xl border bg-secondary/30 p-4">
     <div><p className="text-sm font-semibold">Comprobante de pago</p><p className="mt-1 text-xs text-muted-foreground">Adjunta una imagen o PDF para que Administración lo revise.</p></div>
-    <input ref={input} type="file" accept="application/pdf,image/jpeg,image/png" disabled={busy} className="sr-only" tabIndex={-1} aria-label="Seleccionar comprobante de pago" onChange={(event) => { setSelected(event.target.files?.[0] ?? null); setMessage(""); }} />
-    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed bg-background p-3 sm:p-4">
-      <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">{selected ? <FileCheck2 className="size-5" /> : <FileUp className="size-5" />}</div>
-      <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium" aria-live="polite">{selected ? selected.name : "Elige tu comprobante"}</p><p className="text-xs text-muted-foreground">{selected ? `${(selected.size / 1024 / 1024).toFixed(2)} MB · listo para enviar` : "PDF, JPG o PNG · máximo 5 MB"}</p></div>
-      <Button type="button" size="sm" variant="outline" onClick={() => input.current?.click()} disabled={busy}>{selected ? "Cambiar archivo" : "Elegir archivo"}</Button>
-    </div>
+    <FilePicker inputRef={input} files={selected ? [selected] : []} onFilesChange={(files) => { setSelected(files[0] ?? null); setMessage(""); }} title="Elige tu comprobante" hint="PDF, JPG o PNG · máximo 5 MB" disabled={busy} />
     <p className="text-xs text-muted-foreground">El comprobante no registra el pago ni cambia el saldo automáticamente.</p>
     <div className="flex flex-wrap items-center gap-3"><Button type="button" size="sm" onClick={submit} disabled={busy || !selected}>{busy ? "Enviando…" : "Enviar comprobante"}</Button>{message && <p role="status" className="text-sm">{message}</p>}</div>
   </div>;
