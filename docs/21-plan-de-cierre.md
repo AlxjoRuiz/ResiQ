@@ -16,7 +16,7 @@ El 13 de octubre se repitieron las pruebas locales: `npm run test:security` dio 
 
 ## Aplazado por una dependencia conocida
 
-- **Dominio y correo:** comprar y verificar un dominio, configurar remitente autorizado en Resend, actualizar `RESEND_FROM_EMAIL` y `APP_URL`, y entonces comprobar invitaciones por correo, notificaciones externas y recuperación de contraseña. Hoy la invitación se comparte mediante el enlace mostrado una sola vez; crearla no envía un mensaje automáticamente.
+- **Dominio y correo:** comprar y verificar un dominio, configurar remitente autorizado en Resend, actualizar `RESEND_FROM_EMAIL` y `APP_URL`, y entonces comprobar invitaciones por correo, notificaciones externas y recuperación de contraseña. El llamado técnico de etapa 17 quedó «Creado» esperando aceptación de correos; su lectura por Residente y el único evento de historial pasaron el 14 de octubre, pero revisión y cierre dependen de ese envío. Hoy la invitación se comparte mediante el enlace mostrado una sola vez; crearla no envía un mensaje automáticamente.
 - **Reserva vencida por cron:** se comprobó la transición en SQL y la ejecución periódica del cron; Alejandro aplazó observar un vencimiento real procesado sin interacción.
 - **Respaldo externo:** definir y comprobar una copia fuera de Supabase antes de declarar producción lista.
 
