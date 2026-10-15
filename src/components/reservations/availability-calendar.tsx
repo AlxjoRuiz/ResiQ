@@ -84,10 +84,10 @@ export function AvailabilityCalendar({ zones, timeZone, today, month, propertyId
       </label>
     </div>
     <p className="mt-3 text-xs text-muted-foreground">La zona elegida aquí también queda seleccionada en el formulario de reserva.</p>
-    <div className="mt-5 flex items-center justify-between gap-3" aria-label="Navegación del calendario">
-      {month > firstMonth ? <Link className="rounded-lg border px-3 py-2 text-sm hover:bg-muted" href={monthHref(shiftMonth(month, -1))}>← Anterior</Link> : <span />}
-      <h3 className="text-center font-semibold capitalize">{monthFormatter.format(new Date(`${firstDay}T12:00:00Z`))}</h3>
-      {month < lastMonth ? <Link className="rounded-lg border px-3 py-2 text-sm hover:bg-muted" href={monthHref(shiftMonth(month, 1))}>Siguiente →</Link> : <span />}
+    <div className="mt-5 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3" aria-label="Navegación del calendario">
+      {month > firstMonth ? <Link aria-label="Mes anterior" className="rounded-lg border px-3 py-2 text-sm hover:bg-muted" href={monthHref(shiftMonth(month, -1))}><span aria-hidden="true" className="sm:hidden">←</span><span className="hidden sm:inline">← Anterior</span></Link> : <span />}
+      <h3 className="min-w-0 text-center text-sm font-semibold capitalize sm:text-base">{monthFormatter.format(new Date(`${firstDay}T12:00:00Z`))}</h3>
+      {month < lastMonth ? <Link aria-label="Mes siguiente" className="rounded-lg border px-3 py-2 text-sm hover:bg-muted" href={monthHref(shiftMonth(month, 1))}><span aria-hidden="true" className="sm:hidden">→</span><span className="hidden sm:inline">Siguiente →</span></Link> : <span />}
     </div>
     <div className="mt-5 grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground" aria-hidden="true">
       {(["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const).map((label) => <span key={label}>{label}</span>)}
