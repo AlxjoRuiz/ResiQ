@@ -34,10 +34,9 @@ function activeOnDay(interval: AvailabilityInterval, key: string, timeZone: stri
     dayKey(new Date(new Date(interval.ends_at).getTime() - 1), timeZone) >= key;
 }
 
-export function AvailabilityCalendar({ zones, timeZone, today }: {
-  zones: AvailabilityZone[]; timeZone: string; today: string;
+export function AvailabilityCalendar({ zones, timeZone, today, zoneId, onZoneChange }: {
+  zones: AvailabilityZone[]; timeZone: string; today: string; zoneId: string; onZoneChange: (zoneId: string) => void;
 }) {
-  const [zoneId, setZoneId] = useState(zones[0]?.id ?? "");
   const [selectedDay, setSelectedDay] = useState(today);
   const zone = zones.find((item) => item.id === zoneId);
   const days = Array.from({ length: 30 }, (_, index) => addDays(today, index));
@@ -56,11 +55,12 @@ export function AvailabilityCalendar({ zones, timeZone, today }: {
         <p className="mt-1 text-sm text-muted-foreground">Consulta ocupaciones y cierres de los próximos 30 días antes de elegir tu horario.</p>
       </div>
       <label className="grid gap-1 text-sm">Zona
-        <select className="min-w-48 rounded-lg border bg-background px-3 py-2" value={zoneId} onChange={(event) => setZoneId(event.target.value)}>
+        <select className="min-w-48 rounded-lg border bg-background px-3 py-2" value={zoneId} onChange={(event) => onZoneChange(event.target.value)}>
           {zones.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select>
       </label>
     </div>
+    <p className="mt-3 text-xs text-muted-foreground">La zona elegida aquí también queda seleccionada en el formulario de reserva.</p>
     <div className="mt-5 grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground" aria-hidden="true">
       {(["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const).map((label) => <span key={label}>{label}</span>)}
     </div>
