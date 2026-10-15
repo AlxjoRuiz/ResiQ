@@ -23,8 +23,8 @@ Actualizado: 2026-10-13. Fuente de autoridad: `00-prompt-maestro.md` y aprobacio
 | 14 | Asambleas | Implementada y validada; pendiente de aprobación funcional del usuario |
 | 15 | Notificaciones y comunicaciones | Bandeja y comunicados internos publicados y probados; correo externo pospuesto hasta contar con dominio verificado |
 | 16 | Auditoría integral y seguridad | Cerrada con límites documentados en `17-auditoria-seguridad.md`; pruebas diferidas de correo y expiración real por cron |
-| 17 | Testing integral | En curso; matriz y pendientes en `19-pruebas-etapa-17.md` y `21-plan-de-cierre.md` |
-| 18 | Responsive y UX integral | No iniciada formalmente; ajustes puntuales de interfaz ya publicados |
+| 17 | Testing integral | Cerrada con salvedades por aprobación de Alejandro el 2026-10-14; evidencia y pruebas aplazadas en `22-propuesta-cierre-etapa-17.md` |
+| 18 | Responsive y UX integral | Iniciada por aprobación de Alejandro el 2026-10-14; prioridad móvil del residente |
 | 19 | Deploy | Piloto publicado en Vercel; preparación formal de producción y dominio pendientes |
 | 20 | Preparación comercial SaaS | No iniciada |
 

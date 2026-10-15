@@ -1,6 +1,6 @@
 # Propuesta de cierre de la etapa 17 — Testing integral
 
-Estado al 14 de octubre de 2026: **lista para revisión de Alejandro; no aprobada ni cerrada todavía**. Alcance del prompt maestro: login, roles, RLS, Reservas, PQRS, Paquetes, Visitas, Cartera, Llamados, Asambleas y Notificaciones, con énfasis en aislamiento entre propiedades. La evidencia detallada está en `19-pruebas-etapa-17.md` y `20-recorrido-login-roles-etapa-17.md`.
+Estado al 14 de octubre de 2026: **aprobada por Alejandro con las salvedades enumeradas**. Su mensaje «Empecemos con la etapa 18» autoriza el siguiente paso. Alcance del prompt maestro: login, roles, RLS, Reservas, PQRS, Paquetes, Visitas, Cartera, Llamados, Asambleas y Notificaciones, con énfasis en aislamiento entre propiedades. La evidencia detallada está en `19-pruebas-etapa-17.md` y `20-recorrido-login-roles-etapa-17.md`.
 
 ## Evidencia que permite proponer el cierre
 
@@ -24,6 +24,6 @@ La mayoría de pruebas de navegador son resultados informados por Alejandro; no 
 5. **Documentos y comunicado entre propiedades:** ampliar la prueba visual con identidades de otra propiedad cuando existan cuentas apropiadas.
 6. **Respaldo externo y preparación formal de producción:** pertenecen al cierre operativo posterior; el piloto en Vercel no es declaración de producción lista.
 
-## Decisión solicitada
+## Decisión tomada
 
-Alejandro puede aprobar el **cierre de la etapa 17 con estas salvedades** y autorizar la **etapa 18 — Responsive y UX**. Esa etapa revisará escritorio, tableta y móvil, priorizando la experiencia del residente. Aprobar este cierre no declara terminadas las salvedades ni autoriza por sí mismo la etapa 19 de producción o la etapa 20 comercial.
+Alejandro aprobó el **cierre de la etapa 17 con estas salvedades** y autorizó la **etapa 18 — Responsive y UX**. Esa etapa revisará escritorio, tableta y móvil, priorizando la experiencia del residente. Este cierre no declara terminadas las salvedades ni autoriza por sí mismo la etapa 19 de producción o la etapa 20 comercial.

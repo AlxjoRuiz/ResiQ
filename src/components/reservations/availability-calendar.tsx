@@ -73,12 +73,14 @@ export function AvailabilityCalendar({ zones, timeZone, today }: {
         const label = hasClosure ? "Cierre" : hasOccupation ? "Ocupación" : "Sin cruces";
         return <button key={key} type="button" onClick={() => setSelectedDay(key)} aria-pressed={selectedDay === key}
           aria-label={`${dateFormatter.format(new Date(`${key}T12:00:00Z`))}: ${label}`}
-          className={`min-h-16 rounded-lg border p-1 text-left text-xs transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary ${selectedDay === key ? "border-primary ring-1 ring-primary" : ""} ${hasClosure ? "bg-rose-50" : hasOccupation ? "bg-amber-50" : "bg-emerald-50"}`}>
-          <span className="block font-semibold">{dateFormatter.format(new Date(`${key}T12:00:00Z`))}</span>
-          <span className="mt-1 block text-[10px] leading-tight">{label}</span>
+          className={`flex min-w-0 min-h-12 flex-col items-center justify-center rounded-lg border p-1 text-xs transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary sm:min-h-16 sm:items-start sm:justify-start ${selectedDay === key ? "border-primary ring-1 ring-primary" : ""} ${hasClosure ? "bg-rose-50" : hasOccupation ? "bg-amber-50" : "bg-emerald-50"}`}>
+          <span className="font-semibold sm:hidden">{Number(key.slice(-2))}</span>
+          <span className="hidden font-semibold sm:block">{dateFormatter.format(new Date(`${key}T12:00:00Z`))}</span>
+          <span className="mt-1 hidden text-[10px] leading-tight sm:block">{label}</span>
         </button>;
       })}
     </div>
+    <p className="mt-2 text-xs text-muted-foreground sm:hidden">Verde: sin cruces · Amarillo: ocupado · Rojo: cierre. Toca un día para ver sus horarios.</p>
     <div className="mt-5 rounded-xl border bg-background p-4">
       <h3 className="font-semibold">{dateFormatter.format(new Date(`${selectedDay}T12:00:00Z`))} · {zone?.name}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{selectedHours
