@@ -132,6 +132,50 @@ export async function setAccountPassword(_: AuthState, formData: FormData): Prom
   return { success: "Contraseña guardada. Ya puedes entrar con tu correo y contraseña." };
 }
 
+export async function requestPasswordReset(_: AuthState, formData: FormData): Promise<AuthState> {
+  if (process.env.PASSWORD_RECOVERY_ENABLED !== "true") return { error: "La recuperación por correo aún no está disponible." };
+  const email = field(formData, "email").toLowerCase();
+  if (!email.includes("@") || email.length > 254) return { error: "Escribe un correo válido." };
+  const origin = (await headers()).get("origin");
+  if (!origin) return { error: "No pudimos procesar la solicitud. Intenta nuevamente." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirmar-recuperacion`,
+  });
+  if (error) return { error: "No pudimos enviar el enlace en este momento. Intenta más tarde." };
+  return { success: "Si ese correo tiene una cuenta, recibirás un enlace para crear una nueva contraseña." };
+}
+
+export async function confirmPasswordRecovery(formData: FormData) {
+  if (process.env.PASSWORD_RECOVERY_ENABLED !== "true") redirect("/login?error=callback");
+  const tokenHash = field(formData, "token_hash");
+  if (!tokenHash) redirect("/recuperar-contrasena?error=link");
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
+  if (error || !data.user) redirect("/recuperar-contrasena?error=link");
+  if (await getAppAccessStatus(supabase, data.user.id) !== "authorized") {
+    await supabase.auth.signOut({ scope: "local" });
+    redirect("/login?error=no_invitation");
+  }
+  redirect("/restablecer-contrasena");
+}
+
+export async function completePasswordReset(_: AuthState, formData: FormData): Promise<AuthState> {
+  if (process.env.PASSWORD_RECOVERY_ENABLED !== "true") return { error: "La recuperación por correo aún no está disponible." };
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "");
+  if (password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres." };
+  if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "El enlace venció o no es válido. Solicita uno nuevo." };
+  if (await getAppAccessStatus(supabase, user.id) !== "authorized") return { error: "No pudimos verificar tu acceso." };
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: "No pudimos guardar la contraseña. Solicita otro enlace e intenta nuevamente." };
+  await supabase.auth.signOut({ scope: "local" });
+  redirect("/login?reset=success");
+}
+
 export async function createInvitation(_: InvitationState, formData: FormData): Promise<InvitationState> {
   const propertyId = field(formData, "propertyId");
   const email = field(formData, "email").toLowerCase();

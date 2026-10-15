@@ -1,9 +1,10 @@
 import { Building2, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import styles from "./login.module.css";
 import { LoginForm } from "./login-form";
 import { safeNext } from "@/lib/auth/safe-next";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; reset?: string }> }) {
   const params = await searchParams;
   const next = safeNext(params.next);
   const invitationToken = next.startsWith("/invitacion?") ? new URL(next, "http://localhost").searchParams.get("token") ?? undefined : undefined;
@@ -23,7 +24,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 id="login-title" className={styles.title}>Bienvenido de nuevo</h1>
           <p className={styles.welcome}>Ingresa con la cuenta asociada a tu invitación.</p>
           {params.error && <p role="alert" className={styles.error}>{params.error === "no_invitation" ? "No has sido invitado o aún no has aceptado tu invitación. Si recibiste un enlace, ábrelo y acéptalo con el correo invitado." : params.error === "access_check" ? "No pudimos verificar tu acceso. Intenta nuevamente." : "No pudimos completar el acceso. Intenta nuevamente."}</p>}
+          {params.reset === "success" && <p role="status" className={styles.success}>Contraseña actualizada. Ya puedes iniciar sesión.</p>}
           <LoginForm next={next} invitationToken={invitationToken} />
+          {process.env.PASSWORD_RECOVERY_ENABLED === "true" && <p className={styles.recovery}><Link href="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link></p>}
           <p className={styles.security}><ShieldCheck size={16} aria-hidden="true" />Acceso protegido para miembros autorizados.</p>
         </section>
       </div>
