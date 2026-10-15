@@ -25,7 +25,7 @@ function one<T>(value: T | T[] | null) { return Array.isArray(value) ? value[0] 
 
 export default async function ReservationsPage({ params, searchParams }: {
   params: Promise<{ propertyId: string }>;
-  searchParams: Promise<{ created?: string }>;
+  searchParams: Promise<{ created?: string; status?: string; zone?: string }>;
 }) {
   const { propertyId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
@@ -54,13 +54,6 @@ export default async function ReservationsPage({ params, searchParams }: {
       if (pendingError) throw pendingError;
       const deadlines = new Map((pending ?? []).map((item) => [item.id, item.hold_expires_at]));
       rows = rows.map((row) => ({ ...row, holdExpiresAt: deadlines.get(row.id) ?? null }));
-      rows.sort((a, b) => {
-        if (a.status === "pending" && b.status !== "pending") return -1;
-        if (b.status === "pending" && a.status !== "pending") return 1;
-        if (a.status === "pending" && b.status === "pending")
-          return new Date(a.holdExpiresAt ?? a.startsAt).getTime() - new Date(b.holdExpiresAt ?? b.startsAt).getTime();
-        return new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime();
-      });
     }
   } else {
     const { data, error } = await supabase.from("reservations")
@@ -78,10 +71,19 @@ export default async function ReservationsPage({ params, searchParams }: {
     });
   }
 
+  rows.sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
+  const filters = await searchParams;
+  const statuses = new Set(["pending", "approved", "rejected", "cancelled", "expired", "completed"]);
+  const selectedStatus = filters.status && statuses.has(filters.status) ? filters.status : "all";
+  const zones = [...new Set(rows.map((row) => row.amenity))].sort((a, b) => a.localeCompare(b, "es"));
+  const selectedZone = filters.zone && zones.includes(filters.zone) ? filters.zone : "all";
+  const visibleRows = rows.filter((row) =>
+    (selectedStatus === "all" || row.status === selectedStatus) &&
+    (selectedZone === "all" || row.amenity === selectedZone));
   const formatter = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: property.timezone });
   const pendingCount = administrator ? rows.filter((row) => row.status === "pending").length : 0;
   const urgentCount = administrator ? rows.filter((row) => row.status === "pending" && row.holdExpiresAt && new Date(row.holdExpiresAt).getTime() - new Date().getTime() <= 2 * 60 * 60 * 1000).length : 0;
-  const created = (await searchParams).created === "1";
+  const created = filters.created === "1";
 
   return <main className="mx-auto min-h-screen max-w-6xl px-5 py-8 sm:px-10">
     <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
@@ -94,9 +96,30 @@ export default async function ReservationsPage({ params, searchParams }: {
       {resident && <Button asChild><Link href={`/panel/propiedades/${propertyId}/reservas/nueva`}>Nueva reserva</Link></Button>}
     </header>
     {created && <p role="status" className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-primary">La reserva fue creada correctamente.</p>}
-    {administrator && pendingCount > 0 && <p role="status" className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">Tienes {pendingCount} {pendingCount === 1 ? "solicitud pendiente" : "solicitudes pendientes"} de respuesta.{urgentCount > 0 ? ` ${urgentCount} ${urgentCount === 1 ? "vence" : "vencen"} en menos de 2 horas.` : ""} Las más próximas a vencer aparecen primero.</p>}
+    {administrator && pendingCount > 0 && <p role="status" className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">Tienes {pendingCount} {pendingCount === 1 ? "solicitud pendiente" : "solicitudes pendientes"} de respuesta.{urgentCount > 0 ? ` ${urgentCount} ${urgentCount === 1 ? "vence" : "vencen"} en menos de 2 horas.` : ""} Usa el filtro «Pendientes» para revisarlas.</p>}
+    <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border bg-card p-4">
+      <label className="grid gap-1 text-sm">Estado
+        <select name="status" defaultValue={selectedStatus} className="min-w-40 rounded-lg border bg-background px-3 py-2">
+          <option value="all">Todos</option>
+          <option value="pending">Pendientes</option>
+          <option value="approved">Aprobadas</option>
+          <option value="rejected">Rechazadas</option>
+          <option value="cancelled">Canceladas</option>
+          <option value="expired">Vencidas</option>
+          <option value="completed">Finalizadas</option>
+        </select>
+      </label>
+      <label className="grid gap-1 text-sm">Zona
+        <select name="zone" defaultValue={selectedZone} className="min-w-40 rounded-lg border bg-background px-3 py-2">
+          <option value="all">Todas</option>
+          {zones.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
+        </select>
+      </label>
+      <Button type="submit" variant="outline">Filtrar</Button>
+      <p className="text-xs text-muted-foreground">Ordenadas por fecha de reserva, de la más reciente a la más antigua.</p>
+    </form>
     <section className="mt-7 grid gap-4">
-      {rows.length === 0 ? <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground">No hay reservas visibles en este periodo.</div> : rows.map((row) => {
+      {visibleRows.length === 0 ? <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground">No hay reservas para estos filtros.</div> : visibleRows.map((row) => {
         const response = row.reviewMessage ?? (row.status === "rejected" ? row.reason : null);
         return <article key={row.id} className="rounded-2xl border bg-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
