@@ -27,7 +27,7 @@ Las horas capturadas en la interfaz se convierten en PostgreSQL usando la zona h
 ## Interfaz por rol
 
 - **Administración:** `/panel/propiedades/[propertyId]/zonas` configura zonas, horarios, reglas, cierres y vigencia de solicitudes. `/reservas` aprueba o rechaza con un mensaje para el residente, y puede cancelar con un motivo.
-- **Residente:** `/reservas/nueva` muestra horarios, reglas e intervalos ocupados anónimos de los próximos 30 días; crea reservas para apartamentos vinculados indicando el motivo de uso y cancela las propias antes del inicio.
+- **Residente:** `/reservas/nueva` muestra un calendario por zona con ocupaciones y cierres anónimos de los próximos 30 días, además de horarios y reglas. Al elegir un día se ven los intervalos exactos; la ausencia de cruces no garantiza disponibilidad fuera del horario configurado. Crea reservas para apartamentos vinculados indicando el motivo de uso y cancela las propias antes del inicio.
 - **Portería:** `/reservas` muestra zona, horario, apartamento, solicitante, asistentes, estado, motivo de uso, respuesta de Administración y motivo de cancelación en modo de consulta. Recibe un aviso interno al aprobarse una reserva (incluidas las de confirmación automática), con zona, apartamento, horario y número de asistentes; si se cancela después de la aprobación, recibe otro aviso. No puede aprobar, cancelar ni modificar reservas.
 - Los dashboards enlazan estas rutas según los roles activos.
 
