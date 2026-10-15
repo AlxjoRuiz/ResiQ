@@ -20,6 +20,7 @@ function friendlyError(message?: string) {
   if (message?.includes("amenity_closed")) return "La zona está cerrada durante ese intervalo.";
   if (message?.includes("outside_amenity_hours")) return "El intervalo debe quedar dentro del horario configurado para la zona.";
   if (message?.includes("reservation_too_long")) return "La reserva debe durar más de 0 minutos y no superar el máximo de la zona.";
+  if (message?.includes("purpose_required")) return "Escribe el motivo de la reserva (entre 3 y 500 caracteres).";
   if (message?.includes("amenity_unavailable")) return "La zona ya no está disponible.";
   if (message?.includes("reservation_blocked_by_debt")) return "No puedes realizar reservas en este momento porque tu cuenta presenta un saldo pendiente. Comunícate con la administración para obtener información sobre tu cartera.";
   if (message?.includes("debt_policy_unavailable")) return "La política de cartera todavía no está disponible.";
@@ -75,17 +76,17 @@ export async function deleteAmenityBlackout(_: ReservationState, data: FormData)
 }
 
 export async function createReservation(_: ReservationState, data: FormData): Promise<ReservationState> {
-  const propertyId = field(data, "propertyId"), amenityId = field(data, "amenityId"), unitId = field(data, "unitId"), startsAt = field(data, "startsAt"), endsAt = field(data, "endsAt");
+  const propertyId = field(data, "propertyId"), amenityId = field(data, "amenityId"), unitId = field(data, "unitId"), startsAt = field(data, "startsAt"), endsAt = field(data, "endsAt"), purpose = field(data, "purpose");
   const attendeeCount = Number(field(data, "attendeeCount"));
-  if (![propertyId, amenityId, unitId].every((value) => uuidPattern.test(value)) || !startsAt || !endsAt || new Date(endsAt) <= new Date(startsAt) || !Number.isInteger(attendeeCount) || attendeeCount < 1) return { error: "Completa una reserva válida." };
-  const supabase = await createClient(); const result = await supabase.rpc("create_reservation", { target_property_id: propertyId, target_amenity_id: amenityId, target_unit_id: unitId, target_starts_at: startsAt, target_ends_at: endsAt, target_attendee_count: attendeeCount, target_idempotency_key: crypto.randomUUID() });
+  if (![propertyId, amenityId, unitId].every((value) => uuidPattern.test(value)) || !startsAt || !endsAt || new Date(endsAt) <= new Date(startsAt) || !Number.isInteger(attendeeCount) || attendeeCount < 1 || purpose.length < 3 || purpose.length > 500) return { error: "Completa una reserva válida e indica su motivo (3 a 500 caracteres)." };
+  const supabase = await createClient(); const result = await supabase.rpc("create_reservation_with_purpose", { target_property_id: propertyId, target_amenity_id: amenityId, target_unit_id: unitId, target_starts_at: startsAt, target_ends_at: endsAt, target_attendee_count: attendeeCount, target_idempotency_key: crypto.randomUUID(), target_purpose: purpose });
   if (result.error || !result.data) return { error: friendlyError(result.error?.message) };
   revalidatePath(reservationPath(propertyId)); redirect(`${reservationPath(propertyId)}?created=1`);
 }
 
 export async function decideReservation(_: ReservationState, data: FormData): Promise<ReservationState> {
   const propertyId = field(data, "propertyId"), reservationId = field(data, "reservationId"), decision = field(data, "decision"), reason = field(data, "reason");
-  if (!uuidPattern.test(propertyId) || !uuidPattern.test(reservationId) || !["approve", "reject"].includes(decision) || (decision === "reject" && reason.length < 3) || reason.length > 500) return { error: "Revisa la decisión y su motivo." };
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(reservationId) || !["approve", "reject"].includes(decision) || reason.length < 3 || reason.length > 500) return { error: "Escribe un mensaje de 3 a 500 caracteres para la decisión." };
   const supabase = await createClient(); const result = await supabase.rpc("decide_reservation", { target_reservation_id: reservationId, target_approve: decision === "approve", target_reason: reason });
   if (result.error) return { error: friendlyError(result.error.message) };
   revalidatePath(reservationPath(propertyId)); return { success: decision === "approve" ? "Reserva aprobada." : "Reserva rechazada." };
