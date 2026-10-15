@@ -8,9 +8,10 @@ type OperationalRow = {
   reservation_id: string; amenity_name: string; building_name: string; unit_code: string;
   requester_name: string; attendee_count: number; status: string; starts_at: string;
   ends_at: string; purpose: string | null; review_message: string | null; decision_reason: string | null;
+  created_at: string;
 };
 type OwnRow = {
-  id: string; attendee_count: number; status: string; starts_at: string; ends_at: string;
+  id: string; attendee_count: number; status: string; starts_at: string; ends_at: string; created_at: string;
   hold_expires_at: string | null; purpose: string | null; review_message: string | null; decision_reason: string | null;
   amenities: { name: string } | { name: string }[] | null;
   units: { code: string; buildings: { name: string } | { name: string }[] | null } |
@@ -18,7 +19,7 @@ type OwnRow = {
 };
 type DisplayRow = {
   id: string; amenity: string; unit: string; requester?: string; attendeeCount: number;
-  status: string; startsAt: string; endsAt: string; holdExpiresAt?: string | null;
+  status: string; startsAt: string; endsAt: string; createdAt: string; holdExpiresAt?: string | null;
   purpose?: string | null; reviewMessage?: string | null; reason?: string | null;
 };
 function one<T>(value: T | T[] | null) { return Array.isArray(value) ? value[0] : value; }
@@ -38,7 +39,7 @@ export default async function ReservationsPage({ params, searchParams }: {
   if (administrator || concierge) {
     const from = new Date(); from.setDate(from.getDate() - 30);
     const to = new Date(); to.setDate(to.getDate() + 93);
-    const { data, error } = await supabase.rpc("list_operational_reservations_with_context", {
+    const { data, error } = await supabase.rpc("list_operational_reservations_recent", {
       target_property_id: propertyId, target_from: from.toISOString(), target_to: to.toISOString(),
     });
     if (error) throw error;
@@ -46,6 +47,7 @@ export default async function ReservationsPage({ params, searchParams }: {
       id: row.reservation_id, amenity: row.amenity_name,
       unit: [row.building_name, row.unit_code].filter(Boolean).join(" · "), requester: row.requester_name,
       attendeeCount: row.attendee_count, status: row.status, startsAt: row.starts_at, endsAt: row.ends_at,
+      createdAt: row.created_at,
       purpose: row.purpose, reviewMessage: row.review_message, reason: row.decision_reason,
     }));
     if (administrator) {
@@ -57,21 +59,22 @@ export default async function ReservationsPage({ params, searchParams }: {
     }
   } else {
     const { data, error } = await supabase.from("reservations")
-      .select("id,attendee_count,status,starts_at,ends_at,hold_expires_at,purpose,review_message,decision_reason,amenities(name),units(code,buildings(name))")
-      .eq("property_id", propertyId).order("starts_at", { ascending: false }).limit(100);
+      .select("id,attendee_count,status,starts_at,ends_at,created_at,hold_expires_at,purpose,review_message,decision_reason,amenities(name),units(code,buildings(name))")
+      .eq("property_id", propertyId).order("created_at", { ascending: false }).limit(100);
     if (error) throw error;
     rows = ((data ?? []) as unknown as OwnRow[]).map((row) => {
       const amenity = one(row.amenities), unit = one(row.units), building = one(unit?.buildings ?? null);
       return {
         id: row.id, amenity: amenity?.name ?? "Zona", unit: [building?.name, unit?.code].filter(Boolean).join(" · "),
         attendeeCount: row.attendee_count, status: row.status, startsAt: row.starts_at, endsAt: row.ends_at,
+        createdAt: row.created_at,
         holdExpiresAt: row.hold_expires_at, purpose: row.purpose, reviewMessage: row.review_message,
         reason: row.decision_reason,
       };
     });
   }
 
-  rows.sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
+  rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id.localeCompare(a.id));
   const filters = await searchParams;
   const statuses = new Set(["pending", "approved", "rejected", "cancelled", "expired", "completed"]);
   const selectedStatus = filters.status && statuses.has(filters.status) ? filters.status : "all";
@@ -116,7 +119,7 @@ export default async function ReservationsPage({ params, searchParams }: {
         </select>
       </label>
       <Button type="submit" variant="outline">Filtrar</Button>
-      <p className="text-xs text-muted-foreground">Ordenadas por fecha de reserva, de la más reciente a la más antigua.</p>
+      <p className="text-xs text-muted-foreground">Solicitudes más recientes primero.</p>
     </form>
     <section className="mt-7 grid gap-4">
       {visibleRows.length === 0 ? <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground">No hay reservas para estos filtros.</div> : visibleRows.map((row) => {
@@ -126,6 +129,7 @@ export default async function ReservationsPage({ params, searchParams }: {
             <div>
               <p className="text-xs font-semibold tracking-wider text-primary uppercase">{row.amenity}</p>
               <h2 className="mt-2 text-lg font-semibold">{formatter.format(new Date(row.startsAt))} → {formatter.format(new Date(row.endsAt))}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Solicitada el {formatter.format(new Date(row.createdAt))}</p>
               <p className="mt-2 text-sm text-muted-foreground">{row.unit} · {row.attendeeCount} asistentes{row.requester ? ` · ${row.requester}` : ""}</p>
               <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Motivo de la reserva:</strong> {row.purpose ?? "No registrado en esta solicitud anterior."}</p>
               {response && <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Respuesta de Administración:</strong> {response}</p>}
