@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export type AvailabilityInterval = { starts_at: string; ends_at: string; kind: string };
@@ -24,6 +25,12 @@ function addDays(key: string, count: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function shiftMonth(month: string, count: number) {
+  const date = new Date(`${month}-01T12:00:00Z`);
+  date.setUTCMonth(date.getUTCMonth() + count);
+  return date.toISOString().slice(0, 7);
+}
+
 function weekday(key: string) {
   const day = new Date(`${key}T12:00:00Z`).getUTCDay();
   return day === 0 ? 7 : day;
@@ -41,14 +48,17 @@ function activeOnDay(interval: AvailabilityInterval, key: string, timeZone: stri
     dayKey(new Date(new Date(interval.ends_at).getTime() - 1), timeZone) >= key;
 }
 
-export function AvailabilityCalendar({ zones, timeZone, today, zoneId, onZoneChange }: {
-  zones: AvailabilityZone[]; timeZone: string; today: string; zoneId: string; onZoneChange: (zoneId: string) => void;
+export function AvailabilityCalendar({ zones, timeZone, today, month, propertyId, zoneId, onZoneChange }: {
+  zones: AvailabilityZone[]; timeZone: string; today: string; month: string; propertyId: string; zoneId: string; onZoneChange: (zoneId: string) => void;
 }) {
-  const [selectedDay, setSelectedDay] = useState(today);
+  const [selectedDay, setSelectedDay] = useState(month === today.slice(0, 7) ? today : `${month}-01`);
   const zone = zones.find((item) => item.id === zoneId);
-  const days = Array.from({ length: 30 }, (_, index) => addDays(today, index));
-  const leading = weekday(today) - 1;
+  const firstDay = `${month}-01`;
+  const dayCount = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate();
+  const days = Array.from({ length: dayCount }, (_, index) => addDays(firstDay, index));
+  const leading = weekday(firstDay) - 1;
   const dateFormatter = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", timeZone: "UTC" });
+  const monthFormatter = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "UTC" });
   const timeFormatter = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone });
   const selectedIntervals = zone?.intervals.filter((item) => activeOnDay(item, selectedDay, timeZone)) ?? [];
   const selectedHours = zone?.hours.find((item) => item.weekday === weekday(selectedDay));
@@ -57,11 +67,15 @@ export function AvailabilityCalendar({ zones, timeZone, today, zoneId, onZoneCha
 
   if (zones.length === 0) return null;
 
+  const monthHref = (target: string) => `/panel/propiedades/${propertyId}/reservas/nueva?month=${target}&zone=${encodeURIComponent(zoneId)}`;
+  const firstMonth = today.slice(0, 7);
+  const lastMonth = shiftMonth(firstMonth, 11);
+
   return <section className="mt-7 rounded-2xl border bg-card p-5" aria-labelledby="availability-heading">
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <h2 id="availability-heading" className="text-lg font-semibold">Calendario de disponibilidad</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Consulta ocupaciones y cierres de los próximos 30 días antes de elegir tu horario.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Consulta ocupaciones y cierres de este mes o de los próximos once antes de elegir tu horario.</p>
       </div>
       <label className="grid gap-1 text-sm">Zona
         <select className="min-w-48 rounded-lg border bg-background px-3 py-2" value={zoneId} onChange={(event) => onZoneChange(event.target.value)}>
@@ -70,6 +84,11 @@ export function AvailabilityCalendar({ zones, timeZone, today, zoneId, onZoneCha
       </label>
     </div>
     <p className="mt-3 text-xs text-muted-foreground">La zona elegida aquí también queda seleccionada en el formulario de reserva.</p>
+    <div className="mt-5 flex items-center justify-between gap-3" aria-label="Navegación del calendario">
+      {month > firstMonth ? <Link className="rounded-lg border px-3 py-2 text-sm hover:bg-muted" href={monthHref(shiftMonth(month, -1))}>← Anterior</Link> : <span />}
+      <h3 className="text-center font-semibold capitalize">{monthFormatter.format(new Date(`${firstDay}T12:00:00Z`))}</h3>
+      {month < lastMonth ? <Link className="rounded-lg border px-3 py-2 text-sm hover:bg-muted" href={monthHref(shiftMonth(month, 1))}>Siguiente →</Link> : <span />}
+    </div>
     <div className="mt-5 grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground" aria-hidden="true">
       {(["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const).map((label) => <span key={label}>{label}</span>)}
     </div>

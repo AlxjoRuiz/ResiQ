@@ -5,17 +5,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AvailabilityCalendar, type AvailabilityZone } from "./availability-calendar";
 import { CreateReservationForm, type ReservationAmenity, type ReservationUnit } from "./reservation-forms";
 
-export function ReservationBooking({ propertyId, amenities, units, zones, timeZone, today }: {
+export function ReservationBooking({ propertyId, amenities, units, zones, timeZone, today, month, initialZoneId }: {
   propertyId: string;
   amenities: ReservationAmenity[];
   units: ReservationUnit[];
   zones: AvailabilityZone[];
   timeZone: string;
   today: string;
+  month: string;
+  initialZoneId: string;
 }) {
-  const [amenityId, setAmenityId] = useState(amenities[0]?.id ?? "");
+  const [amenityId, setAmenityId] = useState(initialZoneId);
   return <>
-    <AvailabilityCalendar zones={zones} timeZone={timeZone} today={today} zoneId={amenityId} onZoneChange={setAmenityId} />
+    <AvailabilityCalendar key={month} zones={zones} timeZone={timeZone} today={today} month={month} propertyId={propertyId} zoneId={amenityId} onZoneChange={setAmenityId} />
     <section className="mt-7"><Card><CardContent>
       <CreateReservationForm propertyId={propertyId} amenities={amenities} units={units} amenityId={amenityId} onAmenityChange={setAmenityId} />
     </CardContent></Card></section>
