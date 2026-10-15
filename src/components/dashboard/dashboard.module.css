@@ -58,11 +58,11 @@
 @media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); } .sidebar { top: 0; z-index: 1; height: auto; overflow-y: visible; padding: 16px 18px 12px; border-bottom: 1px solid #e5ebe2; } .brand { padding: 0; } .sidebarLabel { margin: 10px 0 6px; } .navigation { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 5px; } .navigation a { flex-shrink: 0; padding: 9px 11px; } .communityLink { margin-top: 0; padding: 8px 0 0; } .content { padding: 18px; } }
 @media (max-width: 560px) { .canvas { padding: 6px; } .shell { min-height: calc(100vh - 12px); border-radius: 18px; } .content { padding: 16px; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; } .welcomeMain { align-items: flex-start; gap: 12px; } .welcomeIcon { width: 44px; height: 44px; } .metrics, .summaries { grid-template-columns: minmax(0, 1fr); } .metrics > div > div { flex-direction: row; align-items: center; justify-content: space-between; padding: 16px; } .metrics p:last-child { max-width: 55%; } .sectionHeading > span { display: none; } }
 .profileLink { display: flex; align-items: center; gap: 8px; padding: 9px 15px; background: white; color: #405b49; border-radius: 24px; font-size: 13px; }
-.moduleContent { min-width: 0; }
+.moduleContent { min-width: 0; overflow-wrap: anywhere; }
 .moduleContent > main { padding: 0; margin: 0; max-width: none; min-height: 0; width: 100%; }
 .moduleContent [data-slot="card"], .moduleContent section > a, .moduleContent section > div:global(.rounded-2xl) { border-radius: 22px; background-color: white; box-shadow: 0 4px 20px #344a3406; border-color: #e5ebe2; }
 .moduleContent header { border-color: #d9e2d4; }
-.moduleContent input:not([type="checkbox"]):not([type="radio"]), .moduleContent select, .moduleContent textarea { background-color: #fff; border-color: #ccd9c7; border-radius: 12px; }
+.moduleContent input:not([type="checkbox"]):not([type="radio"]), .moduleContent select, .moduleContent textarea { min-width: 0; background-color: #fff; border-color: #ccd9c7; border-radius: 12px; }
 .moduleContent table { background: white; }
 .moduleContent thead { background-color: #e8efdf; }
 .moduleContent th, .moduleContent td { border-color: #e5ebe2; }
