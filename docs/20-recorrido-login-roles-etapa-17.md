@@ -19,4 +19,6 @@ Esta lista permite cerrar lo que las pruebas SQL y HTTP sin sesión no demuestra
 
 Para login, el reingreso a Portería con correo/contraseña y el acceso con cuenta Google al panel de Administración fueron confirmados por Alejandro el 2026-10-09. También confirmó que una contraseña incorrecta muestra «No se pudo iniciar sesión con esos datos» y que abrir `/panel` después vuelve a Iniciar sesión; caso PASS informado por el usuario. Si la cuenta no tiene contraseña, marcar ese caso como no aplicable; la recuperación por correo sigue aplazada hasta contar con dominio verificado.
 
+Seguimiento posterior al cierre de la etapa 17 (2026-10-14): se añadió en `/perfil` la opción para que cuentas autorizadas vinculadas con Google creen su propia contraseña. Falta comprobar con las cuentas de prueba de Administración y Residente que cada una la guarde, cierre sesión y vuelva a entrar con su correo y contraseña, conservando el mismo rol. No registrar contraseñas en este documento.
+
 Registrar para cada caso la fecha, rol, ruta, resultado observado y una captura que no muestre datos sensibles. No marcar como PASS una ruta solo porque no aparece en el menú: debe abrirse directamente. La prueba SQL `stage17_multi_role_tenant_transaction.sql` cubre los límites de una cuenta multirrol en la base de datos, pero no sustituye este recorrido de interfaz.

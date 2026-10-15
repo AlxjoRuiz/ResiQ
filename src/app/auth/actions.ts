@@ -117,6 +117,21 @@ export async function createInvitedPassword(_: AuthState, formData: FormData): P
   redirect("/panel?invitation=accepted");
 }
 
+export async function setAccountPassword(_: AuthState, formData: FormData): Promise<AuthState> {
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "");
+  if (password.length < 8) return { error: "La contraseña debe tener al menos 8 caracteres." };
+  if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (await getAppAccessStatus(supabase, user.id) !== "authorized") return { error: "No pudimos verificar tu acceso." };
+  if (!user.identities?.some((identity) => identity.provider === "google")) return { error: "Esta opción requiere una cuenta vinculada a Google." };
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: "No pudimos guardar la contraseña. Intenta nuevamente." };
+  return { success: "Contraseña guardada. Ya puedes entrar con tu correo y contraseña." };
+}
+
 export async function createInvitation(_: InvitationState, formData: FormData): Promise<InvitationState> {
   const propertyId = field(formData, "propertyId");
   const email = field(formData, "email").toLowerCase();
