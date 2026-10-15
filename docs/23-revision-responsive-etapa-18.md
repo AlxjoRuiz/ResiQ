@@ -8,6 +8,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Navegación de módulos: en móvil y tableta, la barra horizontal centra automáticamente la sección activa al cambiar de página. Aplica a Residente, Portería y Administración porque comparten la misma navegación.
 - Tarjetas y formularios de módulos: los textos largos sin espacios pueden partirse y los campos nativos pueden contraerse dentro del ancho disponible. Detectado por revisión de código; falta comprobación visual.
 - Nueva reserva: el calendario y el formulario comparten la zona seleccionada; cambiarla en cualquiera de los dos actualiza el otro. Evita consultar disponibilidad para una zona y enviar la solicitud para otra, especialmente al desplazarse en móvil. Falta comprobación visual y funcional publicada.
+- Calendario de disponibilidad: los días sin horario de la zona se distinguen en gris y se anuncian como «Sin horario»; si el horario de la víspera cruza la medianoche, se muestra hasta qué hora continúa. Falta comprobación visual publicada.
 
 ## Comprobación visual pendiente
 

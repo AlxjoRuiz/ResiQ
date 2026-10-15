@@ -29,6 +29,13 @@ function weekday(key: string) {
   return day === 0 ? 7 : day;
 }
 
+function hasOpeningOnDay(zone: AvailabilityZone | undefined, key: string) {
+  if (!zone) return false;
+  if (zone.hours.some((hour) => hour.weekday === weekday(key))) return true;
+  return zone.hours.some((hour) =>
+    hour.weekday === weekday(addDays(key, -1)) && hour.closes_at <= hour.opens_at);
+}
+
 function activeOnDay(interval: AvailabilityInterval, key: string, timeZone: string) {
   return dayKey(new Date(interval.starts_at), timeZone) <= key &&
     dayKey(new Date(new Date(interval.ends_at).getTime() - 1), timeZone) >= key;
@@ -45,6 +52,8 @@ export function AvailabilityCalendar({ zones, timeZone, today, zoneId, onZoneCha
   const timeFormatter = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone });
   const selectedIntervals = zone?.intervals.filter((item) => activeOnDay(item, selectedDay, timeZone)) ?? [];
   const selectedHours = zone?.hours.find((item) => item.weekday === weekday(selectedDay));
+  const previousHours = zone?.hours.find((item) =>
+    item.weekday === weekday(addDays(selectedDay, -1)) && item.closes_at <= item.opens_at);
 
   if (zones.length === 0) return null;
 
@@ -70,22 +79,24 @@ export function AvailabilityCalendar({ zones, timeZone, today, zoneId, onZoneCha
         const intervals = zone?.intervals.filter((item) => activeOnDay(item, key, timeZone)) ?? [];
         const hasClosure = intervals.some((item) => item.kind === "closed");
         const hasOccupation = intervals.some((item) => item.kind === "occupied");
-        const label = hasClosure ? "Cierre" : hasOccupation ? "Ocupación" : "Sin cruces";
+        const hasOpening = hasOpeningOnDay(zone, key);
+        const label = !hasOpening ? "Sin horario" : hasClosure ? "Cierre" : hasOccupation ? "Ocupación" : "Sin cruces";
         return <button key={key} type="button" onClick={() => setSelectedDay(key)} aria-pressed={selectedDay === key}
           aria-label={`${dateFormatter.format(new Date(`${key}T12:00:00Z`))}: ${label}`}
-          className={`flex min-w-0 min-h-12 flex-col items-center justify-center rounded-lg border p-1 text-xs transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary sm:min-h-16 sm:items-start sm:justify-start ${selectedDay === key ? "border-primary ring-1 ring-primary" : ""} ${hasClosure ? "bg-rose-50" : hasOccupation ? "bg-amber-50" : "bg-emerald-50"}`}>
+          className={`flex min-w-0 min-h-12 flex-col items-center justify-center rounded-lg border p-1 text-xs transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary sm:min-h-16 sm:items-start sm:justify-start ${selectedDay === key ? "border-primary ring-1 ring-primary" : ""} ${!hasOpening ? "bg-slate-100" : hasClosure ? "bg-rose-50" : hasOccupation ? "bg-amber-50" : "bg-emerald-50"}`}>
           <span className="font-semibold sm:hidden">{Number(key.slice(-2))}</span>
           <span className="hidden font-semibold sm:block">{dateFormatter.format(new Date(`${key}T12:00:00Z`))}</span>
           <span className="mt-1 hidden text-[10px] leading-tight sm:block">{label}</span>
         </button>;
       })}
     </div>
-    <p className="mt-2 text-xs text-muted-foreground sm:hidden">Verde: sin cruces · Amarillo: ocupado · Rojo: cierre. Toca un día para ver sus horarios.</p>
+    <p className="mt-2 text-xs text-muted-foreground sm:hidden">Verde: sin cruces · Amarillo: ocupado · Rojo: cierre · Gris: sin horario. Toca un día para ver sus horarios.</p>
     <div className="mt-5 rounded-xl border bg-background p-4">
       <h3 className="font-semibold">{dateFormatter.format(new Date(`${selectedDay}T12:00:00Z`))} · {zone?.name}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{selectedHours
         ? `Horario del día: ${selectedHours.opens_at.slice(0, 5)}–${selectedHours.closes_at.slice(0, 5)}${selectedHours.closes_at <= selectedHours.opens_at ? " (día siguiente)" : ""}.`
-        : "Esta zona no tiene horario de inicio configurado para este día."}</p>
+        : previousHours ? `Solo continúa el horario del día anterior hasta las ${previousHours.closes_at.slice(0, 5)}.`
+          : "Esta zona no tiene horario configurado para este día."}</p>
       {selectedIntervals.length === 0
         ? <p className="mt-3 text-sm">No hay reservas ni cierres registrados para este día.</p>
         : <ul className="mt-3 grid gap-2">{selectedIntervals.map((item, index) => <li key={`${item.starts_at}-${index}`} className="text-sm">
