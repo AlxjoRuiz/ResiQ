@@ -24,6 +24,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Enlaces de regreso: se revisaron los destinos de páginas de lista, detalle y creación en Residente, Portería y Administración. Las listas dicen «Volver al inicio» cuando llevan al dashboard; los detalles y formularios dicen «Volver a [sección]»; la administración de propiedad y la invitación nombran el destino real. Las rutas no cambiaron. Falta comprobar las nuevas etiquetas publicadas en móvil.
 - Alejandro confirmó el 16 de octubre en iPhone/Safari que «Volver a PQRS» regresa del detalle a la lista y «Volver al inicio» regresa de la lista al panel del conjunto.
 - Cartera en iPhone/Safari: Alejandro confirmó el 16 de octubre que en Torre 1 · 101 se leen completos saldo, obligaciones, comprobantes y pagos sin desplazamiento horizontal; «Volver a Cartera» regresa a la lista.
+- Notificaciones en iPhone/Safari: Alejandro confirmó el 16 de octubre que un aviso de PQRS o Paquetes muestra fecha, hora y detalles legibles, y que «Volver a Notificaciones» regresa a la lista sin desplazamiento horizontal. No se abrió un aviso de Reservas durante la prueba de vencimiento.
 
 ## Comprobación visual pendiente
 
