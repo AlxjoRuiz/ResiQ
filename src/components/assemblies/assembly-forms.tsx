@@ -16,16 +16,16 @@ const labelClass = "block text-sm font-medium";
 function Result({ state }: { state: AssemblyActionState }) { if (state?.error) return <p role="alert" className="text-sm text-destructive">{state.error}</p>; if (state?.success) return <p role="status" className="text-sm text-primary">{state.success}</p>; return null; }
 
 export function CreateAssemblyForm({ propertyId, directory, timeZone }: { propertyId: string; directory: AssemblyDirectoryRow[]; timeZone: string }) {
-  const router = useRouter(), convocationRef = useRef<HTMLInputElement>(null), supportRef = useRef<HTMLInputElement>(null);
+  const router = useRouter(), documentsRef = useRef<HTMLInputElement>(null);
   const requestId = useRef(crypto.randomUUID());
-  const [convocation, setConvocation] = useState<File[]>([]), [support, setSupport] = useState<File[]>([]);
+  const [documents, setDocuments] = useState<File[]>([]);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string>();
   const grouped = useMemo(() => Array.from(new Map(directory.map((row) => [row.unit_id, { unitId: row.unit_id, label: `${row.building_name} · ${row.unit_code}`, members: directory.filter((item) => item.unit_id === row.unit_id) }])).values()), [directory]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    if (convocation.length !== 1 || support.length > 4) return setError("Adjunta una convocatoria y hasta cuatro soportes.");
-    const files = [{ file: convocation[0], kind: "convocation" }, ...support.map((file) => ({ file, kind: "support" }))];
+    if (documents.length < 1 || documents.length > 5) return setError("Selecciona entre uno y cinco archivos. El primero será la convocatoria.");
+    const files = documents.map((file, index) => ({ file, kind: index === 0 ? "convocation" : "support" }));
     if (files.some(({ file }) => !["application/pdf", "image/jpeg", "image/png"].includes(file.type) || !file.name.trim() || file.name.length > 180 || file.size < 1 || file.size > 10 * 1024 * 1024)) return setError("Los documentos deben ser PDF, JPG o PNG de máximo 10 MB cada uno.");
     const data = new FormData(event.currentTarget), stagedIds: string[] = [];
     data.set("requestId", requestId.current);
@@ -62,7 +62,7 @@ export function CreateAssemblyForm({ propertyId, directory, timeZone }: { proper
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" maxLength={5000} placeholder="Información adicional para los convocados." /></label>
     <label className={labelClass}><span className="text-lg font-semibold">2. Orden del día</span><textarea className={areaClass} name="agenda" required placeholder={"Escribe un punto por línea\nVerificación de asistentes\nInforme de administración\nProposiciones"} /><span className="mt-2 block text-xs text-muted-foreground">Cada línea se guardará como un punto ordenado.</span></label>
     <fieldset className="min-w-0 rounded-xl border p-4"><legend className="px-2 text-lg font-semibold">3. Convocados</legend><p className="mb-3 text-xs text-muted-foreground">Selecciona expresamente a cada residente y su apartamento.</p><div className="grid max-h-80 gap-4 overflow-y-auto">{grouped.map((unit) => <div key={unit.unitId}><p className="text-sm font-semibold">{unit.label}</p><div className="mt-2 grid gap-2">{unit.members.map((member) => <label key={member.member_id} className="flex items-center gap-3 text-sm"><input type="checkbox" name="audience" value={`${member.member_id}|${member.unit_id}`} className="size-4 accent-primary" />{member.display_name}</label>)}</div></div>)}</div>{!grouped.length && <p className="text-sm text-muted-foreground">No hay miembros con apartamentos vigentes.</p>}</fieldset>
-    <section className="grid gap-4"><div><h2 className="text-lg font-semibold">4. Documentos privados</h2><p className="mt-1 text-xs text-muted-foreground">La convocatoria es obligatoria. Puedes añadir hasta cuatro soportes.</p></div><div><p className="mb-2 text-sm font-medium">Convocatoria</p><FilePicker inputRef={convocationRef} files={convocation} onFilesChange={setConvocation} title="Elige la convocatoria" hint="PDF, JPG o PNG · máximo 10 MB" disabled={busy}/></div><div><p className="mb-2 text-sm font-medium">Soportes opcionales</p><FilePicker inputRef={supportRef} files={support} onFilesChange={setSupport} title="Elige los soportes" hint="Hasta cuatro PDF, JPG o PNG · 10 MB cada uno" multiple disabled={busy}/></div></section>
+    <section className="grid gap-4"><div><h2 className="text-lg font-semibold">4. Documentos privados</h2><p className="mt-1 text-xs text-muted-foreground">Selecciona de uno a cinco archivos. El primero será la convocatoria obligatoria; los demás serán soportes opcionales.</p></div><FilePicker inputRef={documentsRef} files={documents} onFilesChange={(files) => { setDocuments(files); setError(undefined); }} title="Elige los documentos" hint="PDF, JPG o PNG · máximo 10 MB por archivo" multiple disabled={busy}/>{documents.length > 0 && <ol className="grid gap-1 text-sm" aria-label="Orden de los documentos seleccionados">{documents.map((file, index) => <li key={`${file.name}-${index}`} className="min-w-0 break-words"><span className="font-medium">{index === 0 ? "Convocatoria" : `Soporte ${index}`}:</span> {file.name}</li>)}</ol>}</section>
     <div className="rounded-xl border bg-secondary p-4 text-sm">Al crearla, la asamblea quedará publicada y cada convocado recibirá un aviso interno. Revisa los datos antes de continuar.</div>
     <div className="flex flex-wrap items-center gap-4"><Button disabled={busy || !grouped.length}>{busy ? "Validando y publicando…" : "Crear y publicar asamblea"}</Button>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>
   </form>;

@@ -1,6 +1,6 @@
 # Asambleas: creación y publicación en un solo flujo
 
-Alejandro aprobó el 16 de octubre de 2026 quitar el paso de borrador para nuevas asambleas. El formulario único reúne datos, orden del día, convocados y documentos. Exige una convocatoria PDF/JPG/PNG de hasta 10 MB y admite hasta cuatro soportes. El botón final crea y publica la asamblea y genera un aviso interno para cada convocado.
+Alejandro aprobó el 16 de octubre de 2026 quitar el paso de borrador para nuevas asambleas. El formulario único reúne datos, orden del día, convocados y documentos. Un solo selector acepta de uno a cinco PDF/JPG/PNG de hasta 10 MB cada uno: el primero se registra como convocatoria obligatoria y los demás como soportes. El orden y el papel de cada archivo se muestran antes de publicar. El botón final crea y publica la asamblea y genera un aviso interno para cada convocado.
 
 ## Seguridad y consistencia
 
