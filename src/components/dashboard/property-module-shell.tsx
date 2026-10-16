@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Bell, Building2, House, UserRound } from "lucide-react";
 import { adminModules, conciergeModules, residentModules } from "./navigation";
 import styles from "./dashboard.module.css";
 
 export function PropertyModuleShell({ children, propertyId, propertyName, roles }: { children: ReactNode; propertyId: string; propertyName: string; roles: string[] }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const navigationRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!window.matchMedia("(max-width: 900px)").matches) return;
@@ -24,6 +25,8 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles 
   }, [pathname]);
   const base = `/panel/propiedades/${propertyId}`;
   if (pathname === `${base}/dashboard`) return children;
+  const originNoticeId = searchParams.get("desdeAviso");
+  const showNoticeReturn = !pathname.startsWith(`${base}/notificaciones`) && originNoticeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(originNoticeId);
   const view = roles.includes("administrator") ? "administracion" : roles.includes("concierge") ? "porteria" : "residente";
   const label = view === "administracion" ? "Administración" : view === "porteria" ? "Portería" : "Residente";
   const modules = view === "administracion" ? adminModules(propertyId) : view === "porteria" ? conciergeModules(propertyId) : residentModules(propertyId);
@@ -34,6 +37,6 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles 
       <Link href={`${base}/notificaciones`} aria-current={pathname.startsWith(`${base}/notificaciones`) ? "page" : undefined} className={pathname.startsWith(`${base}/notificaciones`) ? styles.activeLink : undefined}><Bell size={19} aria-hidden="true" />Notificaciones</Link>
       <Link href={`${base}/comunicados`} aria-current={pathname.startsWith(`${base}/comunicados`) ? "page" : undefined} className={pathname.startsWith(`${base}/comunicados`) ? styles.activeLink : undefined}><Bell size={19} aria-hidden="true" />Comunicados</Link>
     </nav><Link href="/panel" className={styles.communityLink}>← Mis comunidades</Link></aside>
-    <div className={styles.content}><header className={styles.topbar}><div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{propertyName}</span></div><Link href="/perfil" className={styles.profileLink}><UserRound size={16} aria-hidden="true" />{label}</Link></header><div className={styles.moduleContent}>{children}</div></div>
+    <div className={styles.content}><header className={styles.topbar}><div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{propertyName}</span></div><Link href="/perfil" className={styles.profileLink}><UserRound size={16} aria-hidden="true" />{label}</Link></header><div className={styles.moduleContent}>{showNoticeReturn && <Link href={`${base}/notificaciones/${originNoticeId}`} className="my-4 inline-flex rounded-lg border px-3 py-2 text-sm font-medium text-primary hover:bg-muted">← Volver al aviso</Link>}{children}</div></div>
   </div></div>;
 }
