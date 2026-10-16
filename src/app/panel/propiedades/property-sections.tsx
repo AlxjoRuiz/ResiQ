@@ -25,7 +25,7 @@ export async function PropertyStructureSection({ propertyId }: { propertyId: str
 export async function PropertyMembersSection({ propertyId }: { propertyId: string }) {
   const supabase = await createClient();
   const [{ data: memberData, error: memberError }, { data: unitData, error: unitError }] = await Promise.all([
-    supabase.from("property_members").select("id,roles,status,profiles(display_name),unit_memberships(id,relationship,valid_to,units(id,code,buildings(name)))").eq("property_id", propertyId).order("joined_at"),
+    supabase.from("property_members").select("id,roles,status,profiles!property_members_user_id_fkey(display_name),unit_memberships(id,relationship,valid_to,units(id,code,buildings(name)))").eq("property_id", propertyId).order("joined_at"),
     supabase.from("units").select("id,code,buildings(name)").eq("property_id", propertyId).eq("status", "active").order("code"),
   ]);
   if (memberError || unitError) throw new Error("No se pudieron cargar los residentes y sus accesos.");
