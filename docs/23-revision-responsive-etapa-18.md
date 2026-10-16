@@ -28,6 +28,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Comunicados en iPhone/Safari: Alejandro confirmó el 16 de octubre que un comunicado publicado muestra completos título, fecha y mensaje, sin desplazamiento horizontal; «Volver a Comunicados» regresa a la lista.
 - Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que su Inicio se ve completo y que puede recorrer la navegación horizontal hasta Notificaciones y Comunicados sin desplazar toda la página lateralmente.
 - Paquetes de Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que la tarjeta y el detalle del paquete de prueba entregado muestran completos datos e historial, sin desplazamiento horizontal; «Volver a Paquetes y recibos» funciona.
+- Visitas de Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que una visita finalizada muestra completos horarios, movimientos e historial; «Volver a Visitas» funciona sin desplazamiento horizontal ni controles cortados.
 
 ## Comprobación visual pendiente
 
