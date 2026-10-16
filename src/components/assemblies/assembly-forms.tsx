@@ -15,6 +15,39 @@ const areaClass = "mt-2 min-h-28 w-full rounded-lg border bg-white px-3 py-3 tex
 const labelClass = "block text-sm font-medium";
 function Result({ state }: { state: AssemblyActionState }) { if (state?.error) return <p role="alert" className="text-sm text-destructive">{state.error}</p>; if (state?.success) return <p role="status" className="text-sm text-primary">{state.success}</p>; return null; }
 
+function NumberedAgendaInput() {
+  const [points, setPoints] = useState([""]);
+  const inputs = useRef<(HTMLInputElement | null)[]>([]);
+  function changePoint(index: number, value: string) { setPoints((current) => current.map((point, position) => position === index ? value : point)); }
+  function addPoint(index = points.length) {
+    if (points.length >= 100) return;
+    setPoints((current) => [...current.slice(0, index), "", ...current.slice(index)]);
+    requestAnimationFrame(() => inputs.current[index]?.focus());
+  }
+  function removePoint(index: number) {
+    if (points.length === 1) return;
+    setPoints((current) => current.filter((_, position) => position !== index));
+    requestAnimationFrame(() => inputs.current[Math.max(0, index - 1)]?.focus());
+  }
+  function pastePoints(event: React.ClipboardEvent<HTMLInputElement>, index: number) {
+    const pasted = event.clipboardData.getData("text");
+    if (!/\r|\n/.test(pasted)) return;
+    event.preventDefault();
+    const input = event.currentTarget, before = points[index].slice(0, input.selectionStart ?? 0);
+    const after = points[index].slice(input.selectionEnd ?? points[index].length);
+    const lines = pasted.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const inserted = lines.slice(0, 100 - points.length + 1);
+    const replacement = inserted.map((line, position) => `${position === 0 ? before : ""}${line}${position === inserted.length - 1 ? after : ""}`.slice(0, 180));
+    setPoints((current) => [...current.slice(0, index), ...replacement, ...current.slice(index + 1)]);
+    requestAnimationFrame(() => inputs.current[index + replacement.length - 1]?.focus());
+  }
+  return <div><h2 className="text-lg font-semibold">2. Orden del día</h2><p className="mt-1 text-xs text-muted-foreground">Cada número será un punto de la agenda publicada.</p><input type="hidden" name="agenda" value={points.join("\n")} />
+    <div className="mt-3 grid gap-2 rounded-xl border bg-white p-3">{points.map((point, index) => <div key={index} className="flex min-w-0 items-center gap-2"><span aria-hidden="true" className="w-7 shrink-0 text-right text-sm font-semibold text-primary">{index + 1}.</span><label className="sr-only" htmlFor={`agenda-point-${index}`}>Punto {index + 1}</label><input id={`agenda-point-${index}`} ref={(element) => { inputs.current[index] = element; }} className="h-11 min-w-0 flex-1 rounded-lg border px-3 text-base outline-none focus:ring-2 focus:ring-ring sm:text-sm" value={point} onChange={(event) => changePoint(index, event.target.value)} onPaste={(event) => pastePoints(event, index)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addPoint(index + 1); } else if (event.key === "Backspace" && !point && points.length > 1) { event.preventDefault(); removePoint(index); } }} minLength={3} maxLength={180} required placeholder="Escribe un punto" /><Button type="button" size="sm" variant="ghost" disabled={points.length === 1} onClick={() => removePoint(index)} aria-label={`Quitar punto ${index + 1}`}>Quitar</Button></div>)}</div>
+    <Button type="button" size="sm" variant="outline" className="mt-3" disabled={points.length >= 100} onClick={() => addPoint()}>Añadir punto</Button><p className="mt-2 text-xs text-muted-foreground">También puedes pulsar Enter para añadir el siguiente punto. Máximo 100.</p>
+  </div>;
+}
+
 export function CreateAssemblyForm({ propertyId, directory, timeZone }: { propertyId: string; directory: AssemblyDirectoryRow[]; timeZone: string }) {
   const router = useRouter(), documentsRef = useRef<HTMLInputElement>(null);
   const requestId = useRef(crypto.randomUUID());
@@ -69,7 +102,7 @@ export function CreateAssemblyForm({ propertyId, directory, timeZone }: { proper
     <label className={labelClass}>Título<input className={inputClass} name="title" minLength={4} maxLength={180} required placeholder="Asamblea general ordinaria" /></label>
     <label className={labelClass}>Lugar o enlace<input className={inputClass} name="location" minLength={3} maxLength={240} required placeholder="Salón comunal" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" maxLength={5000} placeholder="Información adicional para los convocados." /></label>
-    <label className={labelClass}><span className="text-lg font-semibold">2. Orden del día</span><textarea className={areaClass} name="agenda" required placeholder={"Escribe un punto por línea\nVerificación de asistentes\nInforme de administración\nProposiciones"} /><span className="mt-2 block text-xs text-muted-foreground">Cada línea se guardará como un punto ordenado.</span></label>
+    <NumberedAgendaInput />
     <fieldset className="min-w-0 rounded-xl border p-4"><legend className="px-2 text-lg font-semibold">3. Convocados</legend><p className="mb-3 text-xs text-muted-foreground">Selecciona expresamente a cada residente y su apartamento.</p><div className="mb-4 flex flex-wrap items-center gap-3"><Button type="button" size="sm" variant="outline" disabled={busy || !audienceOptions.length || audienceOptions.length > 500} onClick={() => setSelectedResidents(new Set(audienceOptions))}>Seleccionar todos los residentes</Button><Button type="button" size="sm" variant="ghost" disabled={busy || selectedResidents.size === 0} onClick={() => setSelectedResidents(new Set())}>Limpiar selección</Button><span className="text-xs text-muted-foreground">{selectedResidents.size} de {audienceOptions.length} seleccionados</span></div>{audienceOptions.length > 500 && <p className="mb-3 text-xs text-destructive">El máximo por asamblea es 500 convocados. Selecciona los residentes individualmente.</p>}<div className="grid max-h-80 gap-4 overflow-y-auto">{grouped.map((unit) => <div key={unit.unitId}><p className="text-sm font-semibold">{unit.label}</p><div className="mt-2 grid gap-2">{unit.members.map((member) => { const value = `${member.member_id}|${member.unit_id}`; return <label key={value} className="flex items-center gap-3 text-sm"><input type="checkbox" name="audience" value={value} checked={selectedResidents.has(value)} onChange={() => toggleResident(value)} disabled={busy} className="size-4 accent-primary" />{member.display_name}</label>; })}</div></div>)}</div>{!grouped.length && <p className="text-sm text-muted-foreground">No hay miembros con apartamentos vigentes.</p>}</fieldset>
     <section className="grid gap-4"><div><h2 className="text-lg font-semibold">4. Documentos privados</h2><p className="mt-1 text-xs text-muted-foreground">Selecciona de uno a cinco archivos. El primero será la convocatoria obligatoria; los demás serán soportes opcionales.</p></div><FilePicker inputRef={documentsRef} files={documents} onFilesChange={(files) => { setDocuments(files); setError(undefined); }} title="Elige los documentos" hint="PDF, JPG o PNG · máximo 10 MB por archivo" multiple disabled={busy}/>{documents.length > 0 && <ol className="grid gap-1 text-sm" aria-label="Orden de los documentos seleccionados">{documents.map((file, index) => <li key={`${file.name}-${index}`} className="min-w-0 break-words"><span className="font-medium">{index === 0 ? "Convocatoria" : `Soporte ${index}`}:</span> {file.name}</li>)}</ol>}</section>
     <div className="rounded-xl border bg-secondary p-4 text-sm">Al crearla, la asamblea quedará publicada y cada convocado recibirá un aviso interno. Revisa los datos antes de continuar.</div>
