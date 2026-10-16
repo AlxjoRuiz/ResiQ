@@ -63,7 +63,7 @@ export function MemberForm({ propertyId, member }: { propertyId: string; member:
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="memberId" value={member.id} />
     <fieldset className="flex h-11 items-center gap-4 rounded-lg border px-3"><legend className="sr-only">Roles</legend><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="member" defaultChecked={member.roles.includes("member")} />Miembro</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="concierge" defaultChecked={member.roles.includes("concierge")} />Portería</label></fieldset>
-    <label className={labelClass}>Estado<select className={inputClass} name="status" defaultValue={member.status}><option value="active">Activo</option><option value="suspended">Suspendido</option><option value="revoked">Revocado</option></select></label>
+    <label className={labelClass}>Acceso a la propiedad<select className={inputClass} name="status" defaultValue={member.status}><option value="active">Activo</option><option value="suspended">Suspendido temporalmente</option><option value="revoked">Revocado — quitar acceso</option></select></label>
     <Button variant="outline" disabled={pending}>{pending ? "Guardando…" : "Actualizar acceso"}</Button>
     <div className="sm:col-span-3"><Result state={state} /></div>
   </form>;
