@@ -49,7 +49,7 @@ function NumberedAgendaInput() {
 }
 
 export function CreateAssemblyForm({ propertyId, directory, timeZone }: { propertyId: string; directory: AssemblyDirectoryRow[]; timeZone: string }) {
-  const router = useRouter(), documentsRef = useRef<HTMLInputElement>(null);
+  const router = useRouter(), documentsRef = useRef<HTMLInputElement>(null), moreDocumentsRef = useRef<HTMLInputElement>(null);
   const requestId = useRef(crypto.randomUUID());
   const [documents, setDocuments] = useState<File[]>([]);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string>();
@@ -62,6 +62,18 @@ export function CreateAssemblyForm({ propertyId, directory, timeZone }: { proper
       if (next.has(value)) next.delete(value); else next.add(value);
       return next;
     });
+  }
+  function addDocuments(files: File[]) {
+    const existing = new Set(documents.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
+    const additions = files.filter((file) => {
+      const key = `${file.name}:${file.size}:${file.lastModified}`;
+      if (existing.has(key)) return false;
+      existing.add(key);
+      return true;
+    });
+    if (documents.length + additions.length > 5) return setError("Puedes seleccionar máximo cinco documentos.");
+    setDocuments((current) => [...current, ...additions]);
+    setError(undefined);
   }
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,7 +116,7 @@ export function CreateAssemblyForm({ propertyId, directory, timeZone }: { proper
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" maxLength={5000} placeholder="Información adicional para los convocados." /></label>
     <NumberedAgendaInput />
     <fieldset className="min-w-0 rounded-xl border p-4"><legend className="px-2 text-lg font-semibold">3. Convocados</legend><p className="mb-3 text-xs text-muted-foreground">Selecciona expresamente a cada residente y su apartamento.</p><div className="mb-4 flex flex-wrap items-center gap-3"><Button type="button" size="sm" variant="outline" disabled={busy || !audienceOptions.length || audienceOptions.length > 500} onClick={() => setSelectedResidents(new Set(audienceOptions))}>Seleccionar todos los residentes</Button><Button type="button" size="sm" variant="ghost" disabled={busy || selectedResidents.size === 0} onClick={() => setSelectedResidents(new Set())}>Limpiar selección</Button><span className="text-xs text-muted-foreground">{selectedResidents.size} de {audienceOptions.length} seleccionados</span></div>{audienceOptions.length > 500 && <p className="mb-3 text-xs text-destructive">El máximo por asamblea es 500 convocados. Selecciona los residentes individualmente.</p>}<div className="grid max-h-80 gap-4 overflow-y-auto">{grouped.map((unit) => <div key={unit.unitId}><p className="text-sm font-semibold">{unit.label}</p><div className="mt-2 grid gap-2">{unit.members.map((member) => { const value = `${member.member_id}|${member.unit_id}`; return <label key={value} className="flex items-center gap-3 text-sm"><input type="checkbox" name="audience" value={value} checked={selectedResidents.has(value)} onChange={() => toggleResident(value)} disabled={busy} className="size-4 accent-primary" />{member.display_name}</label>; })}</div></div>)}</div>{!grouped.length && <p className="text-sm text-muted-foreground">No hay miembros con apartamentos vigentes.</p>}</fieldset>
-    <section className="grid gap-4"><div><h2 className="text-lg font-semibold">4. Documentos privados</h2><p className="mt-1 text-xs text-muted-foreground">Selecciona de uno a cinco archivos. El primero será la convocatoria obligatoria; los demás serán soportes opcionales.</p></div><FilePicker inputRef={documentsRef} files={documents} onFilesChange={(files) => { setDocuments(files); setError(undefined); }} title="Elige los documentos" hint="PDF, JPG o PNG · máximo 10 MB por archivo" multiple disabled={busy}/>{documents.length > 0 && <ol className="grid gap-1 text-sm" aria-label="Orden de los documentos seleccionados">{documents.map((file, index) => <li key={`${file.name}-${index}`} className="min-w-0 break-words"><span className="font-medium">{index === 0 ? "Convocatoria" : `Soporte ${index}`}:</span> {file.name}</li>)}</ol>}</section>
+    <section className="grid gap-4"><div><h2 className="text-lg font-semibold">4. Documentos privados</h2><p className="mt-1 text-xs text-muted-foreground">Selecciona de uno a cinco archivos. El primero será la convocatoria obligatoria; los demás serán soportes opcionales.</p></div><FilePicker inputRef={documentsRef} files={documents} onFilesChange={(files) => { setDocuments(files); setError(undefined); }} title="Elige los documentos" hint="PDF, JPG o PNG · máximo 10 MB por archivo" multiple disabled={busy}/><input ref={moreDocumentsRef} type="file" accept="application/pdf,image/jpeg,image/png" multiple className="sr-only" aria-label="Agregar más archivos" tabIndex={-1} onChange={(event) => { addDocuments(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ""; }} /><div><Button type="button" size="sm" variant="outline" disabled={busy || documents.length >= 5} onClick={() => moreDocumentsRef.current?.click()}>Agregar más archivos</Button></div>{documents.length > 0 && <ol className="grid gap-2 text-sm" aria-label="Orden de los documentos seleccionados">{documents.map((file, index) => <li key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border px-3 py-2"><span className="min-w-0 break-words"><span className="font-medium">{index === 0 ? "Convocatoria" : `Soporte ${index}`}:</span> {file.name}</span><Button type="button" size="sm" variant="ghost" disabled={busy} aria-label={`Quitar ${file.name}`} onClick={() => { setDocuments((current) => current.filter((_, position) => position !== index)); setError(undefined); }}>Quitar</Button></li>)}</ol>}</section>
     <div className="rounded-xl border bg-secondary p-4 text-sm">Al crearla, la asamblea quedará publicada y cada convocado recibirá un aviso interno. Revisa los datos antes de continuar.</div>
     <div className="flex flex-wrap items-center gap-4"><Button disabled={busy || !grouped.length}>{busy ? "Validando y publicando…" : "Crear y publicar asamblea"}</Button>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}</div>
   </form>;
