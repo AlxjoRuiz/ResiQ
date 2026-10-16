@@ -17,6 +17,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Notificaciones: «Ver aviso» abre primero el resumen completo dentro de Notificaciones, con regreso a la lista. «Abrir sección relacionada» conserva «Volver al aviso» también al pasar de una lista a un detalle de la misma sección. El flujo usa la navegación compartida de Residente, Portería y Administración y aplica a los nueve tipos de aviso. Falta comprobar el recorrido publicado sin usar avisos de Reservas antes de la prueba de vencimiento del lunes.
 - Detalle del aviso: a petición de Alejandro se quitó «Abrir sección relacionada». El aviso muestra día y hora en Colombia y, si el registro es visible para el destinatario, fechas y contexto de Reservas, Visitas, Paquetes, PQRS, Llamados, Asambleas, Comunicados y Cartera. La consulta de Reservas es de solo lectura; falta comprobar el cambio publicado sin abrir avisos de Reservas hasta el lunes.
 - Llamados en iPhone/Safari: Alejandro confirmó el 16 de octubre que la lista y el llamado técnico existente muestran completos el motivo, la evidencia y el historial, sin desplazamiento horizontal ni controles cortados.
+- Asambleas en iPhone/Safari: Alejandro confirmó el 16 de octubre que la asamblea de prueba publicada muestra completos fecha, orden del día, documento privado e historial, sin problemas de ancho ni controles cortados.
 
 ## Comprobación visual pendiente
 
