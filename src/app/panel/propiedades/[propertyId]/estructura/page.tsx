@@ -15,7 +15,7 @@ export default async function PropertyStructurePage({ params }: { params: Promis
   const buildingOptions = buildings.map(({ id, name, active }) => ({ id, name, active }));
 
   return <main className="mx-auto min-h-screen max-w-6xl px-6 py-8 sm:px-10">
-    <Button asChild variant="ghost" size="sm"><Link href={`/panel/propiedades/${propertyId}`}>← Volver a {property.name}</Link></Button>
+    <Button asChild variant="ghost" size="sm"><Link href={`/panel/propiedades/${propertyId}`}>← Volver a la propiedad</Link></Button>
     <header className="mt-5 border-b pb-6"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Estructura</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Torres y apartamentos</h1><p className="mt-2 text-sm text-muted-foreground">Los registros se desactivan para conservar su historial.</p></header>
     <Card className="mt-8"><CardContent><h2 className="mb-5 text-lg font-semibold">Crear torre o bloque</h2><BuildingForm propertyId={propertyId} /></CardContent></Card>
     <Card className="mt-5"><CardContent><h2 className="mb-5 text-lg font-semibold">Crear apartamento</h2><UnitForm propertyId={propertyId} buildings={buildingOptions} /></CardContent></Card>

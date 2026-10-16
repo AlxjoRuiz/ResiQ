@@ -91,7 +91,7 @@ export default async function ReservationsPage({ params, searchParams }: {
   return <main className="mx-auto min-h-screen max-w-6xl px-5 py-8 sm:px-10">
     <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
       <div>
-        <Link href={`/panel/propiedades/${propertyId}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Panel de {property.name}</Link>
+        <Link href={`/panel/propiedades/${propertyId}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Volver al inicio</Link>
         <p className="mt-5 text-xs font-semibold tracking-wider text-primary uppercase">Zonas comunes</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Reservas</h1>
         <p className="mt-2 text-sm text-muted-foreground">{administrator ? "Aprueba solicitudes y consulta la agenda completa." : concierge ? "Consulta la agenda operativa de la propiedad." : "Consulta y administra tus propias reservas."}</p>

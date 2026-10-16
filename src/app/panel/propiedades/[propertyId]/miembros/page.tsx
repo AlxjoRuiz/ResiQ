@@ -26,7 +26,7 @@ export default async function PropertyMembersPage({ params }: { params: Promise<
   });
 
   return <main className="mx-auto min-h-screen max-w-6xl px-6 py-8 sm:px-10">
-    <Button asChild variant="ghost" size="sm"><Link href={`/panel/propiedades/${propertyId}`}>← Volver a {property.name}</Link></Button>
+    <Button asChild variant="ghost" size="sm"><Link href={`/panel/propiedades/${propertyId}`}>← Volver a la propiedad</Link></Button>
     <header className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b pb-6"><div><p className="text-xs font-semibold tracking-wider text-primary uppercase">Accesos</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Miembros y apartamentos</h1><p className="mt-2 text-sm text-muted-foreground">Una persona puede pertenecer a varias propiedades y tener varios vínculos.</p></div><Button asChild><Link href={`/panel/invitaciones/nueva?property=${propertyId}`}>Invitar miembro</Link></Button></header>
     <section className="mt-8 space-y-5">{members.map((member) => {
       const profile = single(member.profiles);

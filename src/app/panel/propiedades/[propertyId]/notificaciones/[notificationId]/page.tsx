@@ -80,7 +80,7 @@ export default async function NotificationDetailPage({ params }: { params: Promi
   }
 
   return <main className="mx-auto min-h-screen max-w-3xl px-5 py-8 sm:px-10">
-    <Link href={`/panel/propiedades/${propertyId}/notificaciones`} className="text-sm text-muted-foreground hover:text-foreground">← Notificaciones de {property.name}</Link>
+    <Link href={`/panel/propiedades/${propertyId}/notificaciones`} className="text-sm text-muted-foreground hover:text-foreground">← Volver a Notificaciones</Link>
     <article className="mt-6 rounded-2xl border bg-card p-6 sm:p-8">
       <div className="flex flex-wrap justify-between gap-3"><p className="text-xs font-semibold tracking-wider text-primary uppercase">{noticeCategoryLabel(notice.target_type)}</p><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{notice.read_at ? "Leída" : "Sin leer"}</span></div>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{notice.subject}</h1>

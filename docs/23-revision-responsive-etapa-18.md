@@ -20,6 +20,8 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Asambleas en iPhone/Safari: Alejandro confirmó el 16 de octubre que la asamblea de prueba publicada muestra completos fecha, orden del día, documento privado e historial, sin problemas de ancho ni controles cortados.
 - Paquetes en iPhone/Safari: Alejandro confirmó el 16 de octubre que el paquete de prueba entregado muestra completos estado, descripción e historial; el regreso a la lista funciona y no hay desplazamiento horizontal.
 - Visitas en iPhone/Safari: Alejandro confirmó el 16 de octubre que una visita finalizada muestra completos visitante, horas de ingreso y salida e historial; el regreso a la lista funciona y no hay desplazamiento horizontal.
+- PQRS en iPhone/Safari: Alejandro confirmó el 16 de octubre que una solicitud cerrada muestra completos asunto, conversación e historial, sin desplazamiento horizontal. Señaló que el enlace «PQRS de [nombre del conjunto]» no describía claramente el regreso.
+- Enlaces de regreso: se revisaron los destinos de páginas de lista, detalle y creación en Residente, Portería y Administración. Las listas dicen «Volver al inicio» cuando llevan al dashboard; los detalles y formularios dicen «Volver a [sección]»; la administración de propiedad y la invitación nombran el destino real. Las rutas no cambiaron. Falta comprobar las nuevas etiquetas publicadas en móvil.
 
 ## Comprobación visual pendiente
 
