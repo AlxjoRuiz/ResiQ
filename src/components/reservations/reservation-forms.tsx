@@ -25,6 +25,17 @@ function TimeChoice({ name, value, disabled }: { name: string; value: string; di
   </select>;
 }
 
+function ClosurePicker({ name, type, label }: { name: string; type: "date" | "time"; label: string }) {
+  const [value, setValue] = useState("");
+  const display = type === "date" && value ? value.split("-").reverse().join("/") : value;
+  return <label className="block min-w-0 text-xs text-muted-foreground">{label}
+    <span className="relative mt-2 flex h-11 min-w-0 items-center overflow-hidden rounded-lg border bg-white px-3 text-base text-foreground focus-within:ring-2 focus-within:ring-ring">
+      <span className="block min-w-0 truncate">{display || (type === "date" ? "Selecciona la fecha" : "Selecciona la hora")}</span>
+      <input className="absolute inset-0 h-full w-full min-w-0 cursor-pointer opacity-0" name={name} type={type} value={value} onChange={(event) => setValue(event.target.value)} onClick={(event) => { try { event.currentTarget.showPicker?.(); } catch { /* Safari opens its native picker on focus. */ } }} required aria-label={label}/>
+    </span>
+  </label>;
+}
+
 function Result({ state }: { state: ReservationState }) {
   if (state?.error) return <p role="alert" className="text-sm text-destructive">{state.error}</p>;
   if (state?.success) return <p role="status" className="text-sm text-primary">{state.success}</p>;
@@ -62,8 +73,8 @@ export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; am
     <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenityId}/>
     <p className="text-sm font-semibold">Programar cierre</p>
     <div className="grid min-w-0 gap-3 lg:grid-cols-2">
-      <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Inicio</legend><label className="block min-w-0 text-xs text-muted-foreground">Fecha<input className={inputClass} name="startsDate" type="date" required/></label><label className="block min-w-0 text-xs text-muted-foreground">Hora<input className={inputClass} name="startsTime" type="time" required/></label></fieldset>
-      <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Fin</legend><label className="block min-w-0 text-xs text-muted-foreground">Fecha<input className={inputClass} name="endsDate" type="date" required/></label><label className="block min-w-0 text-xs text-muted-foreground">Hora<input className={inputClass} name="endsTime" type="time" required/></label></fieldset>
+      <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Inicio</legend><ClosurePicker name="startsDate" type="date" label="Fecha de inicio"/><ClosurePicker name="startsTime" type="time" label="Hora de inicio"/></fieldset>
+      <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Fin</legend><ClosurePicker name="endsDate" type="date" label="Fecha de fin"/><ClosurePicker name="endsTime" type="time" label="Hora de fin"/></fieldset>
     </div>
     <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label>
     <div className="flex flex-wrap items-center gap-4"><Button size="sm" variant="outline" disabled={pending}>{pending?"Programando…":"Programar cierre"}</Button><Result state={state}/></div>
