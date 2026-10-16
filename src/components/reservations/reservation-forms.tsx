@@ -51,7 +51,18 @@ export function ReservationPolicyForm({ propertyId, pendingHoldMinutes }: { prop
 
 export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; amenityId: string }) {
   const [state, action, pending] = useActionState(createAmenityBlackout, undefined as ReservationState);
-  return <form action={action} className="grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-4"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenityId}/><p className="text-sm font-semibold">Programar cierre</p><div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2"><label className={labelClass}>Desde<input className={inputClass} name="startsAt" type="datetime-local" required/></label><label className={labelClass}>Hasta<input className={inputClass} name="endsAt" type="datetime-local" required/></label></div><label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-4"><Button size="sm" variant="outline" disabled={pending}>{pending?"Programando…":"Programar cierre"}</Button><Result state={state}/></div></form>;
+  return <form action={action} className="grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-3 sm:p-4">
+    <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenityId}/>
+    <p className="text-sm font-semibold">Programar cierre</p>
+    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+      <label className={labelClass}>Fecha de inicio<input className={inputClass} name="startsDate" type="date" required/></label>
+      <label className={labelClass}>Hora de inicio<input className={inputClass} name="startsTime" type="time" required/></label>
+      <label className={labelClass}>Fecha de fin<input className={inputClass} name="endsDate" type="date" required/></label>
+      <label className={labelClass}>Hora de fin<input className={inputClass} name="endsTime" type="time" required/></label>
+    </div>
+    <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label>
+    <div className="flex flex-wrap items-center gap-4"><Button size="sm" variant="outline" disabled={pending}>{pending?"Programando…":"Programar cierre"}</Button><Result state={state}/></div>
+  </form>;
 }
 
 export function DeleteBlackoutForm({ propertyId, blackoutId }: { propertyId: string; blackoutId: string }) {

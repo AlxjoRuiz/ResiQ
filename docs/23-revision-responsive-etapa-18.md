@@ -33,6 +33,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Alejandro confirmó el 16 de octubre que el aviso de Visitas en Portería distingue claramente «Llegada prevista», «Salida prevista» e «Ingresos y salidas reales» en líneas propias. El formato de avisos de Reservas sigue sin revisión visual hasta el lunes.
 - Administración en iPhone/Safari: Alejandro confirmó el 16 de octubre que el Inicio y sus cuadros de resumen se ven completos; puede recorrer la navegación horizontal hasta Zonas, Notificaciones y Comunicados sin desplazar toda la página lateralmente.
 - Zonas en Administración, iPhone/Safari: Alejandro detectó que los campos de horarios semanales se montaban unos sobre otros y que «Programar cierre» se salía del cuadro. Se ajustaron las columnas móviles, el ancho mínimo de las celdas y los controles de hora/fecha; la compilación pasó. Falta comprobar la corrección publicada en su dispositivo, sin guardar cambios de configuración.
+- Alejandro comprobó que el primer ajuste de Zonas no resolvió el problema. Se redujo el espacio interior de las tarjetas en móvil y «Programar cierre» pasó a cuatro controles separados (fecha y hora de inicio; fecha y hora de fin) para evitar el ancho mínimo del selector combinado de Safari. Falta comprobar esta segunda corrección publicada, sin guardar cambios.
 
 ## Comprobación visual pendiente
 
