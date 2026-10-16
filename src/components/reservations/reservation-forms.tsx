@@ -61,9 +61,9 @@ export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; am
   return <form action={action} className="-mx-4 grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-2 sm:mx-0 sm:p-4">
     <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenityId}/>
     <p className="text-sm font-semibold">Programar cierre</p>
-    <div className="flex min-w-0 flex-col gap-3 lg:flex-row">
-      <label className="block min-w-0 flex-1 text-sm font-medium">Inicio<input className={`${inputClass} zone-date-time`} name="startsAt" type="datetime-local" required/></label>
-      <label className="block min-w-0 flex-1 text-sm font-medium">Fin<input className={`${inputClass} zone-date-time`} name="endsAt" type="datetime-local" required/></label>
+    <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+      <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Inicio</legend><label className="block min-w-0 text-xs text-muted-foreground">Fecha<input className={inputClass} name="startsDate" type="date" required/></label><label className="block min-w-0 text-xs text-muted-foreground">Hora<input className={inputClass} name="startsTime" type="time" required/></label></fieldset>
+      <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Fin</legend><label className="block min-w-0 text-xs text-muted-foreground">Fecha<input className={inputClass} name="endsDate" type="date" required/></label><label className="block min-w-0 text-xs text-muted-foreground">Hora<input className={inputClass} name="endsTime" type="time" required/></label></fieldset>
     </div>
     <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label>
     <div className="flex flex-wrap items-center gap-4"><Button size="sm" variant="outline" disabled={pending}>{pending?"Programando…":"Programar cierre"}</Button><Result state={state}/></div>

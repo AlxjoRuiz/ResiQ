@@ -60,8 +60,11 @@ export async function updateReservationPolicy(_: ReservationState, data: FormDat
 }
 
 export async function createAmenityBlackout(_: ReservationState, data: FormData): Promise<ReservationState> {
-  const propertyId = field(data, "propertyId"), amenityId = field(data, "amenityId"), startsAt = field(data, "startsAt"), endsAt = field(data, "endsAt"), reason = field(data, "reason");
-  if (!uuidPattern.test(propertyId) || !uuidPattern.test(amenityId) || !startsAt || !endsAt || new Date(endsAt) <= new Date(startsAt) || reason.length < 3 || reason.length > 500) return { error: "Completa un cierre válido." };
+  const propertyId = field(data, "propertyId"), amenityId = field(data, "amenityId"), startsDate = field(data, "startsDate"), startsTime = field(data, "startsTime"), endsDate = field(data, "endsDate"), endsTime = field(data, "endsTime"), reason = field(data, "reason");
+  const validDate = /^\d{4}-\d{2}-\d{2}$/, validTime = /^\d{2}:\d{2}$/;
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(amenityId) || !validDate.test(startsDate) || !validTime.test(startsTime) || !validDate.test(endsDate) || !validTime.test(endsTime) || reason.length < 3 || reason.length > 500) return { error: "Completa un cierre válido." };
+  const startsAt = `${startsDate}T${startsTime}`, endsAt = `${endsDate}T${endsTime}`;
+  if (Number.isNaN(Date.parse(startsAt)) || Number.isNaN(Date.parse(endsAt)) || new Date(endsAt) <= new Date(startsAt)) return { error: "El fin del cierre debe ser posterior al inicio." };
   const supabase = await createClient(); const result = await supabase.rpc("create_amenity_blackout", { target_amenity_id: amenityId, target_starts_at: startsAt, target_ends_at: endsAt, target_reason: reason });
   if (result.error) return { error: friendlyError(result.error.message) };
   revalidatePath(amenityPath(propertyId)); revalidatePath(reservationPath(propertyId)); return { success: "Cierre programado." };
