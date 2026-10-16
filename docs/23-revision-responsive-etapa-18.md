@@ -19,6 +19,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Llamados en iPhone/Safari: Alejandro confirmó el 16 de octubre que la lista y el llamado técnico existente muestran completos el motivo, la evidencia y el historial, sin desplazamiento horizontal ni controles cortados.
 - Asambleas en iPhone/Safari: Alejandro confirmó el 16 de octubre que la asamblea de prueba publicada muestra completos fecha, orden del día, documento privado e historial, sin problemas de ancho ni controles cortados.
 - Paquetes en iPhone/Safari: Alejandro confirmó el 16 de octubre que el paquete de prueba entregado muestra completos estado, descripción e historial; el regreso a la lista funciona y no hay desplazamiento horizontal.
+- Visitas en iPhone/Safari: Alejandro confirmó el 16 de octubre que una visita finalizada muestra completos visitante, horas de ingreso y salida e historial; el regreso a la lista funciona y no hay desplazamiento horizontal.
 
 ## Comprobación visual pendiente
 
