@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { assemblyTypes } from "@/lib/assemblies/constants";
 import { createClient } from "@/lib/supabase/server";
 import { visitTimeToIso } from "@/lib/visitors/validation";
 
 export type AssemblyActionState = { error?: string; success?: string } | undefined;
+export type CreateAssemblyResult = { error?: string; assemblyId?: string };
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 
@@ -15,6 +15,7 @@ function friendlyError(message?: string) {
   if (message?.includes("duplicate_attendee")) return "Cada persona debe aparecer una sola vez en la convocatoria.";
   if (message?.includes("invalid_attendee")) return "Uno de los convocados ya no tiene un vínculo vigente con ese apartamento.";
   if (message?.includes("invalid_publish")) return "Revisa que la fecha sea futura y que existan agenda y convocados.";
+  if (message?.includes("convocation_required") || message?.includes("invalid_uploads")) return "Adjunta y valida una convocatoria antes de crear la asamblea.";
   if (message?.includes("correction_note_required")) return "Explica el motivo de la corrección de asistencia.";
   if (message?.includes("active_representation_exists")) return "Ya existe una representación activa para esa persona y apartamento.";
   if (message?.includes("evidence_required")) return "Adjunta al menos una evidencia válida antes de aprobar la representación.";
@@ -22,25 +23,28 @@ function friendlyError(message?: string) {
   return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
 }
 
-export async function createAssembly(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
-  const propertyId = field(data, "propertyId"), type = field(data, "type"), title = field(data, "title");
+export async function createAssembly(data: FormData): Promise<CreateAssemblyResult> {
+  const propertyId = field(data, "propertyId"), type = field(data, "type"), title = field(data, "title"), requestId = field(data, "requestId");
   const description = field(data, "description"), location = field(data, "location"), localStartsAt = field(data, "startsAt");
   const agenda = field(data, "agenda").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => ({ title: line }));
   const audience = Array.from(new Set(data.getAll("audience").map(String))).map((value) => {
     const [member_id, unit_id] = value.split("|"); return { member_id, unit_id };
   }).filter((item) => uuidPattern.test(item.member_id) && uuidPattern.test(item.unit_id));
-  if (!uuidPattern.test(propertyId) || !assemblyTypes.some(([value]) => value === type) || title.length < 4 || title.length > 180
-    || location.length < 3 || location.length > 240 || agenda.length < 1 || agenda.length > 100 || audience.length < 1 || audience.length > 500) {
-    return { error: "Completa la fecha futura, el lugar, la agenda y al menos un convocado." };
+  let uploadIds: string[];
+  try { const parsed: unknown = JSON.parse(field(data, "uploadIds")); uploadIds = Array.isArray(parsed) && parsed.every((id) => typeof id === "string" && uuidPattern.test(id)) ? parsed : []; }
+  catch { uploadIds = []; }
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(requestId) || !assemblyTypes.some(([value]) => value === type) || title.length < 4 || title.length > 180
+    || location.length < 3 || location.length > 240 || agenda.length < 1 || agenda.length > 100 || audience.length < 1 || audience.length > 500 || uploadIds.length < 1 || uploadIds.length > 5) {
+    return { error: "Completa la fecha futura, el lugar, la agenda, al menos un convocado y la convocatoria adjunta." };
   }
   const supabase = await createClient();
   const { data: property } = await supabase.from("properties").select("timezone").eq("id", propertyId).maybeSingle();
   const startsAt = property ? visitTimeToIso(localStartsAt, property.timezone) : null;
   if (!startsAt || new Date(startsAt) <= new Date()) return { error: "Completa una fecha y hora futuras de la comunidad." };
-  const result = await supabase.rpc("create_assembly", { target_property_id: propertyId, target_type: type, target_title: title, target_description: description || null, target_starts_at: startsAt, target_location: location, target_agenda: agenda, target_audience: audience });
+  const result = await supabase.rpc("create_published_assembly", { target_property_id: propertyId, target_type: type, target_title: title, target_description: description || null, target_starts_at: startsAt, target_location: location, target_agenda: agenda, target_audience: audience, target_upload_ids: uploadIds, target_request_id: requestId });
   if (result.error || !result.data) return { error: friendlyError(result.error?.message) };
   revalidatePath(`/panel/propiedades/${propertyId}/asambleas`);
-  redirect(`/panel/propiedades/${propertyId}/asambleas/${result.data}?created=1`);
+  return { assemblyId: String(result.data) };
 }
 
 export async function publishAssembly(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
