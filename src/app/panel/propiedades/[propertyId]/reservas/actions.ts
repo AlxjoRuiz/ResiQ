@@ -60,12 +60,8 @@ export async function updateReservationPolicy(_: ReservationState, data: FormDat
 }
 
 export async function createAmenityBlackout(_: ReservationState, data: FormData): Promise<ReservationState> {
-  const propertyId = field(data, "propertyId"), amenityId = field(data, "amenityId"), reason = field(data, "reason");
-  const startsDate = field(data, "startsDate"), startsTime = field(data, "startsTime");
-  const endsDate = field(data, "endsDate"), endsTime = field(data, "endsTime");
-  const startsAt = `${startsDate}T${startsTime}`, endsAt = `${endsDate}T${endsTime}`;
-  const validDateTime = /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d$/;
-  if (!uuidPattern.test(propertyId) || !uuidPattern.test(amenityId) || !validDateTime.test(startsAt) || !validDateTime.test(endsAt) || !Number.isFinite(Date.parse(startsAt)) || !Number.isFinite(Date.parse(endsAt)) || new Date(endsAt) <= new Date(startsAt) || reason.length < 3 || reason.length > 500) return { error: "Completa un cierre válido." };
+  const propertyId = field(data, "propertyId"), amenityId = field(data, "amenityId"), startsAt = field(data, "startsAt"), endsAt = field(data, "endsAt"), reason = field(data, "reason");
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(amenityId) || !startsAt || !endsAt || new Date(endsAt) <= new Date(startsAt) || reason.length < 3 || reason.length > 500) return { error: "Completa un cierre válido." };
   const supabase = await createClient(); const result = await supabase.rpc("create_amenity_blackout", { target_amenity_id: amenityId, target_starts_at: startsAt, target_ends_at: endsAt, target_reason: reason });
   if (result.error) return { error: friendlyError(result.error.message) };
   revalidatePath(amenityPath(propertyId)); revalidatePath(reservationPath(propertyId)); return { success: "Cierre programado." };
