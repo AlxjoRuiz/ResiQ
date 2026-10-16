@@ -18,6 +18,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Detalle del aviso: a petición de Alejandro se quitó «Abrir sección relacionada». El aviso muestra día y hora en Colombia y, si el registro es visible para el destinatario, fechas y contexto de Reservas, Visitas, Paquetes, PQRS, Llamados, Asambleas, Comunicados y Cartera. La consulta de Reservas es de solo lectura; falta comprobar el cambio publicado sin abrir avisos de Reservas hasta el lunes.
 - Llamados en iPhone/Safari: Alejandro confirmó el 16 de octubre que la lista y el llamado técnico existente muestran completos el motivo, la evidencia y el historial, sin desplazamiento horizontal ni controles cortados.
 - Asambleas en iPhone/Safari: Alejandro confirmó el 16 de octubre que la asamblea de prueba publicada muestra completos fecha, orden del día, documento privado e historial, sin problemas de ancho ni controles cortados.
+- Paquetes en iPhone/Safari: Alejandro confirmó el 16 de octubre que el paquete de prueba entregado muestra completos estado, descripción e historial; el regreso a la lista funciona y no hay desplazamiento horizontal.
 
 ## Comprobación visual pendiente
 
