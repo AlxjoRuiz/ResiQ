@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { slotDurationHoursLabel, weekdayLabels } from "@/lib/reservations/constants";
 
-const inputClass = "mt-2 h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
+const inputClass = "mt-2 block box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const areaClass = "mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass = "block min-w-0 text-sm font-medium";
 
@@ -38,7 +38,7 @@ export function AmenityForm({ propertyId, amenity }: { propertyId: string; ameni
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" defaultValue={amenity?.description ?? ""} maxLength={1000}/></label>
     <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Duración máxima por reserva (horas)<select className={inputClass} name="slotMinutes" defaultValue={legacySlot ? "" : amenity?.slot_minutes ?? 60} required>{legacySlot && <option value="" disabled>Selecciona una duración en horas completas</option>}{Array.from({ length: 24 }, (_, index) => (index + 1) * 60).map((value)=><option key={value} value={value}>{slotDurationHoursLabel(value)}</option>)}</select>{legacySlot && <span className="text-xs text-muted-foreground">Selecciona una duración en horas completas antes de guardar esta zona.</span>}</label><label className={labelClass}>Estado<select className={inputClass} name="status" defaultValue={amenity?.status ?? "active"}><option value="active">Activa</option><option value="inactive">Inactiva</option></select></label></div>
     <label className="flex items-center gap-3 text-sm font-medium"><input type="checkbox" name="requiresApproval" defaultChecked={amenity?.requires_approval ?? true}/>Requiere aprobación de administración</label>
-    <fieldset className="grid min-w-0 gap-3"><legend className="text-sm font-semibold">Horario semanal</legend><p className="text-xs text-muted-foreground">Si «Cierra» es anterior a «Abre», el horario termina al día siguiente. Si son iguales, la zona permanece abierta 24 horas.</p>{weekdayLabels.map(([day,label])=>{const hour=configured.get(day);return <div key={day} className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-center gap-3 rounded-xl border p-3 sm:grid-cols-[8rem_minmax(0,1fr)_minmax(0,1fr)]"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" name={`day_${day}`} checked={days[day]} onChange={(event)=>setDays({...days,[day]:event.target.checked})}/>{label}</label><label className="min-w-0 text-xs text-muted-foreground">Abre<input className={inputClass} name={`opens_${day}`} type="time" defaultValue={hour?.opens_at?.slice(0,5) ?? "08:00"} disabled={!days[day]}/></label><label className="min-w-0 text-xs text-muted-foreground">Cierra<input className={inputClass} name={`closes_${day}`} type="time" defaultValue={hour?.closes_at?.slice(0,5) ?? "20:00"} disabled={!days[day]}/></label></div>})}</fieldset>
+    <fieldset className="min-w-0 space-y-3"><legend className="text-sm font-semibold">Horario semanal</legend><p className="text-xs text-muted-foreground">Si «Cierra» es anterior a «Abre», el horario termina al día siguiente. Si son iguales, la zona permanece abierta 24 horas.</p>{weekdayLabels.map(([day,label])=>{const hour=configured.get(day);return <div key={day} className="min-w-0 space-y-3 rounded-xl border p-3"><label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" name={`day_${day}`} checked={days[day]} onChange={(event)=>setDays({...days,[day]:event.target.checked})}/>{label}</label><div className="flex min-w-0 flex-col gap-3 lg:flex-row"><label className="block min-w-0 flex-1 text-xs text-muted-foreground">Abre<input className={inputClass} name={`opens_${day}`} type="time" defaultValue={hour?.opens_at?.slice(0,5) ?? "08:00"} disabled={!days[day]}/></label><label className="block min-w-0 flex-1 text-xs text-muted-foreground">Cierra<input className={inputClass} name={`closes_${day}`} type="time" defaultValue={hour?.closes_at?.slice(0,5) ?? "20:00"} disabled={!days[day]}/></label></div></div>})}</fieldset>
     <label className={labelClass}>Reglas de uso<textarea className={areaClass} name="rules" defaultValue={amenity?.rules ?? ""} maxLength={3000} placeholder="Aseo, ruido, elementos permitidos y demás condiciones"/></label>
     <div className="flex flex-wrap items-center gap-4"><Button disabled={pending}>{pending ? "Guardando…" : amenity ? "Guardar cambios" : "Crear zona"}</Button><Result state={state}/></div>
   </form>;
@@ -54,11 +54,15 @@ export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; am
   return <form action={action} className="grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-3 sm:p-4">
     <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenityId}/>
     <p className="text-sm font-semibold">Programar cierre</p>
-    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-      <label className={labelClass}>Fecha de inicio<input className={inputClass} name="startsDate" type="date" required/></label>
-      <label className={labelClass}>Hora de inicio<input className={inputClass} name="startsTime" type="time" required/></label>
-      <label className={labelClass}>Fecha de fin<input className={inputClass} name="endsDate" type="date" required/></label>
-      <label className={labelClass}>Hora de fin<input className={inputClass} name="endsTime" type="time" required/></label>
+    <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+      <fieldset className="min-w-0 space-y-3 rounded-lg border bg-background p-3"><legend className="px-1 text-sm font-medium">Inicio</legend>
+        <label className={labelClass}>Fecha<input className={inputClass} name="startsDate" type="date" required/></label>
+        <label className={labelClass}>Hora<input className={inputClass} name="startsTime" type="time" required/></label>
+      </fieldset>
+      <fieldset className="min-w-0 space-y-3 rounded-lg border bg-background p-3"><legend className="px-1 text-sm font-medium">Fin</legend>
+        <label className={labelClass}>Fecha<input className={inputClass} name="endsDate" type="date" required/></label>
+        <label className={labelClass}>Hora<input className={inputClass} name="endsTime" type="time" required/></label>
+      </fieldset>
     </div>
     <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label>
     <div className="flex flex-wrap items-center gap-4"><Button size="sm" variant="outline" disabled={pending}>{pending?"Programando…":"Programar cierre"}</Button><Result state={state}/></div>
