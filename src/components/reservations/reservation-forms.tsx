@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import {
   cancelReservation,
   createAmenityBlackout,
@@ -63,7 +63,33 @@ export type ReservationAmenity = { id: string; name: string; capacity: number; r
 export type ReservationUnit = { id: string; label: string };
 export function CreateReservationForm({ propertyId, amenities, units, amenityId, onAmenityChange }: { propertyId: string; amenities: ReservationAmenity[]; units: ReservationUnit[]; amenityId: string; onAmenityChange: (amenityId: string) => void }) {
   const [state, action, pending] = useActionState(createReservation, undefined as ReservationState);
-  return <form action={action} className="grid gap-5"><input type="hidden" name="propertyId" value={propertyId}/><label className={labelClass}>Zona<select className={inputClass} name="amenityId" value={amenityId} onChange={(event) => onAmenityChange(event.target.value)} required><option value="">Selecciona una zona</option>{amenities.map((item)=><option key={item.id} value={item.id}>{item.name} · máximo {slotDurationHoursLabel(item.slot_minutes)} · capacidad {item.capacity} · {item.requires_approval?"requiere aprobación":"confirmación inmediata"}</option>)}</select></label><label className={labelClass}>Apartamento<select className={inputClass} name="unitId" required><option value="">Selecciona</option>{units.map((item)=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label><div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Inicio<input className={inputClass} name="startsAt" type="datetime-local" required/></label><label className={labelClass}>Fin<input className={inputClass} name="endsAt" type="datetime-local" required/></label></div><label className={labelClass}>Asistentes<input className={inputClass} name="attendeeCount" type="number" min={1} defaultValue={1} required/></label><label className={labelClass}>Motivo de la reserva<textarea className={areaClass} name="purpose" minLength={3} maxLength={500} placeholder="Cuéntanos para qué usarás la zona" required/></label><p className="text-xs text-muted-foreground">Las horas se interpretan en la zona horaria de la propiedad. Puedes elegir una duración menor que el máximo de la zona y terminar al día siguiente si su horario lo permite. El sistema valida horarios, cierres, capacidad y cruces antes de crear la reserva.</p><div className="flex flex-wrap items-center gap-4"><Button disabled={pending||amenities.length===0||units.length===0}>{pending?"Reservando…":"Crear reserva"}</Button><Result state={state}/></div></form>;
+  const [draft, setDraft] = useState({ unitId: "", startsAt: "", endsAt: "", attendeeCount: "1", purpose: "" });
+  const [purposeError, setPurposeError] = useState("");
+  const purposeRef = useRef<HTMLTextAreaElement>(null);
+  function update(field: keyof typeof draft, value: string) {
+    setDraft((current) => ({ ...current, [field]: value }));
+    if (field === "purpose" && value.trim().length >= 3) setPurposeError("");
+  }
+  return <form action={action} className="grid gap-5" onSubmit={(event) => {
+    if (draft.purpose.trim().length >= 3) return;
+    event.preventDefault();
+    setPurposeError("El motivo debe tener al menos 3 caracteres.");
+    purposeRef.current?.focus();
+  }}>
+    <input type="hidden" name="propertyId" value={propertyId}/>
+    <label className={labelClass}>Zona<select className={inputClass} name="amenityId" value={amenityId} onChange={(event) => onAmenityChange(event.target.value)} required><option value="">Selecciona una zona</option>{amenities.map((item)=><option key={item.id} value={item.id}>{item.name} · máximo {slotDurationHoursLabel(item.slot_minutes)} · capacidad {item.capacity} · {item.requires_approval?"requiere aprobación":"confirmación inmediata"}</option>)}</select></label>
+    <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" value={draft.unitId} onChange={(event) => update("unitId", event.target.value)} required><option value="">Selecciona</option>{units.map((item)=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+    <div className="grid gap-5 sm:grid-cols-2">
+      <label className={labelClass}>Inicio<input className={inputClass} name="startsAt" type="datetime-local" value={draft.startsAt} onChange={(event) => update("startsAt", event.target.value)} required/></label>
+      <label className={labelClass}>Fin<input className={inputClass} name="endsAt" type="datetime-local" value={draft.endsAt} onChange={(event) => update("endsAt", event.target.value)} required/></label>
+    </div>
+    <label className={labelClass}>Asistentes<input className={inputClass} name="attendeeCount" type="number" min={1} value={draft.attendeeCount} onChange={(event) => update("attendeeCount", event.target.value)} required/></label>
+    <label className={labelClass}>Motivo de la reserva<textarea ref={purposeRef} className={areaClass} name="purpose" maxLength={500} value={draft.purpose} onChange={(event) => update("purpose", event.target.value)} aria-invalid={Boolean(purposeError)} aria-describedby={purposeError ? "reservation-purpose-error" : undefined} placeholder="Cuéntanos para qué usarás la zona"/>
+      {purposeError && <span id="reservation-purpose-error" role="alert" className="mt-2 block text-sm text-destructive">{purposeError}</span>}
+    </label>
+    <p className="text-xs text-muted-foreground">Las horas se interpretan en la zona horaria de la propiedad. Puedes elegir una duración menor que el máximo de la zona y terminar al día siguiente si su horario lo permite. El sistema valida horarios, cierres, capacidad y cruces antes de crear la reserva.</p>
+    <div className="flex flex-wrap items-center gap-4"><Button disabled={pending||amenities.length===0||units.length===0}>{pending?"Reservando…":"Crear reserva"}</Button><Result state={state}/></div>
+  </form>;
 }
 
 export function DecisionForm({ propertyId, reservationId }: { propertyId: string; reservationId: string }) {
