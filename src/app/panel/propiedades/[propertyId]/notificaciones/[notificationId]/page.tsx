@@ -18,6 +18,7 @@ export default async function NotificationDetailPage({ params }: { params: Promi
   const dateTime = new Intl.DateTimeFormat("es-CO", { dateStyle: "full", timeStyle: "short", timeZone: "America/Bogota" });
   const dateOnly = new Intl.DateTimeFormat("es-CO", { dateStyle: "full", timeZone: "America/Bogota" });
   const details: { label: string; value: string }[] = [];
+  const movements: { label: string; value: string }[] = [];
   const addTime = (label: string, value: string | null | undefined) => { if (value) details.push({ label, value: dateTime.format(new Date(value)) }); };
   const addDate = (label: string, value: string | null | undefined) => { if (value) details.push({ label, value: dateOnly.format(new Date(`${value}T12:00:00Z`)) }); };
   const addText = (label: string, value: string | number | null | undefined) => { if (value !== null && value !== undefined && value !== "") details.push({ label, value: String(value) }); };
@@ -27,18 +28,35 @@ export default async function NotificationDetailPage({ params }: { params: Promi
     const targetId = notice.target_id;
     switch (notice.target_type) {
       case "reservation": {
-        const { data } = await supabase.from("reservations").select("starts_at,ends_at,attendee_count,purpose,review_message,decision_reason,amenities(name)").eq("property_id", propertyId).eq("id", targetId).maybeSingle();
+        const { data } = await supabase.from("reservations").select("starts_at,ends_at,attendee_count,purpose,review_message,decision_reason,amenities(name),units(code,buildings(name))").eq("property_id", propertyId).eq("id", targetId).maybeSingle();
         if (data) {
           const amenity = Array.isArray(data.amenities) ? data.amenities[0] : data.amenities;
-          addText("Zona", amenity?.name); addTime("Inicio de la reserva", data.starts_at); addTime("Fin de la reserva", data.ends_at);
+          const unit = Array.isArray(data.units) ? data.units[0] : data.units;
+          const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings;
+          addText("Zona", amenity?.name);
+          addText("Apartamento", [building?.name, unit?.code].filter(Boolean).join(" · "));
+          addTime("Llegada prevista", data.starts_at); addTime("Salida prevista", data.ends_at);
           addText("Personas", data.attendee_count); addText("Motivo de la reserva", data.purpose);
           addText("Respuesta de Administración", data.review_message); addText("Motivo de la decisión o cancelación", data.decision_reason);
         }
         break;
       }
       case "visitor": {
-        const { data } = await supabase.from("visitors").select("visitor_name,scheduled_start,scheduled_end,people_count").eq("property_id", propertyId).eq("id", targetId).maybeSingle();
-        if (data) { addText("Visitante", data.visitor_name); addTime("Inicio autorizado", data.scheduled_start); addTime("Fin autorizado", data.scheduled_end); addText("Personas", data.people_count); }
+        const [{ data }, { data: entries }] = await Promise.all([
+          supabase.from("visitors").select("visitor_name,scheduled_start,scheduled_end,people_count,units(code,buildings(name))").eq("property_id", propertyId).eq("id", targetId).maybeSingle(),
+          supabase.from("visitor_entries").select("entered_at,exited_at").eq("property_id", propertyId).eq("visitor_id", targetId).order("entered_at", { ascending: false }),
+        ]);
+        if (data) {
+          const unit = Array.isArray(data.units) ? data.units[0] : data.units;
+          const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings;
+          addText("Visitante", data.visitor_name);
+          addText("Apartamento", [building?.name, unit?.code].filter(Boolean).join(" · "));
+          addTime("Llegada prevista", data.scheduled_start); addTime("Salida prevista", data.scheduled_end); addText("Personas", data.people_count);
+          (entries ?? []).forEach((entry, index) => {
+            movements.push({ label: `Ingreso ${index + 1}`, value: dateTime.format(new Date(entry.entered_at)) });
+            if (entry.exited_at) movements.push({ label: `Salida ${index + 1}`, value: dateTime.format(new Date(entry.exited_at)) });
+          });
+        }
         break;
       }
       case "package": {
@@ -85,8 +103,9 @@ export default async function NotificationDetailPage({ params }: { params: Promi
       <div className="flex flex-wrap justify-between gap-3"><p className="text-xs font-semibold tracking-wider text-primary uppercase">{noticeCategoryLabel(notice.target_type)}</p><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{notice.read_at ? "Leída" : "Sin leer"}</span></div>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{notice.subject}</h1>
       <p className="mt-2 text-sm text-muted-foreground">Aviso recibido el <time dateTime={notice.occurred_at}>{dateTime.format(new Date(notice.occurred_at))}</time> · hora de Colombia</p>
-      <p className="mt-6 whitespace-pre-wrap text-sm leading-6">{notice.body}</p>
+      {notice.target_type !== "reservation" || details.length === 0 ? <p className="mt-6 whitespace-pre-wrap text-sm leading-6">{notice.body}</p> : null}
       {details.length > 0 && <section aria-label="Detalles del aviso" className="mt-6 rounded-xl border bg-muted/30 p-4"><h2 className="text-sm font-semibold">Detalles</h2><dl className="mt-3 grid gap-3 sm:grid-cols-2">{details.map(({ label, value }) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap text-sm font-medium">{value}</dd></div>)}</dl></section>}
+      {movements.length > 0 && <section aria-label="Historial de ingreso y salida" className="mt-4 rounded-xl border bg-muted/30 p-4"><h2 className="text-sm font-semibold">Ingresos y salidas reales</h2><dl className="mt-3 grid gap-3 sm:grid-cols-2">{movements.map(({ label, value }) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-sm font-medium">{value}</dd></div>)}</dl></section>}
       {!notice.read_at && <form action={markNotificationRead.bind(null, propertyId, notice.id)} className="mt-7"><Button type="submit" variant="outline">Marcar como leída</Button></form>}
     </article>
   </main>;

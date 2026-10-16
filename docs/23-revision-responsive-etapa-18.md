@@ -29,6 +29,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que su Inicio se ve completo y que puede recorrer la navegación horizontal hasta Notificaciones y Comunicados sin desplazar toda la página lateralmente.
 - Paquetes de Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que la tarjeta y el detalle del paquete de prueba entregado muestran completos datos e historial, sin desplazamiento horizontal; «Volver a Paquetes y recibos» funciona.
 - Visitas de Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que una visita finalizada muestra completos horarios, movimientos e historial; «Volver a Visitas» funciona sin desplazamiento horizontal ni controles cortados.
+- Notificaciones de Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que la lista y el detalle se ven bien, pero pidió separar zona, personas y horas de llegada/salida que aparecían como texto corrido. Se preparó un resumen por campos para Reservas y un bloque separado de ingresos y salidas reales para Visitas, con horario previsto claramente diferenciado. Falta comprobar el resultado publicado; no abrir avisos de Reservas hasta la prueba de vencimiento del lunes.
 
 ## Comprobación visual pendiente
 
