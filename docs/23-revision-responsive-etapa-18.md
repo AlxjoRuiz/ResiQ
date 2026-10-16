@@ -25,6 +25,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Alejandro confirmó el 16 de octubre en iPhone/Safari que «Volver a PQRS» regresa del detalle a la lista y «Volver al inicio» regresa de la lista al panel del conjunto.
 - Cartera en iPhone/Safari: Alejandro confirmó el 16 de octubre que en Torre 1 · 101 se leen completos saldo, obligaciones, comprobantes y pagos sin desplazamiento horizontal; «Volver a Cartera» regresa a la lista.
 - Notificaciones en iPhone/Safari: Alejandro confirmó el 16 de octubre que un aviso de PQRS o Paquetes muestra fecha, hora y detalles legibles, y que «Volver a Notificaciones» regresa a la lista sin desplazamiento horizontal. No se abrió un aviso de Reservas durante la prueba de vencimiento.
+- Comunicados en iPhone/Safari: Alejandro confirmó el 16 de octubre que un comunicado publicado muestra completos título, fecha y mensaje, sin desplazamiento horizontal; «Volver a Comunicados» regresa a la lista.
 
 ## Comprobación visual pendiente
 
