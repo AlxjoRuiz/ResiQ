@@ -61,6 +61,7 @@
 @layer utilities {
   .zone-date-time::-webkit-date-and-time-value { min-width: 0; text-align: left; }
   @media (max-width: 639px) {
+    .zone-date-time { box-sizing: border-box; inline-size: min(100%, calc(100vw - 4.5rem)) !important; min-inline-size: 0 !important; }
     input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="button"]):not([type="submit"]),
     select[class],
     textarea[class] { font-size: 16px; }
