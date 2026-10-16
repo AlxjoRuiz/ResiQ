@@ -31,6 +31,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Visitas de Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que una visita finalizada muestra completos horarios, movimientos e historial; «Volver a Visitas» funciona sin desplazamiento horizontal ni controles cortados.
 - Notificaciones de Portería en iPhone/Safari: Alejandro confirmó el 16 de octubre que la lista y el detalle se ven bien, pero pidió separar zona, personas y horas de llegada/salida que aparecían como texto corrido. Se preparó un resumen por campos para Reservas y un bloque separado de ingresos y salidas reales para Visitas, con horario previsto claramente diferenciado. Falta comprobar el resultado publicado; no abrir avisos de Reservas hasta la prueba de vencimiento del lunes.
 - Alejandro confirmó el 16 de octubre que el aviso de Visitas en Portería distingue claramente «Llegada prevista», «Salida prevista» e «Ingresos y salidas reales» en líneas propias. El formato de avisos de Reservas sigue sin revisión visual hasta el lunes.
+- Administración en iPhone/Safari: Alejandro confirmó el 16 de octubre que el Inicio y sus cuadros de resumen se ven completos; puede recorrer la navegación horizontal hasta Zonas, Notificaciones y Comunicados sin desplazar toda la página lateralmente.
 
 ## Comprobación visual pendiente
 
