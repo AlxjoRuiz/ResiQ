@@ -57,3 +57,11 @@
   html { scroll-behavior: smooth; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 }
+
+@layer utilities {
+  @media (max-width: 639px) {
+    input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="button"]):not([type="submit"]),
+    select,
+    textarea { font-size: 16px; }
+  }
+}

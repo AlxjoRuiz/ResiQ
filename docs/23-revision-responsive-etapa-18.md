@@ -13,6 +13,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Formulario de Nueva reserva: Alejandro confirmó el 16 de octubre de 2026 que en móvil puede ver y usar Zona, Apartamento, Inicio, Fin, Asistentes, Motivo y el botón Crear reserva, sin contenido cortado ni desplazamiento lateral.
 - Formulario de Nueva reserva: tras una validación fallida del motivo, conserva los valores elegidos y muestra junto al campo que necesita al menos 3 caracteres. Alejandro detectó que antes se borraban todos los datos; falta comprobar el arreglo publicado después de la prueba de vencimiento del lunes para no alterar esa reserva.
 - Cartera → Estado por apartamento: en móvil, las seis columnas ya no comprimen los encabezados en fragmentos de dos letras; la tabla tiene ancho mínimo y se desplaza dentro de su cuadro, con una indicación visible. Alejandro reportó el problema el 16 de octubre; falta comprobar el arreglo publicado en móvil.
+- Campos de texto en móvil: Asunto y Descripción de PQRS, y los demás controles editables de formularios, usan al menos 16 px en pantallas estrechas para evitar que el navegador amplíe la página al enfocarlos. Alejandro reportó que el zoom persistía al terminar de escribir; falta comprobarlo en su dispositivo.
 
 ## Comprobación visual pendiente
 
