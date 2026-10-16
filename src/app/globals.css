@@ -59,6 +59,7 @@
 }
 
 @layer utilities {
+  .zone-date-time::-webkit-date-and-time-value { min-width: 0; text-align: left; }
   @media (max-width: 639px) {
     input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="button"]):not([type="submit"]),
     select[class],

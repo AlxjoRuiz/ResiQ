@@ -58,12 +58,12 @@ export function ReservationPolicyForm({ propertyId, pendingHoldMinutes }: { prop
 
 export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; amenityId: string }) {
   const [state, action, pending] = useActionState(createAmenityBlackout, undefined as ReservationState);
-  return <form action={action} className="grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-3 sm:p-4">
+  return <form action={action} className="-mx-4 grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-2 sm:mx-0 sm:p-4">
     <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenityId}/>
     <p className="text-sm font-semibold">Programar cierre</p>
-    <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-      <label className={labelClass}>Inicio<input className={inputClass} name="startsAt" type="datetime-local" required/></label>
-      <label className={labelClass}>Fin<input className={inputClass} name="endsAt" type="datetime-local" required/></label>
+    <div className="flex min-w-0 flex-col gap-3 lg:flex-row">
+      <label className="block min-w-0 flex-1 text-sm font-medium">Inicio<input className={`${inputClass} zone-date-time`} name="startsAt" type="datetime-local" required/></label>
+      <label className="block min-w-0 flex-1 text-sm font-medium">Fin<input className={`${inputClass} zone-date-time`} name="endsAt" type="datetime-local" required/></label>
     </div>
     <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label>
     <div className="flex flex-wrap items-center gap-4"><Button size="sm" variant="outline" disabled={pending}>{pending?"Programando…":"Programar cierre"}</Button><Result state={state}/></div>
