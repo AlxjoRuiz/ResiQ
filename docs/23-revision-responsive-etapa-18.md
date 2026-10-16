@@ -10,9 +10,10 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Nueva reserva: el calendario y el formulario comparten la zona seleccionada; cambiarla en cualquiera de los dos actualiza el otro. Evita consultar disponibilidad para una zona y enviar la solicitud para otra, especialmente al desplazarse en móvil. Falta comprobación visual y funcional publicada.
 - Calendario de disponibilidad: los días sin horario de la zona se distinguen en gris y se anuncian como «Sin horario»; si el horario de la víspera cruza la medianoche, se muestra hasta qué hora continúa. Falta comprobación visual publicada.
 - Calendario de disponibilidad: navegación por el mes actual y los once siguientes. Cada mes consulta sus propios cruces y cierres; la zona seleccionada se conserva al navegar. Alejandro confirmó el 15 de octubre de 2026 que pudo pasar a noviembre en la web publicada y que los controles compactos de mes se ven bien en móvil.
+- Formulario de Nueva reserva: Alejandro confirmó el 16 de octubre de 2026 que en móvil puede ver y usar Zona, Apartamento, Inicio, Fin, Asistentes, Motivo y el botón Crear reserva, sin contenido cortado ni desplazamiento lateral.
 
 ## Comprobación visual pendiente
 
-- En móvil estrecho, abrir Reservas → Nueva reserva, seleccionar un día libre y uno ocupado; revisar legibilidad, foco visible y ausencia de desplazamiento horizontal de la página.
+- En móvil estrecho, abrir Reservas → Nueva reserva y seleccionar un día libre y uno ocupado; revisar el significado de los colores y el foco visible. El formulario y el ancho de página ya fueron confirmados por Alejandro.
 - En móvil y tableta, abrir secciones lejanas de cada rol (por ejemplo, Cartera, Asambleas, Notificaciones); confirmar que la sección activa aparece en la barra y se puede navegar manualmente a las demás.
 - Recorrer después formularios, listas y detalles de Residente; luego las vistas operativas de Portería y Administración. Registrar y corregir cada problema reproducible antes de cerrar la etapa.
