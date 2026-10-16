@@ -12,6 +12,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - Calendario de disponibilidad: navegación por el mes actual y los once siguientes. Cada mes consulta sus propios cruces y cierres; la zona seleccionada se conserva al navegar. Alejandro confirmó el 15 de octubre de 2026 que pudo pasar a noviembre en la web publicada y que los controles compactos de mes se ven bien en móvil.
 - Formulario de Nueva reserva: Alejandro confirmó el 16 de octubre de 2026 que en móvil puede ver y usar Zona, Apartamento, Inicio, Fin, Asistentes, Motivo y el botón Crear reserva, sin contenido cortado ni desplazamiento lateral.
 - Formulario de Nueva reserva: tras una validación fallida del motivo, conserva los valores elegidos y muestra junto al campo que necesita al menos 3 caracteres. Alejandro detectó que antes se borraban todos los datos; falta comprobar el arreglo publicado después de la prueba de vencimiento del lunes para no alterar esa reserva.
+- Cartera → Estado por apartamento: en móvil, las seis columnas ya no comprimen los encabezados en fragmentos de dos letras; la tabla tiene ancho mínimo y se desplaza dentro de su cuadro, con una indicación visible. Alejandro reportó el problema el 16 de octubre; falta comprobar el arreglo publicado en móvil.
 
 ## Comprobación visual pendiente
 
