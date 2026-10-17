@@ -17,4 +17,6 @@ Alejandro aprobó el 16 de octubre de 2026 quitar el paso de borrador para nueva
 
 ## Seguimiento
 
+Alejandro creó una asamblea de prueba mediante el formulario único. El 17 de octubre confirmó que, desde la cuenta Residente convocada, apareció un solo aviso de nueva asamblea, «Ver aviso» abrió el detalle y el archivo se descargó. Está pendiente confirmar que Portería no pueda abrir esta asamblea nueva. Estas comprobaciones se basan en la sesión reportada por Alejandro, no en una inspección independiente de la base de datos.
+
 Si un usuario cierra el navegador tras cargar un archivo y antes de crear la asamblea, el archivo privado preparado vence a las 24 horas y nunca se muestra como documento de una asamblea. La limpieza de objetos preparados abandonados requiere una tarea periódica de Storage; no borrar filas de `storage.objects` por SQL.
