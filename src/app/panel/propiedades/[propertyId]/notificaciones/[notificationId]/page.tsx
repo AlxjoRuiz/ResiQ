@@ -9,9 +9,9 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 
 export default async function NotificationDetailPage({ params }: { params: Promise<{ propertyId: string; notificationId: string }> }) {
   const { propertyId, notificationId } = await params;
-  const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const { supabase, membership } = await requirePropertyMember(propertyId);
   const { data: notice } = await supabase.from("notifications")
-    .select("id,subject,body,target_type,target_id,read_at,occurred_at")
+    .select("id,type,subject,body,target_type,target_id,read_at,occurred_at")
     .eq("property_id", propertyId).eq("recipient_member_id", membership.id).eq("id", notificationId).maybeSingle();
   if (!notice) notFound();
 
@@ -99,8 +99,8 @@ export default async function NotificationDetailPage({ params }: { params: Promi
 
   return <main className="mx-auto min-h-screen max-w-3xl px-5 py-8 sm:px-10">
     <Link href={`/panel/propiedades/${propertyId}/notificaciones`} className="text-sm text-muted-foreground hover:text-foreground">← Volver a Notificaciones</Link>
-    <article className="mt-6 rounded-2xl border bg-card p-6 sm:p-8">
-      <div className="flex flex-wrap justify-between gap-3"><p className="text-xs font-semibold tracking-wider text-primary uppercase">{noticeCategoryLabel(notice.target_type)}</p><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{notice.read_at ? "Leída" : "Sin leer"}</span></div>
+    <article className={`mt-6 rounded-2xl border p-6 sm:p-8 ${notice.type === "reservation_expired" ? "border-rose-300 bg-rose-50" : notice.read_at ? "bg-card" : "border-amber-300 bg-amber-50"}`}>
+      <div className="flex flex-wrap justify-between gap-3"><p className="text-xs font-semibold tracking-wider text-primary uppercase">{noticeCategoryLabel(notice.target_type)}</p><div className="flex flex-wrap gap-2">{notice.type === "reservation_expired" && <span className="rounded-full bg-rose-200 px-3 py-1 text-xs font-medium text-rose-950">Vencida</span>}<span className={`rounded-full px-3 py-1 text-xs font-medium ${notice.read_at ? "bg-secondary" : "bg-amber-200 text-amber-950"}`}>{notice.read_at ? "Leída" : "Sin leer"}</span></div></div>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">{notice.subject}</h1>
       <p className="mt-2 text-sm text-muted-foreground">Aviso recibido el <time dateTime={notice.occurred_at}>{dateTime.format(new Date(notice.occurred_at))}</time> · hora de Colombia</p>
       {notice.target_type !== "reservation" || details.length === 0 ? <p className="mt-6 whitespace-pre-wrap text-sm leading-6">{notice.body}</p> : null}
