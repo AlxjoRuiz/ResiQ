@@ -12,6 +12,7 @@ import {
   type ReservationState,
 } from "@/app/panel/propiedades/[propertyId]/reservas/actions";
 import { Button } from "@/components/ui/button";
+import { DateTimeField } from "@/components/ui/date-time-field";
 import { slotDurationHoursLabel, weekdayLabels } from "@/lib/reservations/constants";
 
 const inputClass = "mt-2 block box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -106,9 +107,9 @@ export function CreateReservationForm({ propertyId, amenities, units, amenityId,
     <input type="hidden" name="propertyId" value={propertyId}/>
     <label className={labelClass}>Zona<select className={inputClass} name="amenityId" value={amenityId} onChange={(event) => onAmenityChange(event.target.value)} required><option value="">Selecciona una zona</option>{amenities.map((item)=><option key={item.id} value={item.id}>{item.name} · máximo {slotDurationHoursLabel(item.slot_minutes)} · capacidad {item.capacity} · {item.requires_approval?"requiere aprobación":"confirmación inmediata"}</option>)}</select></label>
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" value={draft.unitId} onChange={(event) => update("unitId", event.target.value)} required><option value="">Selecciona</option>{units.map((item)=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
-    <div className="grid gap-5 sm:grid-cols-2">
-      <label className={labelClass}>Inicio<input className={inputClass} name="startsAt" type="datetime-local" value={draft.startsAt} onChange={(event) => update("startsAt", event.target.value)} required/></label>
-      <label className={labelClass}>Fin<input className={inputClass} name="endsAt" type="datetime-local" value={draft.endsAt} onChange={(event) => update("endsAt", event.target.value)} required/></label>
+    <div className="grid min-w-0 gap-5 sm:grid-cols-2">
+      <DateTimeField name="startsAt" label="Inicio" value={draft.startsAt} onChange={(value) => update("startsAt", value)}/>
+      <DateTimeField name="endsAt" label="Fin" value={draft.endsAt} onChange={(value) => update("endsAt", value)}/>
     </div>
     <label className={labelClass}>Asistentes<input className={inputClass} name="attendeeCount" type="number" min={1} value={draft.attendeeCount} onChange={(event) => update("attendeeCount", event.target.value)} required/></label>
     <label className={labelClass}>Motivo de la reserva<textarea ref={purposeRef} className={areaClass} name="purpose" maxLength={500} value={draft.purpose} onChange={(event) => update("purpose", event.target.value)} aria-invalid={Boolean(purposeError)} aria-describedby={purposeError ? "reservation-purpose-error" : undefined} placeholder="Cuéntanos para qué usarás la zona"/>

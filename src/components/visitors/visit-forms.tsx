@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { reviewVisit, cancelVisit, createVisit, registerVisitEntry, registerVisitExit, type VisitState } from "@/app/panel/propiedades/[propertyId]/visitas/actions";
 import { Button } from "@/components/ui/button";
+import { DateTimeField } from "@/components/ui/date-time-field";
 import { visitKinds } from "@/lib/visitors/constants";
 
 export type VisitDirectoryRow={unit_id:string;unit_code:string;building_name:string;member_id:string|null;display_name:string|null};
@@ -10,16 +11,6 @@ const inputClass="mt-2 box-border h-11 min-w-0 w-full max-w-full rounded-lg bord
 const areaClass="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass="block min-w-0 text-sm font-medium";
 function Result({state}:{state:VisitState}){if(state?.error)return <p role="alert" className="text-sm text-destructive">{state.error}</p>;if(state?.success)return <p role="status" className="text-sm text-primary">{state.success}</p>;return null;}
-
-function VisitDateTimeField({name,label,value,onChange}:{name:string;label:string;value:string;onChange:(value:string)=>void}){
-  const display=value ? `${value.slice(8,10)}/${value.slice(5,7)}/${value.slice(0,4)} · ${value.slice(11,16)}` : "Selecciona fecha y hora";
-  return <label className={labelClass}>{label}
-    <span className="relative mt-2 flex box-border h-11 min-w-0 w-full max-w-full items-center overflow-hidden rounded-lg border bg-white px-3 text-base font-normal text-foreground focus-within:ring-2 focus-within:ring-ring">
-      <span aria-hidden="true" className="min-w-0 truncate">{display}</span>
-      <input className="absolute inset-0 h-full w-full min-w-0 cursor-pointer opacity-0" name={name} type="datetime-local" value={value} onChange={(event)=>onChange(event.target.value)} onClick={(event)=>{try{event.currentTarget.showPicker?.();}catch{/* Safari abre su selector nativo al tocarlo. */}}} required aria-label={label}/>
-    </span>
-  </label>;
-}
 
 export function CreateVisitForm({propertyId,directory,timeZone}:{propertyId:string;directory:VisitDirectoryRow[];timeZone:string}){
   const [state,action,pending]=useActionState(createVisit,undefined as VisitState);const [unitId,setUnitId]=useState("");const [kind,setKind]=useState("personal");
@@ -34,7 +25,7 @@ export function CreateVisitForm({propertyId,directory,timeZone}:{propertyId:stri
     <label className={labelClass}>Últimos dígitos del documento <span className="font-normal text-muted-foreground">(opcional)</span><input className={inputClass} name="documentLastDigits" value={values.documentLastDigits} onChange={(event)=>update("documentLastDigits",event.target.value)} inputMode="numeric" pattern="[0-9]{2,6}" maxLength={6}/><span className="mt-1 block text-xs font-normal text-muted-foreground">Entre 2 y 6 dígitos. Puedes repetirlos en otras solicitudes.</span></label>
     {kind==="maintenance"&&<div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Empresa<input className={inputClass} name="company" value={values.company} onChange={(event)=>update("company",event.target.value)} maxLength={120}/></label><label className={labelClass}>Tipo de servicio<input className={inputClass} name="serviceType" value={values.serviceType} onChange={(event)=>update("serviceType",event.target.value)} maxLength={120} required placeholder="Plomería, internet, reparación…"/></label></div>}
     <p className="text-xs text-muted-foreground">Selecciona el horario del conjunto: {timeZone}.</p>
-    <div className="grid min-w-0 gap-5 sm:grid-cols-2"><VisitDateTimeField name="scheduledStart" label="Inicio de la visita" value={values.scheduledStart} onChange={(value)=>update("scheduledStart",value)}/><VisitDateTimeField name="scheduledEnd" label="Fin de la visita" value={values.scheduledEnd} onChange={(value)=>update("scheduledEnd",value)}/></div>
+    <div className="grid min-w-0 gap-5 sm:grid-cols-2"><DateTimeField name="scheduledStart" label="Inicio de la visita" value={values.scheduledStart} onChange={(value)=>update("scheduledStart",value)}/><DateTimeField name="scheduledEnd" label="Fin de la visita" value={values.scheduledEnd} onChange={(value)=>update("scheduledEnd",value)}/></div>
     <label className={labelClass}>Observaciones<textarea className={areaClass} name="notes" value={values.notes} onChange={(event)=>update("notes",event.target.value)} maxLength={1000}/></label>
     <p className="text-xs text-muted-foreground">El documento completo no se almacena. La ventana puede durar máximo 24 horas.</p>
     <div className="flex items-center gap-4"><Button disabled={pending||!unitId}>{pending?"Enviando…":"Solicitar visita"}</Button><Result state={state}/></div>
