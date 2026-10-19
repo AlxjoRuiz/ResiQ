@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { visitKinds } from "@/lib/visitors/constants";
 
 export type VisitDirectoryRow={unit_id:string;unit_code:string;building_name:string;member_id:string|null;display_name:string|null};
-const inputClass="mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
+const inputClass="mt-2 box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const areaClass="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring";
-const labelClass="block text-sm font-medium";
+const labelClass="block min-w-0 text-sm font-medium";
 function Result({state}:{state:VisitState}){if(state?.error)return <p role="alert" className="text-sm text-destructive">{state.error}</p>;if(state?.success)return <p role="status" className="text-sm text-primary">{state.success}</p>;return null;}
 
 export function CreateVisitForm({propertyId,directory,timeZone}:{propertyId:string;directory:VisitDirectoryRow[];timeZone:string}){
@@ -24,7 +24,7 @@ export function CreateVisitForm({propertyId,directory,timeZone}:{propertyId:stri
     <label className={labelClass}>Últimos dígitos del documento <span className="font-normal text-muted-foreground">(opcional)</span><input className={inputClass} name="documentLastDigits" value={values.documentLastDigits} onChange={(event)=>update("documentLastDigits",event.target.value)} inputMode="numeric" pattern="[0-9]{2,6}" maxLength={6}/><span className="mt-1 block text-xs font-normal text-muted-foreground">Entre 2 y 6 dígitos. Puedes repetirlos en otras solicitudes.</span></label>
     {kind==="maintenance"&&<div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Empresa<input className={inputClass} name="company" value={values.company} onChange={(event)=>update("company",event.target.value)} maxLength={120}/></label><label className={labelClass}>Tipo de servicio<input className={inputClass} name="serviceType" value={values.serviceType} onChange={(event)=>update("serviceType",event.target.value)} maxLength={120} required placeholder="Plomería, internet, reparación…"/></label></div>}
     <p className="text-xs text-muted-foreground">Selecciona el horario del conjunto: {timeZone}.</p>
-    <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Inicio de la visita<input className={inputClass} name="scheduledStart" value={values.scheduledStart} onChange={(event)=>update("scheduledStart",event.target.value)} type="datetime-local" required/></label><label className={labelClass}>Fin de la visita<input className={inputClass} name="scheduledEnd" value={values.scheduledEnd} onChange={(event)=>update("scheduledEnd",event.target.value)} type="datetime-local" required/></label></div>
+    <div className="grid min-w-0 gap-5 sm:grid-cols-2"><label className={labelClass}>Inicio de la visita<input className={inputClass} name="scheduledStart" value={values.scheduledStart} onChange={(event)=>update("scheduledStart",event.target.value)} type="datetime-local" required/></label><label className={labelClass}>Fin de la visita<input className={inputClass} name="scheduledEnd" value={values.scheduledEnd} onChange={(event)=>update("scheduledEnd",event.target.value)} type="datetime-local" required/></label></div>
     <label className={labelClass}>Observaciones<textarea className={areaClass} name="notes" value={values.notes} onChange={(event)=>update("notes",event.target.value)} maxLength={1000}/></label>
     <p className="text-xs text-muted-foreground">El documento completo no se almacena. La ventana puede durar máximo 24 horas.</p>
     <div className="flex items-center gap-4"><Button disabled={pending||!unitId}>{pending?"Enviando…":"Solicitar visita"}</Button><Result state={state}/></div>
