@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
 import { InvitationCreateForm } from "@/app/panel/invitaciones/nueva/invitation-create-form";
 import { PropertyForm } from "../management-forms";
-import { PropertyMembersSection, PropertyStructureSection } from "../property-sections";
+import { PropertyManagementSections } from "../property-sections";
 
 export default async function PropertyManagementPage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params;
@@ -21,10 +21,9 @@ export default async function PropertyManagementPage({ params }: { params: Promi
     <Button asChild variant="ghost" size="sm"><Link href={`/panel/propiedades/${propertyId}/dashboard`}>← Volver al inicio</Link></Button>
     <header className="mt-5 flex flex-wrap items-start justify-between gap-4 border-b pb-6"><div><p className="text-xs font-semibold tracking-wider text-primary uppercase">Administración</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{property.name}</h1><p className="mt-2 text-sm text-muted-foreground">{[property.address, property.city].filter(Boolean).join(" · ") || "Ubicación sin registrar"}</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">{property.status === "active" ? "Activa" : property.status}</span></header>
     <section className="mt-8 grid gap-4 sm:grid-cols-3"><Card><CardContent><Building2 className="text-primary" size={20} /><p className="mt-3 text-2xl font-semibold">{buildingCount ?? 0}</p><p className="text-sm text-muted-foreground">Torres o bloques</p></CardContent></Card><Card><CardContent><House className="text-primary" size={20} /><p className="mt-3 text-2xl font-semibold">{unitCount ?? 0}</p><p className="text-sm text-muted-foreground">Apartamentos</p></CardContent></Card><Card><CardContent><UsersRound className="text-primary" size={20} /><p className="mt-3 text-2xl font-semibold">{memberCount ?? 0}</p><p className="text-sm text-muted-foreground">Miembros activos</p></CardContent></Card></section>
-    <nav aria-label="Administrar propiedad" className="mt-7 flex flex-wrap gap-2 text-sm"><a href="#invitaciones" className="rounded-full border px-4 py-2 hover:bg-secondary">Invitaciones</a><a href="#apartamentos" className="rounded-full border px-4 py-2 hover:bg-secondary">Torres y apartamentos</a><a href="#residentes" className="rounded-full border px-4 py-2 hover:bg-secondary">Residentes y accesos</a><a href="#porteria" className="rounded-full border px-4 py-2 hover:bg-secondary">Portería</a><a href="#datos" className="rounded-full border px-4 py-2 hover:bg-secondary">Datos generales</a></nav>
+    <nav aria-label="Administrar propiedad" className="mt-7 flex flex-wrap gap-2 text-sm"><a href="#invitaciones" className="rounded-full border px-4 py-2 hover:bg-secondary">Invitaciones</a><a href="#apartamentos" className="rounded-full border px-4 py-2 hover:bg-secondary">Torres y apartamentos</a><a href="#porteria" className="rounded-full border px-4 py-2 hover:bg-secondary">Portería</a><a href="#datos" className="rounded-full border px-4 py-2 hover:bg-secondary">Datos generales</a></nav>
     <section id="invitaciones" className="mt-10 scroll-mt-6"><h2 className="text-2xl font-semibold">Invitaciones</h2><p className="mt-1 text-sm text-muted-foreground">Invita a un residente o a Portería y asocia su apartamento si corresponde.</p><Card className="mt-4"><CardContent><InvitationCreateForm propertyId={propertyId} units={(invitationUnits ?? []).map((unit) => ({ id: unit.id, code: `${(Array.isArray(unit.buildings) ? unit.buildings[0] : unit.buildings)?.name ?? "Torre"} · ${unit.code}` }))} /></CardContent></Card></section>
-    <PropertyStructureSection propertyId={propertyId} />
-    <PropertyMembersSection propertyId={propertyId} />
+    <PropertyManagementSections propertyId={propertyId} />
     <section id="datos" className="mt-10 scroll-mt-6"><Card><CardContent><div className="mb-6 flex items-center gap-2"><ShieldCheck size={20} className="text-primary" /><h2 className="text-lg font-semibold">Datos generales</h2></div><PropertyForm property={property} /></CardContent></Card></section>
   </main>;
 }
