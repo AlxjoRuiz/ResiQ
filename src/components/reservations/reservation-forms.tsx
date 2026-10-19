@@ -76,7 +76,7 @@ export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; am
       <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Inicio</legend><ClosurePicker name="startsDate" type="date" label="Fecha de inicio"/><ClosurePicker name="startsTime" type="time" label="Hora de inicio"/></fieldset>
       <fieldset className="grid min-w-0 gap-2 rounded-lg border p-3"><legend className="px-1 text-sm font-medium">Fin</legend><ClosurePicker name="endsDate" type="date" label="Fecha de fin"/><ClosurePicker name="endsTime" type="time" label="Hora de fin"/></fieldset>
     </div>
-    <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label>
+    <label className={labelClass}>Motivo del cierre (visible para residentes)<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label>
     <div className="flex flex-wrap items-center gap-4"><Button size="sm" variant="outline" disabled={pending}>{pending?"Programando…":"Programar cierre"}</Button><Result state={state}/></div>
   </form>;
 }

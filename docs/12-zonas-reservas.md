@@ -35,7 +35,7 @@ Las horas capturadas en la interfaz se convierten en PostgreSQL usando la zona h
 
 - El cliente no inserta ni cambia estados de reservas directamente.
 - Las claves operativas incluyen `property_id` y las relaciones compuestas impiden referencias entre propiedades.
-- Residentes ajenos no reciben nombre, apartamento, asistentes ni motivos: `get_amenity_availability` sólo devuelve rango y tipo de ocupación.
+- Residentes ajenos no reciben nombre, apartamento, asistentes ni motivos de las reservas: la disponibilidad sólo devuelve sus intervalos ocupados. `get_amenity_availability_with_reason` devuelve además el motivo de los cierres programados, incluidos los anteriores; el formulario de Administración avisa que ese motivo es visible para residentes.
 - Portería usa `list_operational_reservations_with_context`, que omite correo, teléfono y cartera, pero muestra el motivo de la reserva y los mensajes de decisión solicitados para la agenda operativa.
 - Los avisos de Portería se dirigen únicamente a miembros activos con ese rol en la misma propiedad; una clave única evita duplicados. No generan correo externo.
 - Cierres y zonas sólo pueden ser modificados por administración.

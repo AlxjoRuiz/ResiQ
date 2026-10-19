@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export type AvailabilityInterval = { starts_at: string; ends_at: string; kind: string };
+export type AvailabilityInterval = { starts_at: string; ends_at: string; kind: string; reason?: string | null };
 export type AvailabilityZone = {
   id: string;
   name: string;
@@ -118,8 +118,9 @@ export function AvailabilityCalendar({ zones, timeZone, today, month, propertyId
           : "Esta zona no tiene horario configurado para este día."}</p>
       {selectedIntervals.length === 0
         ? <p className="mt-3 text-sm">No hay reservas ni cierres registrados para este día.</p>
-        : <ul className="mt-3 grid gap-2">{selectedIntervals.map((item, index) => <li key={`${item.starts_at}-${index}`} className="text-sm">
+        : <ul className="mt-3 grid gap-2">{selectedIntervals.map((item, index) => <li key={`${item.starts_at}-${index}`} className="min-w-0 text-sm">
           <span className="font-medium">{item.kind === "closed" ? "Cierre" : "Ocupado"}:</span> {timeFormatter.format(new Date(item.starts_at))} → {timeFormatter.format(new Date(item.ends_at))}
+          {item.kind === "closed" && item.reason && <p className="mt-1 whitespace-pre-wrap break-words text-muted-foreground"><span className="font-medium text-foreground">Motivo:</span> {item.reason}</p>}
         </li>)}</ul>}
       <p className="mt-3 text-xs text-muted-foreground">Los tramos sin cruces también deben respetar el horario de la zona y pasar la validación al reservar. Las reservas de otros residentes se muestran sin datos personales.</p>
     </div>
