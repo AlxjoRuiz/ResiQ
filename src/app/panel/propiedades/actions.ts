@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type ManagementState = { error?: string; success?: string } | undefined;
@@ -86,25 +85,6 @@ export async function endUnitMembership(_: ManagementState, formData: FormData):
   if (error) return { error: databaseError(error.code) };
   propertyPaths(propertyId);
   return { success: "Vínculo finalizado. El acceso histórico operativo fue retirado." };
-}
-
-export type ApartmentResidentState = { error?: string; success?: string; invitationUrl?: string } | undefined;
-
-export async function assignApartmentResident(_: ApartmentResidentState, formData: FormData): Promise<ApartmentResidentState> {
-  const propertyId = field(formData, "propertyId");
-  const unitId = field(formData, "unitId");
-  const email = field(formData, "email").toLowerCase();
-  const relationship = field(formData, "relationship");
-  if (!propertyId || !unitId || !email.includes("@") || !["owner", "resident"].includes(relationship)) return { error: "Completa el correo y el tipo de residente." };
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("assign_apartment_resident", { target_property_id: propertyId, target_unit_id: unitId, target_email: email, target_relationship: relationship });
-  if (error) return { error: error.message.includes("not_a_resident") ? "Esta cuenta tiene otro rol en la propiedad. Revisa sus permisos antes de asignarla." : databaseError(error.code) };
-  propertyPaths(propertyId);
-  if (typeof data === "string") {
-    const origin = (await headers()).get("origin") ?? "http://localhost:3000";
-    return { success: "Invitación creada para este apartamento. Compártela con la persona indicada.", invitationUrl: `${origin}/invitacion?token=${encodeURIComponent(data)}` };
-  }
-  return { success: "Residente asignado al apartamento y acceso activado." };
 }
 
 export async function updateApartmentRelationship(_: ManagementState, formData: FormData): Promise<ManagementState> {

@@ -57,23 +57,5 @@ do $test$ begin
 end $test$;
 reset role;
 
-select set_config('request.jwt.claims','{"sub":"21000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
-select set_config('request.jwt.claim.sub','21000000-0000-4000-8000-000000000001',true);
-set local role authenticated;
-select public.assign_apartment_resident('21100000-0000-4000-8000-000000000001','21400000-0000-4000-8000-000000000001','apartment-resident@resiq.invalid','resident');
-do $test$ begin
-  if length(public.assign_apartment_resident('21100000-0000-4000-8000-000000000001','21400000-0000-4000-8000-000000000002','new-apartment-resident@resiq.invalid','owner')) < 32 then raise exception 'new_resident_not_invited'; end if;
-end $test$;
-do $test$ begin
-  if (select status from public.property_members where id='21200000-0000-4000-8000-000000000002') <> 'active' then raise exception 'resident_not_reactivated'; end if;
-  if (select count(*) from public.unit_memberships where unit_id='21400000-0000-4000-8000-000000000001' and valid_to is null) <> 1 then raise exception 'resident_not_reassigned'; end if;
-end $test$;
-reset role;
-
--- La tabla de invitaciones no es legible por authenticated; inspección interna del test.
-do $test$ begin
-  if (select count(*) from public.invitations where property_id='21100000-0000-4000-8000-000000000001' and email_normalized='new-apartment-resident@resiq.invalid' and status='pending') <> 1 then raise exception 'invitation_not_recorded'; end if;
-end $test$;
-
 select 'apartment_resident_management_passed_rollback' as result;
 rollback;

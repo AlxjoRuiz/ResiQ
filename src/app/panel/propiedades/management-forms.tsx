@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
-import { assignApartmentResident, endUnitMembership, manageMember, saveBuilding, saveUnit, updateApartmentRelationship, updateProperty, type ApartmentResidentState, type ManagementState } from "./actions";
+import { endUnitMembership, manageMember, saveBuilding, saveUnit, updateApartmentRelationship, updateProperty, type ManagementState } from "./actions";
 
 const inputClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass = "block text-sm font-medium";
@@ -77,20 +77,6 @@ export function EndMembershipForm({ propertyId, unitMembershipId }: { propertyId
     <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" required />Confirmo la desvinculación</label>
     <Button type="submit" size="sm" variant="outline" disabled={pending}>{pending ? "Desvinculando…" : "Desvincular del apartamento"}</Button>
     <Result state={state} />
-  </form>;
-}
-
-export function ApartmentResidentForm({ propertyId, unitId }: { propertyId: string; unitId: string }) {
-  const [state, action, pending] = useActionState(assignApartmentResident, undefined as ApartmentResidentState);
-  return <form action={action} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto] sm:items-end">
-    <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
-    <label className={labelClass}>Correo electrónico<input className={inputClass} name="email" type="email" required placeholder="residente@ejemplo.com" /></label>
-    <label className={labelClass}>Tipo de residente<select className={inputClass} name="relationship" defaultValue="resident"><option value="resident">Arrendatario</option><option value="owner">Propietario</option></select></label>
-    <Button disabled={pending}>{pending ? "Asignando…" : "Asignar residente"}</Button>
-    <p className="text-xs text-muted-foreground sm:col-span-3">Si la cuenta ya pertenece a la propiedad, se vinculará aquí. Si aún no pertenece, se generará una invitación.</p>
-    {state?.error && <p role="alert" className="text-sm text-destructive sm:col-span-3">{state.error}</p>}
-    {state?.success && <p role="status" className="text-sm text-primary sm:col-span-3">{state.success}</p>}
-    {state?.invitationUrl && <div className="min-w-0 rounded-lg bg-secondary p-3 sm:col-span-3"><p className="text-sm font-medium">Enlace de invitación válido durante 72 horas</p><p className="mt-1 break-all text-xs">{state.invitationUrl}</p></div>}
   </form>;
 }
 

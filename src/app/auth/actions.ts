@@ -180,20 +180,21 @@ export async function createInvitation(_: InvitationState, formData: FormData): 
   const propertyId = field(formData, "propertyId");
   const email = field(formData, "email").toLowerCase();
   const role = field(formData, "role");
-  const unitId = field(formData, "unitId") || null;
-  const relationship = unitId ? field(formData, "relationship") : null;
+  const buildingId = field(formData, "buildingId");
+  const unitId = field(formData, "unitId");
+  const relationship = field(formData, "relationship");
   if (!propertyId || !email.includes("@") || !["member", "concierge"].includes(role)) return { error: "Revisa la propiedad, el correo y el rol." };
+  if (role === "member" && (!buildingId || !unitId || !["owner", "resident"].includes(relationship))) return { error: "Selecciona torre, apartamento y tipo de residente." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_invitation", {
-    target_property_id: propertyId,
-    target_email: email,
-    target_roles: [role],
-    target_unit_id: unitId,
-    target_relationship: relationship,
-    valid_hours: 72,
-  });
-  if (error || typeof data !== "string") return { error: "No pudimos crear la invitación. Verifica tus permisos y los datos." };
+  const { data, error } = role === "member"
+    ? await supabase.rpc("create_resident_invitation", { target_property_id: propertyId, target_building_id: buildingId, target_unit_id: unitId, target_email: email, target_relationship: relationship })
+    : await supabase.rpc("create_invitation", { target_property_id: propertyId, target_email: email, target_roles: ["concierge"], target_unit_id: null, target_relationship: null, valid_hours: 72 });
+  if (error || typeof data !== "string") {
+    if (error?.message.includes("already_assigned")) return { error: "Ese residente ya está vinculado a este apartamento." };
+    if (error?.message.includes("not_a_resident")) return { error: "Ese correo tiene otro rol en esta propiedad. Revisa su acceso antes de invitarlo como residente." };
+    return { error: "No pudimos crear la invitación. Comprueba que la torre y el apartamento sigan activos y pertenezcan a esta propiedad." };
+  }
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   return { invitationUrl: `${origin}/invitacion?token=${encodeURIComponent(data)}` };
 }
