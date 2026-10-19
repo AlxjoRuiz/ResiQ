@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { changeAssemblyStatus, createAssembly, publishAssembly, recordAssemblyAttendance, reviewAssemblyRepresentation, setAssemblyRsvp, submitAssemblyRepresentation, updateAssembly, type AssemblyActionState } from "@/app/panel/propiedades/[propertyId]/asambleas/actions";
 import { Button } from "@/components/ui/button";
+import { DateTimeField } from "@/components/ui/date-time-field";
 import { FilePicker } from "@/components/ui/file-picker";
 import { assemblyTypes } from "@/lib/assemblies/constants";
 import { createClient } from "@/lib/supabase/client";
@@ -52,6 +53,7 @@ function NumberedAgendaInput() {
 export function CreateAssemblyForm({ propertyId, directory, timeZone }: { propertyId: string; directory: AssemblyDirectoryRow[]; timeZone: string }) {
   const router = useRouter(), documentsRef = useRef<HTMLInputElement>(null);
   const requestId = useRef(crypto.randomUUID());
+  const [startsAt, setStartsAt] = useState("");
   const [documents, setDocuments] = useState<File[]>([]);
   const [busy, setBusy] = useState(false), [error, setError] = useState<string>();
   const [selectedResidents, setSelectedResidents] = useState<Set<string>>(() => new Set());
@@ -111,7 +113,7 @@ export function CreateAssemblyForm({ propertyId, directory, timeZone }: { proper
   }
   return <form onSubmit={submit} className="grid gap-6"><input type="hidden" name="propertyId" value={propertyId} />
     <div><h2 className="text-lg font-semibold">1. Datos de la asamblea</h2><p className="mt-1 text-xs text-muted-foreground">Estos datos aparecerán en la convocatoria de los residentes.</p></div>
-    <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Tipo<select className={inputClass} name="type" defaultValue="ordinary">{assemblyTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className={labelClass}>Fecha y hora de la comunidad<input className={`${inputClass} min-w-0 max-w-72`} type="datetime-local" name="startsAt" required /><span className="mt-1 block text-xs text-muted-foreground">{timeZone}</span></label></div>
+    <div className="grid min-w-0 gap-5 sm:grid-cols-2"><label className={labelClass}>Tipo<select className={inputClass} name="type" defaultValue="ordinary">{assemblyTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><div className="min-w-0 max-w-72"><DateTimeField name="startsAt" label="Fecha y hora de la comunidad" value={startsAt} onChange={setStartsAt} /><span className="mt-1 block text-xs text-muted-foreground">{timeZone}</span></div></div>
     <label className={labelClass}>Título<input className={inputClass} name="title" minLength={4} maxLength={180} required placeholder="Asamblea general ordinaria" /></label>
     <label className={labelClass}>Lugar o enlace<input className={inputClass} name="location" minLength={3} maxLength={240} required placeholder="Salón comunal" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" maxLength={5000} placeholder="Información adicional para los convocados." /></label>
@@ -133,7 +135,8 @@ export function RsvpForm({ propertyId, assemblyId }: { propertyId: string; assem
 
 export function UpdateAssemblyForm({ propertyId, assembly, timeZone }: { propertyId: string; assembly: { id: string; title: string; description: string | null; starts_at: string; location: string }; timeZone: string }) {
   const [state, action, pending] = useActionState(updateAssembly, undefined as AssemblyActionState);
-  return <form action={action} className="grid gap-4"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="assemblyId" value={assembly.id} /><label className={labelClass}>Título<input className={inputClass} name="title" defaultValue={assembly.title} required /></label><div className="grid gap-4 sm:grid-cols-2"><label className={labelClass}>Fecha y hora<input className={inputClass} type="datetime-local" name="startsAt" defaultValue={dateTimeInputValue(new Date(assembly.starts_at), timeZone)} required /></label><label className={labelClass}>Lugar<input className={inputClass} name="location" defaultValue={assembly.location} required /></label></div><label className={labelClass}>Descripción<textarea className={areaClass} name="description" defaultValue={assembly.description ?? ""} /></label><div className="flex items-center gap-4"><Button variant="outline" disabled={pending}>{pending ? "Actualizando…" : "Guardar cambios"}</Button><Result state={state} /></div></form>;
+  const [startsAt, setStartsAt] = useState(() => dateTimeInputValue(new Date(assembly.starts_at), timeZone));
+  return <form action={action} className="grid gap-4"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="assemblyId" value={assembly.id} /><label className={labelClass}>Título<input className={inputClass} name="title" defaultValue={assembly.title} required /></label><div className="grid min-w-0 gap-4 sm:grid-cols-2"><DateTimeField name="startsAt" label="Fecha y hora" value={startsAt} onChange={setStartsAt} /><label className={labelClass}>Lugar<input className={inputClass} name="location" defaultValue={assembly.location} required /></label></div><label className={labelClass}>Descripción<textarea className={areaClass} name="description" defaultValue={assembly.description ?? ""} /></label><div className="flex items-center gap-4"><Button variant="outline" disabled={pending}>{pending ? "Actualizando…" : "Guardar cambios"}</Button><Result state={state} /></div></form>;
 }
 
 export function AssemblyStatusForm({ propertyId, assemblyId, status }: { propertyId: string; assemblyId: string; status: string }) {

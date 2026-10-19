@@ -47,6 +47,7 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 - La comprobación posterior mostró que existe una segunda lista, «Mis asambleas» (`/panel/asambleas`), cuyas tarjetas de fecha y hora seguían blancas. Se aplicó allí el mismo fondo completo amarillo/verde según la respuesta, dejando el detalle sin cambios. Falta confirmar cuál de las dos listas usa Alejandro y el resultado en su iPhone.
 - Alejandro precisó que se refiere a la pantalla de consulta de Asambleas, pero prefirió continuar con las pruebas móviles antes de otro ajuste de color. La ubicación exacta queda pendiente de confirmar; no se atribuye esa comprobación al detalle ni a una de las dos listas sin evidencia adicional.
 - Alejandro confirmó en iPhone/Safari que el aviso «Reserva aprobada para portería» muestra zona, apartamento, horario, cantidad de personas y motivo en líneas legibles, sin desplazamiento horizontal. También confirmó que el formulario de Registrar paquete y los controles de ingreso y salida de Visitas en Portería caben y se leen completos, sin registrar ni modificar datos.
+- En Administración → Nueva asamblea, Alejandro detectó que «Fecha y hora de la comunidad» llegaba al borde de la tarjeta en iPhone. Crear y Editar asamblea pasan a usar el mismo control de fecha y hora de ancho contenido ya comprobado en Reservas y Visitas. Falta confirmar en Safari que ambos cuadros caben y abren el selector, sin crear ni modificar una asamblea.
 
 ## Comprobación visual pendiente
 
