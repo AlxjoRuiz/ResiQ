@@ -83,7 +83,7 @@ export async function setAssemblyRsvp(_: AssemblyActionState, data: FormData): P
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(assemblyId) || !["yes", "no"].includes(rsvp)) return { error: "Respuesta inválida." };
   const supabase = await createClient(); const result = await supabase.rpc("set_assembly_rsvp", { target_assembly_id: assemblyId, target_rsvp: rsvp });
   if (result.error) return { error: friendlyError(result.error.message) };
-  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`); return { success: "Respuesta guardada." };
+  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`); revalidatePath(`/panel/propiedades/${propertyId}/asambleas`); return { success: "Respuesta guardada." };
 }
 
 export async function recordAssemblyAttendance(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
