@@ -67,9 +67,13 @@ end $test$;
 do $test$ begin
   if (select status from public.property_members where id='21200000-0000-4000-8000-000000000002') <> 'active' then raise exception 'resident_not_reactivated'; end if;
   if (select count(*) from public.unit_memberships where unit_id='21400000-0000-4000-8000-000000000001' and valid_to is null) <> 1 then raise exception 'resident_not_reassigned'; end if;
-  if (select count(*) from public.invitations where property_id='21100000-0000-4000-8000-000000000001' and email_normalized='new-apartment-resident@resiq.invalid' and status='pending') <> 1 then raise exception 'invitation_not_recorded'; end if;
 end $test$;
 reset role;
+
+-- La tabla de invitaciones no es legible por authenticated; inspección interna del test.
+do $test$ begin
+  if (select count(*) from public.invitations where property_id='21100000-0000-4000-8000-000000000001' and email_normalized='new-apartment-resident@resiq.invalid' and status='pending') <> 1 then raise exception 'invitation_not_recorded'; end if;
+end $test$;
 
 select 'apartment_resident_management_passed_rollback' as result;
 rollback;
