@@ -16,14 +16,13 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles 
   const section = pathname.startsWith(`${base}/`) ? pathname.slice(base.length + 1).split("/")[0] : "";
   const originNoticeId = searchParams.get("desdeAviso");
   const validNoticeId = originNoticeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(originNoticeId) ? originNoticeId : null;
-  useEffect(() => {
-    setReturnContext((current) => {
-      if (validNoticeId && section && section !== "notificaciones" && section !== "dashboard") {
-        return current?.noticeId === validNoticeId && current.section === section ? current : { noticeId: validNoticeId, section };
-      }
-      return current?.section === section ? current : null;
-    });
-  }, [validNoticeId, section]);
+  if (validNoticeId && section && section !== "notificaciones" && section !== "dashboard") {
+    if (returnContext?.noticeId !== validNoticeId || returnContext.section !== section) {
+      setReturnContext({ noticeId: validNoticeId, section });
+    }
+  } else if (returnContext && returnContext.section !== section) {
+    setReturnContext(null);
+  }
   useEffect(() => {
     if (!window.matchMedia("(max-width: 900px)").matches) return;
     const navigation = navigationRef.current;

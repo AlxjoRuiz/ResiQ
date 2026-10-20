@@ -54,6 +54,8 @@ Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance 
 
 ## Comprobación visual pendiente
 
+- Navegación desde Notificaciones: se corrigió localmente la conservación de «Volver al aviso» dentro de la misma sección sin actualizar estado desde un efecto de React. TypeScript, ESLint y compilación pasaron; falta confirmar el despliegue y comprobar en la app que el enlace sigue apareciendo al entrar desde un aviso y navegar dentro del módulo, y desaparece al cambiar de sección.
+
 - En móvil estrecho, abrir Reservas → Nueva reserva y seleccionar un día libre y uno ocupado; revisar el significado de los colores y el foco visible. El formulario y el ancho de página ya fueron confirmados por Alejandro.
 - En móvil y tableta, abrir secciones lejanas de cada rol (por ejemplo, Cartera, Asambleas, Notificaciones); confirmar que la sección activa aparece en la barra y se puede navegar manualmente a las demás.
 - Recorrer después formularios, listas y detalles de Residente; luego las vistas operativas de Portería y Administración. Registrar y corregir cada problema reproducible antes de cerrar la etapa.
