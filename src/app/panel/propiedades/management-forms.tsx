@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
-import { endUnitMembership, manageMember, saveBuilding, saveUnit, updateApartmentRelationship, updateProperty, type ManagementState } from "./actions";
+import { endUnitMembership, manageMember, saveBuilding, saveUnit, updateProperty, type ManagementState } from "./actions";
 
 const inputClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass = "block text-sm font-medium";
@@ -57,15 +57,15 @@ export function UnitForm({ propertyId, buildings, unit }: {
   </form>;
 }
 
-export function MemberForm({ propertyId, member, residentMode = false }: { propertyId: string; member: { id: string; roles: string[]; status: string }; residentMode?: boolean }) {
+export function MemberForm({ propertyId, member }: { propertyId: string; member: { id: string; roles: string[]; status: string } }) {
   const [state, action, pending] = useActionState(manageMember, undefined as ManagementState);
   return <form action={action} className="mt-4 grid gap-3 sm:grid-cols-3 sm:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="memberId" value={member.id} />
-    {residentMode ? <input type="hidden" name="roles" value="member" /> : <fieldset className="flex h-11 items-center gap-4 rounded-lg border px-3"><legend className="sr-only">Roles</legend><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="member" defaultChecked={member.roles.includes("member")} />Miembro</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="concierge" defaultChecked={member.roles.includes("concierge")} />Portería</label></fieldset>}
-    <label className={labelClass}>Acceso a la aplicación<select className={inputClass} name="status" defaultValue={member.status}><option value="active">Activo</option><option value="suspended">{residentMode ? "Inactivo — libera el apartamento" : "Inactivo — sin acceso"}</option>{!residentMode && <option value="revoked">Revocado — quitar acceso</option>}</select></label>
+    <fieldset className="flex h-11 items-center gap-4 rounded-lg border px-3"><legend className="sr-only">Roles</legend><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="member" defaultChecked={member.roles.includes("member")} />Miembro</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="concierge" defaultChecked={member.roles.includes("concierge")} />Portería</label></fieldset>
+    <label className={labelClass}>Acceso a la aplicación<select className={inputClass} name="status" defaultValue={member.status}><option value="active">Activo</option><option value="suspended">Inactivo — sin acceso</option><option value="revoked">Revocado — quitar acceso</option></select></label>
     <Button variant="outline" disabled={pending}>{pending ? "Guardando…" : "Actualizar acceso"}</Button>
-    <div className="sm:col-span-3">{residentMode && <p className="mb-2 text-xs text-muted-foreground">Al inactivarlo, se cerrarán sus vínculos con apartamentos y perderá acceso. Para reactivarlo, envía una nueva invitación.</p>}<Result state={state} /></div>
+    <div className="sm:col-span-3"><Result state={state} /></div>
   </form>;
 }
 
@@ -74,17 +74,7 @@ export function EndMembershipForm({ propertyId, unitMembershipId }: { propertyId
   return <form action={action} className="flex flex-wrap items-center gap-2">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="unitMembershipId" value={unitMembershipId} />
-    <label className="flex items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" required />Confirmo la desvinculación</label>
     <Button type="submit" size="sm" variant="outline" disabled={pending}>{pending ? "Desvinculando…" : "Desvincular del apartamento"}</Button>
     <Result state={state} />
-  </form>;
-}
-
-export function ApartmentRelationshipForm({ propertyId, unitMembershipId, relationship }: { propertyId: string; unitMembershipId: string; relationship: string }) {
-  const [state, action, pending] = useActionState(updateApartmentRelationship, undefined as ManagementState);
-  return <form action={action} className="mt-3 flex flex-wrap items-end gap-2">
-    <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitMembershipId" value={unitMembershipId} />
-    <label className={labelClass}>Tipo de residente<select className={inputClass} name="relationship" defaultValue={relationship}><option value="resident">Arrendatario</option><option value="owner">Propietario</option></select></label>
-    <Button variant="outline" size="sm" disabled={pending}>{pending ? "Guardando…" : "Guardar tipo"}</Button><Result state={state} />
   </form>;
 }

@@ -86,15 +86,3 @@ export async function endUnitMembership(_: ManagementState, formData: FormData):
   propertyPaths(propertyId);
   return { success: "Vínculo finalizado. El acceso histórico operativo fue retirado." };
 }
-
-export async function updateApartmentRelationship(_: ManagementState, formData: FormData): Promise<ManagementState> {
-  const propertyId = field(formData, "propertyId");
-  const unitMembershipId = field(formData, "unitMembershipId");
-  const relationship = field(formData, "relationship");
-  if (!propertyId || !unitMembershipId || !["owner", "resident"].includes(relationship)) return { error: "Selecciona un tipo de residente válido." };
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("update_apartment_relationship", { target_property_id: propertyId, target_unit_membership_id: unitMembershipId, target_relationship: relationship });
-  if (error) return { error: databaseError(error.code) };
-  propertyPaths(propertyId);
-  return { success: "Tipo de residente actualizado." };
-}

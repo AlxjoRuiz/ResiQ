@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { ApartmentRelationshipForm, BuildingForm, EndMembershipForm, MemberForm, UnitForm } from "./management-forms";
+import { BuildingForm, EndMembershipForm, MemberForm, UnitForm } from "./management-forms";
 
 type Unit = { id: string; building_id: string; code: string; floor: string | null; status: string };
 type Building = { id: string; name: string; code: string; active: boolean; units: Unit[] | null };
@@ -17,8 +17,8 @@ function OccupantCard({ occupant, propertyId }: { occupant: Occupant; propertyId
   const { member, link } = occupant;
   return <div className="min-w-0 rounded-xl border bg-white p-3 sm:p-4">
     <div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="font-semibold">{one(member.profiles)?.display_name ?? "Miembro"}</p><p className="break-all text-sm text-muted-foreground">{member.email ?? "Correo no disponible"}</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{link.relationship === "owner" ? "Propietario" : "Arrendatario"}</span></div>
-    <p className="mt-2 text-sm">Acceso a la propiedad: <strong>{statusLabel(member.status)}</strong></p>
-    <details className="mt-3 border-t pt-3"><summary className="cursor-pointer text-sm font-medium">Administrar acceso y relación</summary><MemberForm propertyId={propertyId} member={member} residentMode /><ApartmentRelationshipForm propertyId={propertyId} unitMembershipId={link.id} relationship={link.relationship} /><div className="mt-3 border-t pt-3"><EndMembershipForm propertyId={propertyId} unitMembershipId={link.id} /></div></details>
+    <p className="mt-2 text-sm">Estado: <strong>{statusLabel(member.status)}</strong></p>
+    <div className="mt-3 border-t pt-3"><p className="mb-3 text-xs text-muted-foreground">Desvincular libera este apartamento. Si era el último vínculo del residente, también se retira su acceso; para volver a asignarlo se envía una invitación.</p><EndMembershipForm propertyId={propertyId} unitMembershipId={link.id} /></div>
   </div>;
 }
 
