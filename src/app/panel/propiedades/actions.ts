@@ -71,9 +71,9 @@ export async function manageMember(_: ManagementState, formData: FormData): Prom
   if (!propertyId || !memberId || !status || roles.length === 0) return { error: "Selecciona al menos un rol válido." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("manage_property_member", { target_property_id: propertyId, target_member_id: memberId, target_roles: roles, target_status: status });
-  if (error) return { error: databaseError(error.code) };
+  if (error) return { error: error.message.includes("resident_requires_invitation") ? "Para reactivar a este residente, envíale una nueva invitación a un apartamento." : databaseError(error.code) };
   propertyPaths(propertyId);
-  return { success: "Acceso del miembro actualizado." };
+  return { success: status === "suspended" && roles.length === 1 && roles[0] === "member" ? "Residente inactivado y apartamentos liberados. Para reactivarlo, envía una nueva invitación." : "Acceso del miembro actualizado." };
 }
 
 export async function endUnitMembership(_: ManagementState, formData: FormData): Promise<ManagementState> {

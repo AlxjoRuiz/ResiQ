@@ -63,9 +63,9 @@ export function MemberForm({ propertyId, member, residentMode = false }: { prope
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="memberId" value={member.id} />
     {residentMode ? <input type="hidden" name="roles" value="member" /> : <fieldset className="flex h-11 items-center gap-4 rounded-lg border px-3"><legend className="sr-only">Roles</legend><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="member" defaultChecked={member.roles.includes("member")} />Miembro</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="concierge" defaultChecked={member.roles.includes("concierge")} />Portería</label></fieldset>}
-    <label className={labelClass}>Acceso a la aplicación<select className={inputClass} name="status" defaultValue={member.status}><option value="active">Activo</option><option value="suspended">Inactivo — sin acceso</option>{!residentMode && <option value="revoked">Revocado — quitar acceso</option>}</select></label>
+    <label className={labelClass}>Acceso a la aplicación<select className={inputClass} name="status" defaultValue={member.status}><option value="active">Activo</option><option value="suspended">{residentMode ? "Inactivo — libera el apartamento" : "Inactivo — sin acceso"}</option>{!residentMode && <option value="revoked">Revocado — quitar acceso</option>}</select></label>
     <Button variant="outline" disabled={pending}>{pending ? "Guardando…" : "Actualizar acceso"}</Button>
-    <div className="sm:col-span-3"><Result state={state} /></div>
+    <div className="sm:col-span-3">{residentMode && <p className="mb-2 text-xs text-muted-foreground">Al inactivarlo, se cerrarán sus vínculos con apartamentos y perderá acceso. Para reactivarlo, envía una nueva invitación.</p>}<Result state={state} /></div>
   </form>;
 }
 
