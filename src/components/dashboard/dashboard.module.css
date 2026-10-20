@@ -61,6 +61,10 @@
 .moduleContent { min-width: 0; overflow-wrap: anywhere; }
 .moduleContent > main { padding: 0; margin: 0; max-width: none; min-height: 0; width: 100%; }
 .moduleContent [data-slot="card"], .moduleContent section > a, .moduleContent section > div:global(.rounded-2xl) { border-radius: 22px; background-color: white; box-shadow: 0 4px 20px #344a3406; border-color: #e5ebe2; }
+.moduleContent section > a[data-assembly-response="pending"] { background-color: #fffbeb; border-color: #fcd34d; }
+.moduleContent section > a[data-assembly-response="pending"]:hover { background-color: #fef3c7; }
+.moduleContent section > a[data-assembly-response="answered"] { background-color: #eaf4e8; border-color: #b9d7bd; }
+.moduleContent section > a[data-assembly-response="answered"]:hover { background-color: #dceedd; }
 .moduleContent header { border-color: #d9e2d4; }
 .moduleContent input:not([type="checkbox"]):not([type="radio"]), .moduleContent select, .moduleContent textarea { min-width: 0; background-color: #fff; border-color: #ccd9c7; border-radius: 12px; }
 .moduleContent table { background: white; }
