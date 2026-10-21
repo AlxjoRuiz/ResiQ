@@ -26,6 +26,8 @@ La interfaz depende de la migracion anterior; Alejandro confirmo las siete colum
 
 Verificación local de esta entrega: TypeScript y compilación aprobaron; siete pruebas del censo y 20 de seguridad aprobaron; ESLint terminó sin errores, con seis advertencias preexistentes en otros módulos. No hubo prueba de importación contra Supabase ni verificación visual en Vercel.
 
+Codigo de interfaz: commit `535676b`, subido a `main` junto con la documentacion hasta `ed2a2f9`. El estado de GitHub para `ed2a2f9` reporto Vercel `success` y «Deployment has completed». Esto confirma despliegue, no que Alejandro haya importado o revisado la pantalla en produccion.
+
 ## Pendiente para la entrega de envio
 
 Faltan la interfaz de seleccion, una cola de invitaciones con comprobacion de vigencia y permisos justo antes del envio, la plantilla del enlace, deduplicacion, registro de errores y un interruptor de activacion que permanezca apagado hasta la prueba de correo. La importacion real del Excel y los correos a residentes estan pendientes de un caso controlado acordado con Alejandro. No usar el Excel real ni enviar a terceros en una prueba tecnica.

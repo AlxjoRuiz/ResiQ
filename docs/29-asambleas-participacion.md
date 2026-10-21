@@ -25,3 +25,5 @@ Alejandro aprobo continuar esta ampliacion el 21 de octubre de 2026. No forma pa
 `assembly_self_check_in_catalog_readonly.sql` comprueba cuatro propiedades del catalogo sin modificar datos. Falta su aplicacion y prueba transaccional remota; ninguna asistencia real ha sido marcada por este cambio. La interfaz no debe publicarse hasta que Alejandro confirme el SQL y el catalogo.
 
 Alejandro confirmo despues las siete comprobaciones de catalogo del censo. Antes de publicar esta entrega, verificar el push y el despliegue sin confundirlos con una prueba funcional en produccion.
+
+La preparacion de SQL y prueba quedo en `3151cf7`, subida a `main`. El commit `ed2a2f9` que la incluye reporto Vercel `success`; esto solo despliega archivos fuente, no aplica la migracion a Supabase. No se ha publicado el boton de auto-registro.
