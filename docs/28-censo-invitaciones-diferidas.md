@@ -4,7 +4,7 @@ Alejandro aprobo preparar el envio de invitaciones al importar el Excel, con una
 
 ## Decisiones y limites
 
-- La vista previa permitira elegir a un residente principal por apartamento y confirmar si se invita como propietario o arrendatario. El texto original «Tipo de usuario» no se transforma automaticamente en un permiso. Los apartamentos sin nombre o correo verificable no pueden tener principal invitado.
+- La vista previa elige automáticamente al principal cuando hay una sola respuesta válida por apartamento; si hay varias, Administración lo selecciona. Por decisión posterior de Alejandro, «Tipo de usuario» del Excel determina la relación futura: Propietario/a → propietario; Residente o Arrendatario/a → residente. Un valor distinto bloquea esa selección hasta corregir el archivo. Los apartamentos sin nombre o correo verificable no pueden tener principal invitado.
 - El mismo correo en dos apartamentos requiere resolucion manual: la funcion actual de invitaciones revoca enlaces pendientes anteriores del mismo correo dentro de la propiedad. El lote no debe enviar dos enlaces incompatibles.
 - La importacion del censo conserva su comportamiento atomico e idempotente. La eleccion del principal se guarda junto a la fila; repetir el mismo archivo no cambia la eleccion silenciosamente.
 - Guardar un principal **no** crea una cuenta, una invitacion, un trabajo de correo ni acceso a ResiQ. Tampoco interpreta el consentimiento del censo como permiso para enviar mensajes.
@@ -20,7 +20,7 @@ Alejandro informó después que la ejecución completa devolvió `CENSUS_PRIMARY
 
 ## Entrega 2: seleccion visible, todavia sin envio
 
-La vista previa agrupa respuestas por apartamento y exige elegir una fila principal con nombre y correo de la columna G. La relacion de acceso (propietario/arrendatario) se elige aparte; no cambia el correo destinatario. El servidor relee el Excel, valida la seleccion y rechaza el mismo correo como principal de dos apartamentos. La ficha identifica el principal guardado. Las unidades sin nombre o correo elegibles se conservan sin principal. No se generan invitaciones ni correos.
+La vista previa agrupa respuestas por apartamento y conserva un único principal con nombre y correo de la columna G. Si hay una sola respuesta válida, se preselecciona; si hay varias, se elige una. La relación de acceso se deriva de «Tipo de usuario» en el servidor, sin selector adicional ni confiar en un valor enviado por el navegador. El servidor relee el Excel, valida la selección y rechaza el mismo correo como principal de dos apartamentos. La ficha identifica el principal guardado. Las unidades sin nombre o correo elegibles se conservan sin principal. No se generan invitaciones ni correos.
 
 La interfaz depende de la migracion anterior; Alejandro confirmo las siete columnas `true` antes de publicarla. La importacion funcional queda pendiente de un caso de prueba controlado aprobado por Alejandro.
 
@@ -29,6 +29,8 @@ Verificación local de esta entrega: TypeScript y compilación aprobaron; siete 
 Codigo de interfaz: commit `535676b`, subido a `main` junto con la documentacion hasta `ed2a2f9`. El estado de GitHub para `ed2a2f9` reporto Vercel `success` y «Deployment has completed». Esto confirma despliegue, no que Alejandro haya importado o revisado la pantalla en produccion.
 
 ## Pendiente para la entrega de envio
+
+En la revisión de la vista previa del 21/10, Alejandro pidió quitar el selector «Relación para acceso futuro». El cliente muestra el valor derivado de «Tipo de usuario» y preselecciona al único candidato válido de cada apartamento; el servidor vuelve a derivar la relación desde el archivo y no acepta la relación enviada por el navegador. Los tipos ambiguos impiden confirmar la importación. Pasaron ocho pruebas del censo, 20 de seguridad, TypeScript y compilación; ESLint no dio errores y conservó seis advertencias preexistentes de otros módulos. Aún no se importó el Excel ni se comprobó visualmente esta vista publicada.
 
 Por solicitud de Alejandro, la pantalla de Propiedad ya no muestra la antigua sección manual «Invitaciones de residentes» ni su acceso de navegación. Se retiraron también sus consultas de torres y apartamentos de esa página. No se borraron invitaciones históricas ni se activó el envío desde el censo; el flujo subyacente permanece para una futura activación controlada.
 Esta entrega pasó `npm run typecheck`, `npm run build` y las 20 pruebas de seguridad. ESLint terminó sin errores y con seis advertencias preexistentes fuera de esta página. La revisión visual en Vercel y la prueba de asistencia en Asambleas quedan pendientes de confirmación de Alejandro.
