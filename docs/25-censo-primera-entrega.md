@@ -21,6 +21,8 @@ El texto y valor de autorización se guardan tal como llegaron del Excel. No se 
 
 ## Activación controlada
 
+Alejandro confirmó el 20 de octubre de 2026 que la migración devolvió `CENSO_SCHEMA_OK` y que las ocho columnas de la consulta de catálogo salieron `true`. Esto confirma la aplicación informada por Alejandro; todavía no se ha importado el Excel ni hecho una prueba funcional en producción.
+
 1. Abrir en GitHub el archivo completo `supabase/migrations/20261020234000_census_import.sql`, copiar su contenido íntegro al SQL Editor y comprobar que el final dice `select 'CENSO_SCHEMA_OK' as result;` antes de pulsar Run. No ejecutar SQL parcial. La respuesta esperada es una fila `CENSO_SCHEMA_OK`; después ejecutar `supabase/tests/census_catalog_readonly.sql` y confirmar que todas sus columnas sean `true`.
 2. Publicar la interfaz solo después de confirmar la migración. La validación local de TypeScript, lint y parser no es una prueba del piloto.
 3. En el piloto, importar únicamente `outputs/01a15b3a-46f0-73f2-9870-2f033dd11f04/censo-prueba-resiq.xlsx` a la propiedad de prueba elegida por Alejandro. Confirmar torres, apartamentos, las seis respuestas, la ficha y que Torre 1 · 101 muestre el correo solicitado sin vincular la cuenta.

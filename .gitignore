@@ -9,3 +9,4 @@ coverage/
 .vercel/
 *.log
 .npm-cache/
+outputs/
