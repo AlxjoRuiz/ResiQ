@@ -19,3 +19,5 @@ Esta reorganización puede revisarse visualmente sin crear datos. La prueba func
 ## Estado
 
 El código de esta etapa quedó en `c19b08a`, subido a `main`, y Vercel confirmó su despliegue. Pasaron TypeScript, ESLint sin errores (seis advertencias preexistentes), compilación, tres pruebas del parser y 16 pruebas de seguridad. Sigue pendiente que Alejandro confirme la presentación de Propiedad en producción; no se ha realizado la importación funcional ni una prueba de exportación.
+
+El ajuste posterior que retiró «Datos generales» y «Gestión manual de unidades» quedó en `fe86f87`, subido a `main` y desplegado por Vercel. Pasaron TypeScript, ESLint sin errores (las mismas seis advertencias), compilación y las 16 pruebas de seguridad. Falta que Alejandro confirme visualmente la ausencia de ambos bloques en producción.
