@@ -31,6 +31,7 @@ Codigo de interfaz: commit `535676b`, subido a `main` junto con la documentacion
 ## Pendiente para la entrega de envio
 
 En la revisión de la vista previa del 21/10, Alejandro pidió quitar el selector «Relación para acceso futuro». El cliente muestra el valor derivado de «Tipo de usuario» y preselecciona al único candidato válido de cada apartamento; el servidor vuelve a derivar la relación desde el archivo y no acepta la relación enviada por el navegador. Los tipos ambiguos impiden confirmar la importación. Pasaron ocho pruebas del censo, 20 de seguridad, TypeScript y compilación; ESLint no dio errores y conservó seis advertencias preexistentes de otros módulos. Aún no se importó el Excel ni se comprobó visualmente esta vista publicada.
+Código `a03fcc2` subido a `main`; GitHub informó `Vercel: success` y «Deployment has completed». La revisión en la web sigue pendiente de Alejandro.
 
 Por solicitud de Alejandro, la pantalla de Propiedad ya no muestra la antigua sección manual «Invitaciones de residentes» ni su acceso de navegación. Se retiraron también sus consultas de torres y apartamentos de esa página. No se borraron invitaciones históricas ni se activó el envío desde el censo; el flujo subyacente permanece para una futura activación controlada.
 Esta entrega pasó `npm run typecheck`, `npm run build` y las 20 pruebas de seguridad. ESLint terminó sin errores y con seis advertencias preexistentes fuera de esta página. La revisión visual en Vercel y la prueba de asistencia en Asambleas quedan pendientes de confirmación de Alejandro.
