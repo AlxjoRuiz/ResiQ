@@ -16,6 +16,16 @@ Alejandro aprobo preparar el envio de invitaciones al importar el Excel, con una
 
 En local pasaron las 20 pruebas de seguridad existentes y la revision de formato del diff. No hay instancia local de PostgreSQL para ejecutar la migracion; el SQL y la consulta de catalogo estan preparados, pero el resultado en Supabase sigue pendiente de Alejandro. La aplicacion desplegada mantiene la importacion anterior y no envia invitaciones.
 
+Alejandro informó después que la ejecución completa devolvió `CENSUS_PRIMARY_SCHEMA_OK`. Queda pendiente su resultado de las siete columnas de `census_primary_catalog_readonly.sql`; no se ha hecho una importación real ni una prueba funcional en producción.
+
+## Entrega 2: seleccion visible, todavia sin envio
+
+La vista previa agrupa respuestas por apartamento y exige elegir una fila principal con nombre y correo de la columna G. La relacion de acceso (propietario/arrendatario) se elige aparte; no cambia el correo destinatario. El servidor relee el Excel, valida la seleccion y rechaza el mismo correo como principal de dos apartamentos. La ficha identifica el principal guardado. Las unidades sin nombre o correo elegibles se conservan sin principal. No se generan invitaciones ni correos.
+
+La interfaz depende de la migracion anterior; antes de publicarla se espera tambien la comprobacion de las siete columnas `true`. La importacion funcional queda pendiente de un caso de prueba controlado aprobado por Alejandro.
+
+Verificación local de esta entrega: TypeScript y compilación aprobaron; siete pruebas del censo y 20 de seguridad aprobaron; ESLint terminó sin errores, con seis advertencias preexistentes en otros módulos. No hubo prueba de importación contra Supabase ni verificación visual en Vercel. La interfaz no se publica mientras falte la confirmación del catálogo.
+
 ## Pendiente para la entrega de envio
 
 Faltan la interfaz de seleccion, una cola de invitaciones con comprobacion de vigencia y permisos justo antes del envio, la plantilla del enlace, deduplicacion, registro de errores y un interruptor de activacion que permanezca apagado hasta la prueba de correo. La importacion real del Excel y los correos a residentes estan pendientes de un caso controlado acordado con Alejandro. No usar el Excel real ni enviar a terceros en una prueba tecnica.

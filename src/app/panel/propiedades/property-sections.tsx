@@ -17,7 +17,7 @@ type UnitRelation = { id: string; code: string };
 type UnitLink = { id: string; relationship: string; valid_to: string | null; units: UnitRelation | UnitRelation[] | null };
 type Member = { id: string; user_id: string; roles: string[]; status: string; profiles: { display_name: string } | { display_name: string }[] | null; unit_memberships: UnitLink[] | null; email?: string | null };
 type Occupant = { member: Member; link: UnitLink };
-type CensusRecord = { id: string; unit_id: string; import_id: string; full_name: string | null; email_normalized: string | null; cells: unknown };
+type CensusRecord = { id: string; unit_id: string; import_id: string; full_name: string | null; email_normalized: string | null; invitation_primary: boolean; invitation_relationship: string | null; cells: unknown };
 type CensusImport = { id: string; headers: unknown };
 type ConciergeAccount = { id: string; member_id: string; username: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; email_normalized: string; address: string | null; photo_path: string | null; vehicles: unknown; status: string; photoUrl?: string | null };
 function ageFor(birthDate: string) { const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE); return Number(today.slice(0, 4)) - Number(birthDate.slice(0, 4)) - (today.slice(5) < birthDate.slice(5) ? 1 : 0); }
@@ -43,7 +43,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
   const [{ data: buildingData, error: buildingError }, { data: memberData, error: memberError }, { data: censusData, error: censusError }, { data: importData, error: importError }, { data: conciergeData, error: conciergeError }] = await Promise.all([
     supabase.from("buildings").select("id,name,code,active,units(id,building_id,code,floor,status)").eq("property_id", propertyId).order("name"),
     supabase.from("property_members").select("id,user_id,roles,status,profiles!property_members_user_id_fkey(display_name),unit_memberships(id,relationship,valid_to,units(id,code))").eq("property_id", propertyId).order("joined_at"),
-    supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,cells").eq("property_id", propertyId).limit(500),
+    supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,invitation_primary,invitation_relationship,cells").eq("property_id", propertyId).limit(500),
     supabase.from("census_imports").select("id,headers").eq("property_id", propertyId),
     supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,photo_path,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
   ]);
@@ -86,7 +86,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
         <div className="space-y-4"><h4 className="font-semibold">Información del Excel</h4>{(censusByUnit.get(unit.id) ?? []).map((record, index) => {
           const headers = headersByImport.get(record.import_id) ?? [];
           const cells = Array.isArray(record.cells) ? record.cells.map((value) => value === null ? null : String(value)) : [];
-          return <div key={record.id} className="min-w-0 rounded-lg border p-3 sm:p-4"><p className="mb-4 font-medium">{record.full_name || record.email_normalized || `Residente ${index + 1}`}</p>{headers.length ? <CensusDetail headers={headers} cells={cells} /> : <p className="text-sm text-muted-foreground">No se pudieron mostrar los encabezados de esta respuesta.</p>}</div>;
+          return <div key={record.id} className="min-w-0 rounded-lg border p-3 sm:p-4"><p className="mb-4 font-medium">{record.full_name || record.email_normalized || `Residente ${index + 1}`}{record.invitation_primary && <span className="ml-2 rounded-full bg-secondary px-2 py-1 text-xs">Principal para futura invitación · {record.invitation_relationship === "owner" ? "Propietario" : "Arrendatario"}</span>}</p>{headers.length ? <CensusDetail headers={headers} cells={cells} /> : <p className="text-sm text-muted-foreground">No se pudieron mostrar los encabezados de esta respuesta.</p>}</div>;
         })}{!censusByUnit.get(unit.id)?.length && <p className="text-sm text-muted-foreground">Este apartamento no tiene respuestas importadas.</p>}</div>
         <div className="space-y-3 border-t pt-4"><h4 className="font-semibold">Vinculaciones y acceso a ResiQ</h4>{(occupantsByUnit.get(unit.id) ?? []).map((occupant) => <OccupantCard key={occupant.link.id} occupant={occupant} propertyId={propertyId} />)}{!occupantsByUnit.get(unit.id)?.length && <p className="text-sm text-muted-foreground">Sin residente vinculado. Un correo del Excel no concede acceso.</p>}</div>
       </>,
@@ -95,7 +95,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
 
   return <>
     <Card className="mt-6"><CardContent>
-      <section aria-labelledby="importar-unidades"><h2 id="importar-unidades" className="text-xl font-semibold">Importar unidades desde Excel</h2><p className="mb-5 mt-1 text-sm text-muted-foreground">Importa un archivo Excel para crear automáticamente las torres, apartamentos y registrar su información.</p>{imported && <p role="status" className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900">Importación completada. Los correos del Excel no envían invitaciones ni conceden acceso.</p>}{canImport ? <CensusImportForm propertyId={propertyId} /> : <p className="rounded-lg bg-secondary p-3 text-sm">Esta propiedad ya tiene torres. Para evitar cruces, esta primera versión no permite importar otro archivo sobre la estructura existente.</p>}</section>
+      <section aria-labelledby="importar-unidades"><h2 id="importar-unidades" className="text-xl font-semibold">Importar unidades desde Excel</h2><p className="mb-5 mt-1 text-sm text-muted-foreground">Importa un archivo Excel para crear automáticamente las torres, apartamentos y registrar su información.</p>{imported && <p role="status" className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900">Importación completada y principales guardados. No se enviaron invitaciones ni se concedió acceso.</p>}{canImport ? <CensusImportForm propertyId={propertyId} /> : <p className="rounded-lg bg-secondary p-3 text-sm">Esta propiedad ya tiene torres. Para evitar cruces, esta primera versión no permite importar otro archivo sobre la estructura existente.</p>}</section>
       <section id="apartamentos" className="mt-8 scroll-mt-6 border-t pt-8"><h2 className="text-xl font-semibold">Torres de la propiedad</h2><p className="mt-1 text-sm text-muted-foreground">Abre una torre y después un apartamento para consultar cada respuesta importada y sus vinculaciones, sin mezclar personas.</p>
         <div className="mt-4"><PropertyUnitExplorer towers={explorerTowers} /></div>
       </section>
