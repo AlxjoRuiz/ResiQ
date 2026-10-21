@@ -9,13 +9,14 @@ Alejandro aprobo continuar esta ampliacion el 21 de octubre de 2026. No forma pa
 - Cuando Administracion inicia la asamblea, cada convocado marca su propia llegada desde su perfil, sin codigo. El registro es autodeclarado y no demuestra presencia fisica.
 - Durante la asamblea, Administracion abre preguntas de participacion con respuesta por seleccion o texto, y votaciones. Se muestran sin esperar recarga manual prolongada.
 - Cada convocado tiene un voto por votacion; un poder no agrega automaticamente otro voto. Al cerrar, el resultado se muestra enseguida sin aprobacion posterior.
+- Solo puede votar quien haya marcado asistencia. Los convocados ven los totales al cerrar, no quien eligio cada opcion.
 - Las respuestas de participacion no se contabilizan como votos. No se calcula automaticamente quorum, coeficientes ni mayorias con las reglas actualmente comunicadas.
 
 ## Orden de entregas
 
 1. Auto-registro de asistencia: migracion y prueba de catalogo, confirmacion de Alejandro en SQL Editor, interfaz y prueba con una asamblea sintetica dirigida solo a cuentas controladas.
 2. Dudas previas publicas para convocados y aviso interno a Administracion.
-3. Preguntas de participacion y votaciones en vivo, con bloqueo al cerrar, resultado inmediato, aislamiento entre propiedades y pruebas de concurrencia. Las decisiones pendientes sobre requisito de asistencia para votar y privacidad del voto individual deben resolverse antes de esta entrega.
+3. Preguntas de participacion y votaciones en vivo, con bloqueo al cerrar, resultado inmediato, aislamiento entre propiedades y pruebas de concurrencia. El requisito de asistencia y la privacidad del voto individual quedaron confirmados por Alejandro.
 
 ## Entrega 1 preparada, sin publicar
 
@@ -23,4 +24,4 @@ Alejandro aprobo continuar esta ampliacion el 21 de octubre de 2026. No forma pa
 
 `assembly_self_check_in_catalog_readonly.sql` comprueba cuatro propiedades del catalogo sin modificar datos. Falta su aplicacion y prueba transaccional remota; ninguna asistencia real ha sido marcada por este cambio. La interfaz no debe publicarse hasta que Alejandro confirme el SQL y el catalogo.
 
-El commit local del censo `535676b` sigue sin publicarse porque falta la confirmacion de sus siete comprobaciones de catalogo. No subir este trabajo a `main` de forma que publique accidentalmente aquella interfaz dependiente.
+Alejandro confirmo despues las siete comprobaciones de catalogo del censo. Antes de publicar esta entrega, verificar el push y el despliegue sin confundirlos con una prueba funcional en produccion.
