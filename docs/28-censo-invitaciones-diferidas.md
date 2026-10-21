@@ -32,5 +32,6 @@ Codigo de interfaz: commit `535676b`, subido a `main` junto con la documentacion
 
 Por solicitud de Alejandro, la pantalla de Propiedad ya no muestra la antigua sección manual «Invitaciones de residentes» ni su acceso de navegación. Se retiraron también sus consultas de torres y apartamentos de esa página. No se borraron invitaciones históricas ni se activó el envío desde el censo; el flujo subyacente permanece para una futura activación controlada.
 Esta entrega pasó `npm run typecheck`, `npm run build` y las 20 pruebas de seguridad. ESLint terminó sin errores y con seis advertencias preexistentes fuera de esta página. La revisión visual en Vercel y la prueba de asistencia en Asambleas quedan pendientes de confirmación de Alejandro.
+Código subido en `ce4c323`; GitHub informó `Vercel: success` y «Deployment has completed» para ese commit. Esto confirma el despliegue, no la revisión visual de Alejandro.
 
 Faltan la interfaz de seleccion, una cola de invitaciones con comprobacion de vigencia y permisos justo antes del envio, la plantilla del enlace, deduplicacion, registro de errores y un interruptor de activacion que permanezca apagado hasta la prueba de correo. La importacion real del Excel y los correos a residentes estan pendientes de un caso controlado acordado con Alejandro. No usar el Excel real ni enviar a terceros en una prueba tecnica.
