@@ -14,8 +14,8 @@ export function LoginForm({ next, invitationToken }: { next: string; invitationT
       {invitationToken && <p className="text-sm text-muted-foreground">Puedes aceptar la invitación con Google o crear tu cuenta con el correo invitado y una contraseña.</p>}
       <form action={action} className="space-y-4">
         <input type="hidden" name="next" value={next} />
-        <label className="block text-sm font-medium">Correo
-          <input className="mt-2 h-11 w-full rounded-lg border bg-white px-3 outline-none focus:ring-2 focus:ring-ring" name="email" type="email" autoComplete="email" required />
+        <label className="block text-sm font-medium">Correo o usuario de portería
+          <input className="mt-2 h-11 w-full rounded-lg border bg-white px-3 outline-none focus:ring-2 focus:ring-ring" name="identifier" type="text" autoComplete="username" required />
         </label>
         <label className="block text-sm font-medium">Contraseña
           <input className="mt-2 h-11 w-full rounded-lg border bg-white px-3 outline-none focus:ring-2 focus:ring-ring" name="password" type="password" autoComplete="current-password" minLength={8} required />

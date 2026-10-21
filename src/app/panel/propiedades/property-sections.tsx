@@ -1,10 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 import { CensusDetail } from "@/components/census/census-detail";
 import { CensusImportForm } from "@/components/census/census-import-form";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { BuildingForm, EndMembershipForm, MemberForm } from "./management-forms";
 import { PropertyUnitExplorer } from "./property-unit-explorer";
+import { ConciergeRegistrationForm } from "./concierge-registration-form";
+import { ConciergeManagementForms } from "./concierge-management-forms";
+import { maskDocument } from "@/lib/concierge/identity";
+import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 
 type Unit = { id: string; building_id: string; code: string; floor: string | null; status: string };
 type Building = { id: string; name: string; code: string; active: boolean; units: Unit[] | null };
@@ -14,6 +19,8 @@ type Member = { id: string; user_id: string; roles: string[]; status: string; pr
 type Occupant = { member: Member; link: UnitLink };
 type CensusRecord = { id: string; unit_id: string; import_id: string; full_name: string | null; email_normalized: string | null; cells: unknown };
 type CensusImport = { id: string; headers: unknown };
+type ConciergeAccount = { id: string; member_id: string; username: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; email_normalized: string; address: string | null; photo_path: string | null; vehicles: unknown; status: string; photoUrl?: string | null };
+function ageFor(birthDate: string) { const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE); return Number(today.slice(0, 4)) - Number(birthDate.slice(0, 4)) - (today.slice(5) < birthDate.slice(5) ? 1 : 0); }
 
 function one<T>(value: T | T[] | null): T | null { return Array.isArray(value) ? value[0] ?? null : value; }
 function statusLabel(status: string) { return status === "active" ? "Activo" : "Inactivo"; }
@@ -28,20 +35,22 @@ function OccupantCard({ occupant, propertyId }: { occupant: Occupant; propertyId
 }
 
 function ConciergeCard({ member, propertyId }: { member: Member; propertyId: string }) {
-  return <Card><CardContent><div className="flex flex-wrap items-start justify-between gap-3"><div><h4 className="text-lg font-semibold">{one(member.profiles)?.display_name ?? "Miembro"}</h4><p className="break-all text-sm text-muted-foreground">{member.email ?? "Correo no disponible"}</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{statusLabel(member.status)}</span></div><details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Administrar acceso</summary><MemberForm propertyId={propertyId} member={member} /></details></CardContent></Card>;
+  return <Card><CardContent><div className="flex flex-wrap items-start justify-between gap-3"><div><h4 className="text-lg font-semibold">{one(member.profiles)?.display_name ?? "Miembro"}</h4><p className="break-all text-sm text-muted-foreground">{member.email ?? "Correo no disponible"}</p><p className="mt-1 text-xs text-muted-foreground">Cuenta anterior creada por invitación; no tiene usuario permanente.</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{statusLabel(member.status)}</span></div><details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Administrar acceso</summary><MemberForm propertyId={propertyId} member={member} /></details></CardContent></Card>;
 }
 
 export async function PropertyManagementSections({ propertyId, canImport, imported }: { propertyId: string; canImport: boolean; imported: boolean }) {
   const supabase = await createClient();
-  const [{ data: buildingData, error: buildingError }, { data: memberData, error: memberError }, { data: censusData, error: censusError }, { data: importData, error: importError }] = await Promise.all([
+  const [{ data: buildingData, error: buildingError }, { data: memberData, error: memberError }, { data: censusData, error: censusError }, { data: importData, error: importError }, { data: conciergeData, error: conciergeError }] = await Promise.all([
     supabase.from("buildings").select("id,name,code,active,units(id,building_id,code,floor,status)").eq("property_id", propertyId).order("name"),
     supabase.from("property_members").select("id,user_id,roles,status,profiles!property_members_user_id_fkey(display_name),unit_memberships(id,relationship,valid_to,units(id,code))").eq("property_id", propertyId).order("joined_at"),
     supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,cells").eq("property_id", propertyId).limit(500),
     supabase.from("census_imports").select("id,headers").eq("property_id", propertyId),
+    supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,photo_path,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
   ]);
-  if (buildingError || memberError || censusError || importError) throw new Error("No se pudieron cargar las torres y sus accesos.");
+  if (buildingError || memberError || censusError || importError || conciergeError) throw new Error("No se pudieron cargar las torres y sus accesos.");
   const buildings = (buildingData ?? []) as Building[];
   const members = (memberData ?? []) as Member[];
+  const memberStatusById = new Map(members.map((member) => [member.id, member.status]));
   const admin = createAdminClient();
   const memberEmails = await Promise.all(members.map(async (member) => {
     const { data, error } = await admin.auth.admin.getUserById(member.user_id);
@@ -58,7 +67,10 @@ export async function PropertyManagementSections({ propertyId, canImport, import
       if (!link.valid_to && unit) occupantsByUnit.set(unit.id, [...(occupantsByUnit.get(unit.id) ?? []), { member, link }]);
     }
   }
-  const conciergeMembers = members.filter((member) => member.roles.includes("concierge") && !member.roles.includes("administrator"));
+  const conciergeAccounts = (conciergeData ?? []) as ConciergeAccount[];
+  await Promise.all(conciergeAccounts.map(async (account) => { if (account.photo_path) { const { data } = await admin.storage.from("private-documents").createSignedUrl(account.photo_path, 60); account.photoUrl = data?.signedUrl ?? null; } }));
+  const newConciergeMemberIds = new Set(conciergeAccounts.map((account) => account.member_id));
+  const conciergeMembers = members.filter((member) => member.roles.includes("concierge") && !member.roles.includes("administrator") && !newConciergeMemberIds.has(member.id));
   const headersByImport = new Map((importData as CensusImport[] ?? []).map((item) => [item.id, Array.isArray(item.headers) ? item.headers.map(String) : []]));
   const censusByUnit = new Map<string, CensusRecord[]>();
   for (const record of (censusData as CensusRecord[] ?? [])) censusByUnit.set(record.unit_id, [...(censusByUnit.get(record.unit_id) ?? []), record]);
@@ -88,6 +100,19 @@ export async function PropertyManagementSections({ propertyId, canImport, import
         <div className="mt-4"><PropertyUnitExplorer towers={explorerTowers} /></div>
       </section>
     </CardContent></Card>
-    <section id="porteria" className="mt-10 scroll-mt-6"><h2 className="text-2xl font-semibold">Personal de portería</h2><p className="mt-1 text-sm text-muted-foreground">Suspende el acceso temporalmente o selecciona «Revocado — quitar acceso» cuando un portero deje de trabajar. Se conserva el historial.</p><div className="mt-4 grid gap-4">{conciergeMembers.map((member) => <ConciergeCard key={member.id} member={member} propertyId={propertyId} />)}{!conciergeMembers.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay personal de portería registrado.</p></CardContent></Card>}</div></section>
+    <section id="porteria" className="mt-10 scroll-mt-6">
+      <h2 className="text-2xl font-semibold">Personal de portería</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Cada portero tiene un usuario permanente. Su correo real sirve como identidad interna, pero puede entrar con el usuario.</p>
+      <Card className="mt-4"><CardContent><details><summary className="cursor-pointer font-semibold">Nuevo portero</summary><div className="mt-5"><ConciergeRegistrationForm propertyId={propertyId} /></div></details></CardContent></Card>
+      <div className="mt-4 grid gap-4">
+        {conciergeAccounts.map((account) => <Card key={account.id}><CardContent>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{account.full_name}</h3><p className="text-sm text-muted-foreground">Usuario: {account.username}</p><p className="text-sm">Cédula: {maskDocument(account.document_number)} · Edad: {ageFor(account.birth_date)} · Teléfono: {account.phone_e164}</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs">{account.status === "active" && memberStatusById.get(account.member_id) === "active" ? "Activo" : "Inactivo"}</span></div>
+          <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Ver detalles</summary><div className="mt-3 space-y-1 text-sm">{account.photoUrl && <Image unoptimized src={account.photoUrl} alt={`Fotografía de ${account.full_name}`} width={96} height={96} className="h-24 w-24 rounded-lg object-cover" />}<p>Cédula: {account.document_number}</p><p>Fecha de nacimiento: {account.birth_date}</p><p>Correo: {account.email_normalized}</p><p>Dirección: {account.address || "Sin información"}</p><p>Vehículos: {Array.isArray(account.vehicles) ? account.vehicles.length : 0}</p>{Array.isArray(account.vehicles) && account.vehicles.map((vehicle, index) => <p key={index}>{index + 1}. {String(vehicle.type ?? "")} · {String(vehicle.brand ?? "")} · {String(vehicle.model ?? "")} · {String(vehicle.plate ?? "")}</p>)}</div></details>
+          <ConciergeManagementForms propertyId={propertyId} account={account} />
+        </CardContent></Card>)}
+        {conciergeMembers.map((member) => <ConciergeCard key={member.id} member={member} propertyId={propertyId} />)}
+        {!conciergeMembers.length && !conciergeAccounts.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay personal de portería registrado.</p></CardContent></Card>}
+      </div>
+    </section>
   </>;
 }

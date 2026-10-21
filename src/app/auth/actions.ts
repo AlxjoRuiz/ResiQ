@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAppAccessStatus } from "@/lib/auth/app-access";
 import { safeNext } from "@/lib/auth/safe-next";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AuthState = { error?: string; success?: string } | undefined;
 export type InvitationState = { error?: string; invitationUrl?: string } | undefined;
@@ -15,14 +16,28 @@ function field(formData: FormData, name: string) {
 
 
 export async function signIn(_: AuthState, formData: FormData): Promise<AuthState> {
-  const email = field(formData, "email").toLowerCase();
-  const password = field(formData, "password");
+  const identifier = (field(formData, "identifier") || field(formData, "email")).toLowerCase();
+  const password = String(formData.get("password") ?? "");
   const next = safeNext(field(formData, "next"));
-  if (!email.includes("@") || password.length < 8) return { error: "Revisa el correo y la contraseña." };
+  if (password.length < 8 || (!identifier.includes("@") && !/^[a-z0-9]+$/u.test(identifier))) return { error: "Revisa el usuario o correo y la contraseña." };
+
+  let email = identifier;
+  let conciergeUserId: string | null = null;
+  if (!identifier.includes("@")) {
+    const { data: account, error: lookupError } = await createAdminClient().from("concierge_accounts")
+      .select("user_id,email_normalized,status").eq("username", identifier).maybeSingle();
+    if (lookupError || !account || account.status !== "active") return { error: "No pudimos iniciar sesión con esos datos." };
+    email = account.email_normalized;
+    conciergeUserId = account.user_id;
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "No pudimos iniciar sesión con esos datos." };
+  if (conciergeUserId && data.user?.id !== conciergeUserId) {
+    await supabase.auth.signOut({ scope: "local" });
+    return { error: "No pudimos iniciar sesión con esos datos." };
+  }
   if (!next.startsWith("/invitacion?")) {
     const access = data.user ? await getAppAccessStatus(supabase, data.user.id) : "error";
     if (access !== "authorized") {
@@ -85,6 +100,7 @@ export async function updateProfile(_: AuthState, formData: FormData): Promise<A
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  if (await getAppAccessStatus(supabase, user.id) !== "authorized") return { error: "Tu acceso a ResiQ ya no está activo." };
   const { error } = await supabase.from("profiles").update({ display_name: displayName }).eq("id", user.id);
   if (error) return { error: "No pudimos actualizar el perfil." };
   return { success: "Perfil actualizado." };
@@ -183,13 +199,11 @@ export async function createInvitation(_: InvitationState, formData: FormData): 
   const buildingId = field(formData, "buildingId");
   const unitId = field(formData, "unitId");
   const relationship = field(formData, "relationship");
-  if (!propertyId || !email.includes("@") || !["member", "concierge"].includes(role)) return { error: "Revisa la propiedad, el correo y el rol." };
-  if (role === "member" && (!buildingId || !unitId || !["owner", "resident"].includes(relationship))) return { error: "Selecciona torre, apartamento y tipo de residente." };
+  if (!propertyId || !email.includes("@") || role !== "member") return { error: "Esta invitación es solo para residentes. Registra porteros desde Propiedad." };
+  if (!buildingId || !unitId || !["owner", "resident"].includes(relationship)) return { error: "Selecciona torre, apartamento y tipo de residente." };
 
   const supabase = await createClient();
-  const { data, error } = role === "member"
-    ? await supabase.rpc("create_resident_invitation", { target_property_id: propertyId, target_building_id: buildingId, target_unit_id: unitId, target_email: email, target_relationship: relationship })
-    : await supabase.rpc("create_invitation", { target_property_id: propertyId, target_email: email, target_roles: ["concierge"], target_unit_id: null, target_relationship: null, valid_hours: 72 });
+  const { data, error } = await supabase.rpc("create_resident_invitation", { target_property_id: propertyId, target_building_id: buildingId, target_unit_id: unitId, target_email: email, target_relationship: relationship });
   if (error || typeof data !== "string") {
     if (error?.message.includes("already_assigned")) return { error: "Ese residente ya está vinculado a este apartamento." };
     if (error?.message.includes("not_a_resident")) return { error: "Ese correo tiene otro rol en esta propiedad. Revisa su acceso antes de invitarlo como residente." };
