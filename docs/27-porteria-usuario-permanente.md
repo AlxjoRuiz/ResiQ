@@ -27,3 +27,5 @@ La utilidad `src/lib/concierge/identity.ts` y sus tres pruebas estan en `655f759
 ## Porteros anteriores creados por invitacion
 
 Alejandro revoco el acceso de Luis Ruiz desde «Administrar acceso» en Propiedad. La accion conserva la membresia y el historial, pero la lista seguia mostrando su tarjeta porque incluia miembros revocados. Se ajusto la lista para ocultar solo las membresias de Porteria con estado `revoked`; las `suspended` permanecen visibles para poder reactivarlas. No se elimina la cuenta Auth ni se alteran otras propiedades. Pendiente comprobar en produccion, con Alejandro, que la tarjeta de Luis ya no aparece y que la revocacion quedo registrada.
+
+El ajuste se subio en `7cd5018`. Pasaron TypeScript, ESLint (cero errores, seis advertencias anteriores), compilacion y `git diff --check`. GitHub confirmo `main` en ese commit y el estado de Vercel para el commit fue `success` con «Deployment has completed». Falta la comprobacion de Alejandro en la pagina privada; la verificacion de Vercel no demuestra el resultado de su sesion.
