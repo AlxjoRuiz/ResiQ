@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { assemblyTypes } from "@/lib/assemblies/constants";
+import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { createClient } from "@/lib/supabase/server";
 import { visitTimeToIso } from "@/lib/visitors/validation";
 
@@ -17,6 +18,9 @@ function friendlyError(message?: string) {
   if (message?.includes("invalid_publish")) return "Revisa que la fecha sea futura y que existan agenda y convocados.";
   if (message?.includes("convocation_required") || message?.includes("invalid_uploads")) return "Adjunta y valida una convocatoria antes de crear la asamblea.";
   if (message?.includes("correction_note_required")) return "Explica el motivo de la corrección de asistencia.";
+  if (message?.includes("assembly_not_in_progress")) return "Podrás marcar tu llegada cuando Administración inicie la asamblea.";
+  if (message?.includes("not_invited_or_inactive")) return "No tienes una convocatoria activa para marcar asistencia.";
+  if (message?.includes("attendance_already_recorded")) return "La asistencia ya fue registrada. Solicita una corrección a Administración.";
   if (message?.includes("active_representation_exists")) return "Ya existe una representación activa para esa persona y apartamento.";
   if (message?.includes("evidence_required")) return "Adjunta al menos una evidencia válida antes de aprobar la representación.";
   if (message?.includes("invalid_transition") || message?.includes("invalid_review")) return "Ese cambio no está permitido en el estado actual.";
@@ -92,6 +96,19 @@ export async function recordAssemblyAttendance(_: AssemblyActionState, data: For
   const supabase = await createClient(); const result = await supabase.rpc("record_assembly_attendance", { target_attendee_id: attendeeId, target_attended: value === "true", target_note: note || null });
   if (result.error) return { error: friendlyError(result.error.message) };
   revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`); return { success: "Asistencia guardada." };
+}
+
+export async function selfCheckInAssembly(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
+  const propertyId = field(data, "propertyId"), assemblyId = field(data, "assemblyId");
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(assemblyId)) return { error: "Asamblea inválida." };
+  const { supabase, membership } = await requirePropertyMember(propertyId);
+  if (!membership.roles.includes("member")) return { error: "Solo un convocado puede marcar su propia asistencia." };
+  const { data: assembly } = await supabase.from("assemblies").select("id").eq("property_id", propertyId).eq("id", assemblyId).maybeSingle();
+  if (!assembly) return { error: "No tienes acceso a esta asamblea." };
+  const { error } = await supabase.rpc("self_check_in_assembly", { target_assembly_id: assemblyId });
+  if (error) return { error: friendlyError(error.message) };
+  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`);
+  return { success: "Tu asistencia quedó registrada." };
 }
 
 export async function submitAssemblyRepresentation(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {

@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { changeAssemblyStatus, createAssembly, publishAssembly, recordAssemblyAttendance, reviewAssemblyRepresentation, setAssemblyRsvp, submitAssemblyRepresentation, updateAssembly, type AssemblyActionState } from "@/app/panel/propiedades/[propertyId]/asambleas/actions";
+import { changeAssemblyStatus, createAssembly, publishAssembly, recordAssemblyAttendance, reviewAssemblyRepresentation, selfCheckInAssembly, setAssemblyRsvp, submitAssemblyRepresentation, updateAssembly, type AssemblyActionState } from "@/app/panel/propiedades/[propertyId]/asambleas/actions";
 import { Button } from "@/components/ui/button";
 import { DateTimeField } from "@/components/ui/date-time-field";
 import { assemblyTypes } from "@/lib/assemblies/constants";
@@ -131,6 +131,11 @@ function SimpleAction({ action, propertyId, assemblyId, children, hidden }: { ac
 
 export function PublishAssemblyForm(props: { propertyId: string; assemblyId: string }) { return <SimpleAction action={publishAssembly} {...props}>Publicar convocatoria</SimpleAction>; }
 export function RsvpForm({ propertyId, assemblyId }: { propertyId: string; assemblyId: string }) { const [state, action, pending] = useActionState(setAssemblyRsvp, undefined as AssemblyActionState); return <form action={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="assemblyId" value={assemblyId} /><Button name="rsvp" value="yes" disabled={pending}>Asistiré</Button><Button name="rsvp" value="no" variant="outline" disabled={pending}>No asistiré</Button><Result state={state} /></form>; }
+
+export function SelfCheckInForm({ propertyId, assemblyId }: { propertyId: string; assemblyId: string }) {
+  const [state, action, pending] = useActionState(selfCheckInAssembly, undefined as AssemblyActionState);
+  return <form action={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="assemblyId" value={assemblyId} /><Button disabled={pending}>{pending ? "Registrando…" : "Marcar mi asistencia"}</Button><Result state={state} /></form>;
+}
 
 export function UpdateAssemblyForm({ propertyId, assembly, timeZone }: { propertyId: string; assembly: { id: string; title: string; description: string | null; starts_at: string; location: string }; timeZone: string }) {
   const [state, action, pending] = useActionState(updateAssembly, undefined as AssemblyActionState);
