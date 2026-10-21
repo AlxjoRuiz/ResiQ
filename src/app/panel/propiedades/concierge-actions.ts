@@ -59,11 +59,13 @@ export async function registerConcierge(_: ConciergeState, data: FormData): Prom
   const address = value(data, "address");
   const password = String(data.get("password") ?? "");
   const confirmation = String(data.get("confirmation") ?? "");
-  const username = conciergeUsername(firstName, firstSurname, documentNumber);
+  const expectedUsername = conciergeUsername(firstName, firstSurname, documentNumber);
+  const username = value(data, "username");
   const vehicles = parseVehicles(value(data, "vehicles"));
   const photo = data.get("photo");
   const age = ageOn(birthDate);
-  if (!username || fullName.length < 2 || fullName.length > 120 || age === null || age < 18 || age > 100 || !phone || !vehicles || address.length > 180) return { error: "Revisa nombre, cédula, fecha de nacimiento, teléfono y vehículos." };
+  if (!expectedUsername || username !== expectedUsername) return { error: "Escribe el usuario con primer nombre, primer apellido y los dos últimos dígitos de la cédula, en minúsculas y sin espacios ni tildes." };
+  if (fullName.length < 2 || fullName.length > 120 || age === null || age < 18 || age > 100 || !phone || !vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa nombre, cédula, fecha de nacimiento, teléfono y vehículo (máximo uno)." };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/u.test(email) || email.length > 254 || data.get("emailVerified") !== "yes") return { error: "Indica un correo real y confirma que pertenece al portero." };
   if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
   if (password.length < 12 || password.length > 128 || !/[a-z]/u.test(password) || !/[A-Z]/u.test(password) || !/\d/u.test(password) || password.includes(documentNumber)) return { error: "La contraseña debe tener de 12 a 128 caracteres, mayúscula, minúscula y número; no puede contener la cédula." };
