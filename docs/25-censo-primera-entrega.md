@@ -31,3 +31,10 @@ Alejandro confirmó el 20 de octubre de 2026 que la migración devolvió `CENSO_
 ## Fuera de esta entrega
 
 Edición e historial de cambios, exportación completa con permiso específico, corrección interactiva de columnas, conciliación con una estructura ya existente, inferencia de piso e invitación desde el censo. Requieren diseño y validación por separado.
+
+## Estado de entrega
+
+- Migración y comprobación de catálogo: commit `8dc6aeb`; Alejandro confirmó `CENSO_SCHEMA_OK` y ocho resultados `true` en Supabase SQL Editor.
+- Interfaz y parser: commit `fa98e38`, subido a `main`; Vercel confirmó el despliegue. Pasaron TypeScript, compilación, tres pruebas del parser y 16 pruebas de seguridad. ESLint terminó sin errores y con seis advertencias preexistentes ajenas al censo.
+- El Excel ficticio se leyó localmente con 27 columnas, seis respuestas, tres torres, cinco apartamentos y sin errores. Su primera respuesta corresponde a Torre 1 · 101 y al correo de prueba indicado por Alejandro.
+- Pendiente en producción: Alejandro debe comprobar la pantalla y decidir la propiedad de prueba antes de confirmar una importación que cree datos. No se ha importado ningún Excel ni se ha confirmado visualmente el detalle o el aislamiento con una cuenta no administrativa.
