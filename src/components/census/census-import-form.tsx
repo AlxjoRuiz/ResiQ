@@ -6,11 +6,13 @@ import { importCensus, type CensusImportState } from "@/app/panel/propiedades/[p
 import { parseCensusRows, type CensusPreview } from "@/lib/census/parse";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 import { Button } from "@/components/ui/button";
+import { FilePicker } from "@/components/ui/file-picker";
 
 export function CensusImportForm({ propertyId }: { propertyId: string }) {
   const [state, action, pending] = useActionState(importCensus, undefined as CensusImportState);
   const [preview, setPreview] = useState<CensusPreview | null>(null);
   const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [reading, setReading] = useState(false);
   const [readingError, setReadingError] = useState("");
   const selection = useRef(0);
@@ -20,6 +22,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
     const currentSelection = ++selection.current;
     setPreview(null);
     setFileName(file?.name ?? "");
+    setSelectedFile(file ?? null);
     setReadingError("");
     setReading(false);
     if (!file) return;
@@ -42,11 +45,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
 
   return <form action={action} className="grid min-w-0 gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
-    <label className="inline-flex w-fit cursor-pointer items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">Importar Excel
-      <input ref={fileInput} name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        className="sr-only"
-        onChange={(event) => { void onFile(event.target.files?.[0]); }} required />
-    </label>
+    <FilePicker inputRef={fileInput} files={selectedFile ? [selectedFile] : []} onFilesChange={(files) => { void onFile(files[0]); }} title="Archivo del censo" hint="Excel .xlsx · máximo 2 MB" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" name="file" disabled={pending || reading} />
     <p className="text-sm text-muted-foreground">Antes de guardar, se muestra una vista previa de todos los registros. La importación no envía invitaciones ni vincula cuentas.</p>
     {reading && <p role="status" className="text-sm">Leyendo el Excel…</p>}
     {readingError && <p role="alert" className="text-sm text-destructive">{readingError}</p>}
@@ -64,7 +63,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
       </tbody></table></div>
       <p className="text-xs text-muted-foreground">El archivo se validará nuevamente en el servidor. La importación guardará todas las respuestas o ninguna.</p>
     </section>}
-    {preview && <div className="flex flex-wrap gap-3"><Button disabled={pending || reading || preview.errors.length > 0 || preview.rows.length === 0}>{pending ? "Importando…" : "Confirmar importación"}</Button><Button type="button" variant="outline" onClick={() => { selection.current++; setPreview(null); setFileName(""); if (fileInput.current) { fileInput.current.value = ""; fileInput.current.click(); } }}>Corregir archivo</Button><Button type="reset" variant="outline" onClick={() => { selection.current++; setPreview(null); setFileName(""); setReading(false); setReadingError(""); }}>Cancelar</Button></div>}
+    {preview && <div className="flex flex-wrap gap-3"><Button disabled={pending || reading || preview.errors.length > 0 || preview.rows.length === 0}>{pending ? "Importando…" : "Confirmar importación"}</Button><Button type="button" variant="outline" onClick={() => { selection.current++; setPreview(null); setFileName(""); setSelectedFile(null); if (fileInput.current) { fileInput.current.value = ""; fileInput.current.click(); } }}>Corregir archivo</Button><Button type="reset" variant="outline" onClick={() => { selection.current++; setPreview(null); setFileName(""); setSelectedFile(null); setReading(false); setReadingError(""); }}>Cancelar</Button></div>}
     {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
   </form>;
 }

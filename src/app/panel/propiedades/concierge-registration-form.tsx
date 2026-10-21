@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { FilePicker } from "@/components/ui/file-picker";
 import { conciergeUsername } from "@/lib/concierge/identity";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { registerConcierge, type ConciergeState } from "./concierge-actions";
@@ -17,6 +18,8 @@ export function ConciergeRegistrationForm({ propertyId }: { propertyId: string }
   const [documentNumber, setDocumentNumber] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
   const username = conciergeUsername(firstName, firstSurname, documentNumber);
   const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
   const birth = birthDate ? new Date(`${birthDate}T12:00:00Z`) : null;
@@ -34,9 +37,9 @@ export function ConciergeRegistrationForm({ propertyId }: { propertyId: string }
     <label className="text-sm font-medium">Fecha de nacimiento<input className={input} name="birthDate" type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} required /></label>
     <p className="text-sm sm:col-span-2">Edad: <strong>{age === null ? "—" : `${age} años`}</strong></p>
     <label className="text-sm font-medium">Teléfono<input className={input} name="phone" type="tel" autoComplete="tel" required placeholder="3001234567" /></label>
-    <label className="text-sm font-medium">Correo real del portero<input className={input} name="email" type="email" autoComplete="email" required /></label>
+    <label className="text-sm font-medium">Correo<input className={input} name="email" type="email" autoComplete="email" required /></label>
     <label className="text-sm font-medium sm:col-span-2">Dirección (opcional)<input className={input} name="address" maxLength={180} /></label>
-    <label className="text-sm font-medium sm:col-span-2">Fotografía (opcional, máximo 1 MB)<input className="mt-1 block w-full text-sm" name="photo" type="file" accept="image/png,image/jpeg,image/webp" /></label>
+    <div className="grid gap-2 sm:col-span-2"><p className="text-sm font-medium">Fotografía (opcional)</p><FilePicker inputRef={photoInput} files={photo ? [photo] : []} onFilesChange={(files) => setPhoto(files[0] ?? null)} title="Fotografía del portero" hint="PNG, JPG o WEBP · máximo 1 MB" accept="image/png,image/jpeg,image/webp" name="photo" disabled={pending} /></div>
     <div className="sm:col-span-2 rounded-lg border p-3"><p className="text-sm font-medium">Vehículos ({vehicles.length})</p>{vehicles.map((vehicle, index) => <div key={index} className="mt-3 grid gap-2 sm:grid-cols-4">{(["type", "brand", "model", "plate"] as const).map((key) => <label key={key} className="text-xs">{{ type: "Tipo", brand: "Marca", model: "Modelo", plate: "Placa" }[key]}<input className={input} value={vehicle[key]} onChange={(event) => changeVehicle(index, key, event.target.value)} required maxLength={60} /></label>)}<button type="button" className="text-left text-sm text-destructive sm:col-span-4" onClick={() => setVehicles((current) => current.filter((_, item) => item !== index))}>Quitar vehículo</button></div>)}<Button type="button" variant="outline" className="mt-3" disabled={vehicles.length >= 10} onClick={() => setVehicles((current) => [...current, blankVehicle()])}>Agregar vehículo</Button></div>
     <div className="sm:col-span-2 rounded-lg border bg-secondary/30 p-3"><p className="text-sm">Usuario permanente: <strong>{username ?? "Completa primer nombre, apellido y cédula"}</strong></p><p className="mt-1 text-xs text-muted-foreground">Si ya existe en ResiQ, el registro se detendrá; no se creará un usuario con sufijo.</p></div>
     <label className="text-sm font-medium sm:col-span-2">Contraseña permanente asignada por administración<input className={input} name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={128} /><span className="mt-1 block text-xs text-muted-foreground">Mínimo 12 caracteres, mayúscula, minúscula y número. Entrégala en privado; no se mostrará después.</span></label>

@@ -1,7 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
-import { FileCheck2, FileUp } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type FilePickerProps = {
@@ -14,15 +14,20 @@ type FilePickerProps = {
   disabled?: boolean;
   accept?: string;
   name?: string;
+  maxFiles?: number;
 };
 
-export function FilePicker({ inputRef, files, onFilesChange, title, hint, multiple = false, disabled = false, accept = "application/pdf,image/jpeg,image/png", name }: FilePickerProps) {
-  const summary = files.length === 0 ? "Elige un archivo" : files.length === 1 ? files[0].name : `${files.length} archivos seleccionados`;
-  const detail = files.length === 0 ? hint : files.length === 1 ? `${(files[0].size / 1024 / 1024).toFixed(2)} MB · listo para enviar` : `${files.map((file) => file.name).join(", ")}`;
-  return <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed bg-background p-3 sm:p-4">
-    <input ref={inputRef} type="file" name={name} multiple={multiple} accept={accept} disabled={disabled} className="sr-only" tabIndex={-1} aria-label={title} onChange={(event) => onFilesChange(Array.from(event.target.files ?? []))} />
-    <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">{files.length ? <FileCheck2 className="size-5" /> : <FileUp className="size-5" />}</div>
-    <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium" aria-live="polite">{files.length ? summary : title}</p><p className="truncate text-xs text-muted-foreground" title={files.length > 1 ? detail : undefined}>{detail}</p></div>
-    <Button type="button" size="sm" variant="outline" onClick={() => inputRef.current?.click()} disabled={disabled}>{files.length ? multiple ? "Cambiar archivos" : "Cambiar archivo" : multiple ? "Elegir archivos" : "Elegir archivo"}</Button>
+export function FilePicker({ inputRef, files, onFilesChange, title, hint, multiple = false, disabled = false, accept = "application/pdf,image/jpeg,image/png", name, maxFiles }: FilePickerProps) {
+  function remove(index: number) {
+    if (inputRef.current) inputRef.current.value = "";
+    onFilesChange(files.filter((_, position) => position !== index));
+  }
+  return <div className="grid min-w-0 gap-2">
+    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed bg-background p-3 sm:p-4">
+      <input ref={inputRef} type="file" name={name} multiple={multiple} accept={accept} disabled={disabled} className="sr-only" tabIndex={-1} aria-label={title} onChange={(event) => { const incoming = Array.from(event.currentTarget.files ?? []); onFilesChange(multiple ? [...files, ...incoming] : incoming.slice(0, 1)); if (multiple) event.currentTarget.value = ""; }} />
+      <div className="min-w-0 flex-1"><p className="text-sm font-medium">{title}</p><p className="text-xs text-muted-foreground">{hint}</p></div>
+      <Button type="button" size="sm" variant="outline" onClick={() => inputRef.current?.click()} disabled={disabled || (maxFiles !== undefined && files.length >= maxFiles)}>{files.length ? "Agregar más archivos" : "Agregar archivo"}</Button>
+    </div>
+    {files.length > 0 && <ul className="grid gap-2 text-sm" aria-label={`Archivos seleccionados: ${title}`}>{files.map((file, index) => <li key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border px-3 py-2"><span className="min-w-0 break-words">{file.name}</span><Button type="button" size="icon" variant="ghost" disabled={disabled} aria-label={`Quitar ${file.name}`} title={`Quitar ${file.name}`} onClick={() => remove(index)}><Trash2 className="size-4" aria-hidden="true" /></Button></li>)}</ul>}
   </div>;
 }
