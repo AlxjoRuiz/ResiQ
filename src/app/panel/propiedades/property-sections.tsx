@@ -70,7 +70,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
   const conciergeAccounts = (conciergeData ?? []) as ConciergeAccount[];
   await Promise.all(conciergeAccounts.map(async (account) => { if (account.photo_path) { const { data } = await admin.storage.from("private-documents").createSignedUrl(account.photo_path, 60); account.photoUrl = data?.signedUrl ?? null; } }));
   const newConciergeMemberIds = new Set(conciergeAccounts.map((account) => account.member_id));
-  const conciergeMembers = members.filter((member) => member.roles.includes("concierge") && !member.roles.includes("administrator") && !newConciergeMemberIds.has(member.id));
+  const conciergeMembers = members.filter((member) => member.roles.includes("concierge") && member.status !== "revoked" && !member.roles.includes("administrator") && !newConciergeMemberIds.has(member.id));
   const headersByImport = new Map((importData as CensusImport[] ?? []).map((item) => [item.id, Array.isArray(item.headers) ? item.headers.map(String) : []]));
   const censusByUnit = new Map<string, CensusRecord[]>();
   for (const record of (censusData as CensusRecord[] ?? [])) censusByUnit.set(record.unit_id, [...(censusByUnit.get(record.unit_id) ?? []), record]);

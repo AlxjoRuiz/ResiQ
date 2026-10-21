@@ -23,3 +23,7 @@ El codigo de alta, login por usuario, detalle, edicion, sustitucion administrati
 El 21 de octubre de 2026, `main` en GitHub quedo en `a349788` y se comprobo que `https://resi-q.vercel.app/login` devuelve HTTP 200 con el nuevo texto "Correo o usuario de porteria". Estado: codigo subido y despliegue visible en la pagina publica. La pantalla privada de Propiedad, el alta, el ingreso efectivo y la baja siguen pendientes de prueba por Alejandro. La comprobacion del login publico no certifica esos flujos.
 
 La utilidad `src/lib/concierge/identity.ts` y sus tres pruebas estan en `655f759`: pasaron TypeScript, ESLint sin errores (seis advertencias preexistentes), compilacion y 19 pruebas de seguridad. Vercel confirmo el despliegue de ese codigo preparatorio, que no modifica el login ni presenta el nuevo formulario. No se ha creado una cuenta de portero por este flujo ni se ha realizado una prueba de acceso en produccion.
+
+## Porteros anteriores creados por invitacion
+
+Alejandro revoco el acceso de Luis Ruiz desde «Administrar acceso» en Propiedad. La accion conserva la membresia y el historial, pero la lista seguia mostrando su tarjeta porque incluia miembros revocados. Se ajusto la lista para ocultar solo las membresias de Porteria con estado `revoked`; las `suspended` permanecen visibles para poder reactivarlas. No se elimina la cuenta Auth ni se alteran otras propiedades. Pendiente comprobar en produccion, con Alejandro, que la tarjeta de Luis ya no aparece y que la revocacion quedo registrada.
