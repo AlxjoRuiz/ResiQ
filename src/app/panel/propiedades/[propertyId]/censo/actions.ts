@@ -33,8 +33,7 @@ export async function importCensus(_: CensusImportState, form: FormData): Promis
       return { error: "No se pudo confirmar el censo. No se guardó ninguna fila; revisa el archivo y vuelve a intentarlo." };
     }
     revalidatePath(`/panel/propiedades/${propertyId}`);
-    revalidatePath(`/panel/propiedades/${propertyId}/censo`);
-    redirect(`/panel/propiedades/${propertyId}/censo?importado=1`);
+    redirect(`/panel/propiedades/${propertyId}?importado=1`);
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
     return { error: "No pudimos leer el Excel. Verifica que sea un .xlsx válido y menor de 2 MB." };

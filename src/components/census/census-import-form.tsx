@@ -14,6 +14,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
   const [reading, setReading] = useState(false);
   const [readingError, setReadingError] = useState("");
   const selection = useRef(0);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   async function onFile(file: File | undefined) {
     const currentSelection = ++selection.current;
@@ -41,12 +42,12 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
 
   return <form action={action} className="grid min-w-0 gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
-    <label className="grid gap-2 text-sm font-medium">Archivo del censo
-      <input name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        className="block w-full min-w-0 rounded-lg border bg-white p-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-2"
+    <label className="grid cursor-pointer gap-2 rounded-lg bg-foreground px-4 py-3 text-center text-sm font-semibold text-background focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">Importar Excel
+      <input ref={fileInput} name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        className="sr-only"
         onChange={(event) => { void onFile(event.target.files?.[0]); }} required />
     </label>
-    <p className="text-sm text-muted-foreground">Se mostrará una vista previa antes de guardar. La importación crea torres y apartamentos, pero no envía invitaciones ni vincula cuentas.</p>
+    <p className="text-sm text-muted-foreground">Antes de guardar, se muestra una vista previa de todos los registros. La importación no envía invitaciones ni vincula cuentas.</p>
     {reading && <p role="status" className="text-sm">Leyendo el Excel…</p>}
     {readingError && <p role="alert" className="text-sm text-destructive">{readingError}</p>}
     {preview && <section className="min-w-0 space-y-4 rounded-xl border p-3 sm:p-5" aria-label="Vista previa del censo">
@@ -63,7 +64,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
       </tbody></table></div>
       <p className="text-xs text-muted-foreground">El archivo se validará nuevamente en el servidor. La importación guardará todas las respuestas o ninguna.</p>
     </section>}
-    <div className="flex flex-wrap gap-3"><Button disabled={pending || reading || !preview || preview.errors.length > 0 || preview.rows.length === 0}>{pending ? "Importando…" : "Confirmar importación"}</Button><Button type="reset" variant="outline" onClick={() => { selection.current++; setPreview(null); setFileName(""); setReading(false); setReadingError(""); }}>Cancelar importación</Button></div>
+    {preview && <div className="flex flex-wrap gap-3"><Button disabled={pending || reading || preview.errors.length > 0 || preview.rows.length === 0}>{pending ? "Importando…" : "Confirmar importación"}</Button><Button type="button" variant="outline" onClick={() => { selection.current++; setPreview(null); setFileName(""); if (fileInput.current) { fileInput.current.value = ""; fileInput.current.click(); } }}>Corregir archivo</Button><Button type="reset" variant="outline" onClick={() => { selection.current++; setPreview(null); setFileName(""); setReading(false); setReadingError(""); }}>Cancelar</Button></div>}
     {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
   </form>;
 }
