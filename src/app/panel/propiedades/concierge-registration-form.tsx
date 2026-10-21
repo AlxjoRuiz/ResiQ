@@ -29,9 +29,8 @@ export function ConciergeRegistrationForm({ propertyId }: { propertyId: string }
   return <form action={action} className="grid gap-4 sm:grid-cols-2">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="vehicles" value={JSON.stringify(vehicleStarted ? [vehicle] : [])} />
-    <label className="text-sm font-medium sm:col-span-2">Nombre completo<input className={input} name="fullName" required maxLength={120} autoComplete="name" /></label>
-    <label className="text-sm font-medium">Primer nombre<input className={input} name="firstName" value={firstName} onChange={(event) => setFirstName(event.target.value)} required maxLength={60} /></label>
-    <label className="text-sm font-medium">Primer apellido<input className={input} name="firstSurname" value={firstSurname} onChange={(event) => setFirstSurname(event.target.value)} required maxLength={60} /></label>
+    <label className="text-sm font-medium">Nombres<input className={input} name="firstName" value={firstName} onChange={(event) => setFirstName(event.target.value)} required maxLength={60} autoComplete="given-name" placeholder="Uno o dos nombres" /></label>
+    <label className="text-sm font-medium">Apellidos<input className={input} name="firstSurname" value={firstSurname} onChange={(event) => setFirstSurname(event.target.value)} required maxLength={60} autoComplete="family-name" placeholder="Uno o dos apellidos" /></label>
     <label className="text-sm font-medium">Cédula<input className={input} name="documentNumber" value={documentNumber} onChange={(event) => setDocumentNumber(event.target.value)} inputMode="numeric" pattern="[0-9]{5,20}" required /></label>
     <label className="text-sm font-medium">Fecha de nacimiento<input className={input} name="birthDate" type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} required /></label>
     <p className="text-sm sm:col-span-2">Edad: <strong>{age === null ? "—" : `${age} años`}</strong></p>

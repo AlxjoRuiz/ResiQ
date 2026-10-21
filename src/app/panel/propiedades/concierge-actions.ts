@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { conciergeUsername } from "@/lib/concierge/identity";
+import { conciergeFullName, conciergeUsername } from "@/lib/concierge/identity";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 
 export type ConciergeState = { error?: string; success?: string } | undefined;
@@ -49,9 +49,9 @@ function refresh(propertyId: string) { revalidatePath(`/panel/propiedades/${prop
 export async function registerConcierge(_: ConciergeState, data: FormData): Promise<ConciergeState> {
   const propertyId = value(data, "propertyId");
   const { user } = await requirePropertyAdmin(propertyId);
-  const fullName = value(data, "fullName");
   const firstName = value(data, "firstName");
   const firstSurname = value(data, "firstSurname");
+  const fullName = conciergeFullName(firstName, firstSurname);
   const documentNumber = value(data, "documentNumber");
   const birthDate = value(data, "birthDate");
   const phone = normalizePhone(value(data, "phone"));
@@ -65,7 +65,7 @@ export async function registerConcierge(_: ConciergeState, data: FormData): Prom
   const photo = data.get("photo");
   const age = ageOn(birthDate);
   if (!expectedUsername || username !== expectedUsername) return { error: "Escribe el usuario con primer nombre, primer apellido y los dos últimos dígitos de la cédula, en minúsculas y sin espacios ni tildes." };
-  if (fullName.length < 2 || fullName.length > 120 || age === null || age < 18 || age > 100 || !phone || !vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa nombre, cédula, fecha de nacimiento, teléfono y vehículo (máximo uno)." };
+  if (!firstName || !firstSurname || firstName.length > 60 || firstSurname.length > 60 || fullName.length > 120 || age === null || age < 18 || age > 100 || !phone || !vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa nombres, apellidos, cédula, fecha de nacimiento, teléfono y vehículo (máximo uno)." };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/u.test(email) || email.length > 254 || data.get("emailVerified") !== "yes") return { error: "Indica un correo real y confirma que pertenece al portero." };
   if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
   if (password.length < 12 || password.length > 128 || !/[a-z]/u.test(password) || !/[A-Z]/u.test(password) || !/\d/u.test(password) || password.includes(documentNumber)) return { error: "La contraseña debe tener de 12 a 128 caracteres, mayúscula, minúscula y número; no puede contener la cédula." };

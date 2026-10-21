@@ -1,4 +1,8 @@
-/** The first name and first surname are explicit inputs; never guess them from a full name. */
+export function conciergeFullName(names: string, surnames: string) {
+  return `${names} ${surnames}`.replace(/\s+/gu, " ").trim();
+}
+
+/** Name and surname fields may contain multiple words; the username uses the first of each. */
 export function conciergeUsername(firstName: string, firstSurname: string, documentNumber: string): string | null {
   const normalizePart = (value: string) => value.trim().split(/\s+/u)[0]
     .normalize("NFD").replace(/[\u0300-\u036f]/gu, "").toLowerCase().replace(/[^a-z0-9]/gu, "");

@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { conciergeUsername, maskDocument } from "../../src/lib/concierge/identity.ts";
+import { conciergeFullName, conciergeUsername, maskDocument } from "../../src/lib/concierge/identity.ts";
+
+test("preserves both given names and both surnames in the registered name", () => {
+  assert.equal(conciergeFullName("José  Luis", "Muñoz Pérez"), "José Luis Muñoz Pérez");
+});
 
 test("generates permanent-format username with accents removed", () => {
   assert.equal(conciergeUsername("Cárlos", "Martínez", "1234567845"), "carlosmartinez45");
   assert.equal(conciergeUsername("José", "Muñoz", "0012345600"), "josemunoz00");
+  assert.equal(conciergeUsername("José Luis", "Muñoz Pérez", "0012345600"), "josemunoz00");
 });
 
 test("keeps leading zero in the final document digits and rejects invalid identifiers", () => {

@@ -37,3 +37,9 @@ Alejandro decidio que el administrador escriba el usuario permanente, con una in
 Pendiente comprobar en la web, sin registrar una cuenta real: visualizacion y validacion del usuario escrito, los cuatro campos del unico vehiculo y su presentacion en movil. El alta efectiva sigue requiriendo un caso controlado acordado con Alejandro.
 
 El ajuste se subio en `c5ac51e`. Pasaron TypeScript, ESLint sin errores en los archivos modificados (la verificacion general mantiene seis advertencias anteriores), compilacion y 19 pruebas de seguridad. Como no aparecia el despliegue automatico, se creo desde el panel de Vercel un despliegue de produccion con el hash exacto `c5ac51e`: `E91wLPUQXpAAVxT3G7khLusHvLkf`. Vercel mostro `Ready` y `resi-q.vercel.app` en Current Domains. Esta confirmacion de despliegue no equivale a la comprobacion visual ni funcional por Alejandro.
+
+## Nombres y apellidos en el alta
+
+Alejandro pidio quitar «Nombre completo» porque duplicaba los campos de nombre y apellido. El formulario de nuevo portero tiene «Nombres» y «Apellidos», que admiten uno o dos de cada uno. El servidor compone el nombre completo para la ficha y la cuenta; el usuario permanente sigue usando solo el primer nombre, el primer apellido y los dos ultimos digitos de la cedula. La edicion y las cuentas existentes no cambian. No se necesita migracion. Pendiente de comprobacion visual por Alejandro en la pagina privada, sin registrar un portero real.
+
+En local pasaron `npm run verify` (TypeScript, ESLint con cero errores y las seis advertencias anteriores, y build) y `npm run test:security` (20/20), incluida la comprobacion de nombre compuesto. Esto no constituye una prueba de alta en produccion.
