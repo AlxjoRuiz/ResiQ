@@ -15,3 +15,7 @@ Alejandro pidió el 20 de octubre de 2026 que la importación y la consulta torr
 No se implementa todavía «Descargar Excel», edición del censo, conciliación incremental, reglas de piso ni invitación automática. La exportación completa debe tratarse en una entrega separada por incluir datos personales sensibles de menores y discapacidad. Hasta entonces, solo administradores activos pueden leer las respuestas por la política existente.
 
 Esta reorganización puede revisarse visualmente sin crear datos. La prueba funcional de importación requiere elegir primero la propiedad de prueba y confirmar expresamente el uso del Excel ficticio. Una prueba local o un despliegue exitoso no equivalen a una importación aprobada por Alejandro.
+
+## Estado
+
+El código de esta etapa quedó en `c19b08a`, subido a `main`, y Vercel confirmó su despliegue. Pasaron TypeScript, ESLint sin errores (seis advertencias preexistentes), compilación, tres pruebas del parser y 16 pruebas de seguridad. Sigue pendiente que Alejandro confirme la presentación de Propiedad en producción; no se ha realizado la importación funcional ni una prueba de exportación.
