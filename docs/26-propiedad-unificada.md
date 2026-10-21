@@ -30,3 +30,5 @@ El ajuste posterior que retiró «Datos generales» y «Gestión manual de unida
 - No se modifica el flujo de importación, invitaciones ni permisos. La comprobación visual y funcional en producción sigue pendiente de Alejandro; no se han creado registros de prueba con este ajuste.
 
 Verificación local del ajuste: TypeScript, ESLint sin errores (seis advertencias preexistentes), compilación de producción y 16 pruebas de seguridad aprobadas. El conteo real tras importar y la presentación móvil quedan pendientes de comprobar con Alejandro en producción.
+
+El cambio de interfaz y conteo quedó en `5589388`, subido a `main`; el estado de GitHub para ese commit reportó Vercel `success`. Esto confirma el despliegue, no la revisión visual ni la prueba funcional en producción por Alejandro.
