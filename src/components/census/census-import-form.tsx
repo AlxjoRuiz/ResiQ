@@ -42,7 +42,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
 
   return <form action={action} className="grid min-w-0 gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
-    <label className="grid cursor-pointer gap-2 rounded-lg bg-foreground px-4 py-3 text-center text-sm font-semibold text-background focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">Importar Excel
+    <label className="inline-flex w-fit cursor-pointer items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary">Importar Excel
       <input ref={fileInput} name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="sr-only"
         onChange={(event) => { void onFile(event.target.files?.[0]); }} required />

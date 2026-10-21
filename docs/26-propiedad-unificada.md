@@ -4,7 +4,7 @@ Alejandro pidió el 20 de octubre de 2026 que la importación y la consulta torr
 
 ## Alcance de esta entrega
 
-- «Propiedad» presenta la importación como primera acción. La vista previa sigue siendo obligatoria y muestra errores antes de guardar.
+- «Propiedad» presenta la importación como primera acción de gestión, después de los indicadores. La vista previa sigue siendo obligatoria y muestra errores antes de guardar.
 - Las torres aparecen en orden natural, cerradas inicialmente. Dentro de cada una se abren los apartamentos, ordenados por piso registrado y luego por número. Si el piso está vacío se muestra «Sin información»; no se deduce del número.
 - Cada respuesta del Excel aparece separada dentro de su apartamento, con secciones temáticas y todos los encabezados y valores originales. Los vínculos de acceso a ResiQ se distinguen de los datos censales.
 - Las invitaciones, Portería y los demás módulos conservan sus funciones. Después de la revisión visual, Alejandro pidió retirar de Propiedad las secciones «Gestión manual de unidades» y «Datos generales»; esto no borra registros, tablas ni las funciones de servidor existentes.
@@ -21,3 +21,12 @@ Esta reorganización puede revisarse visualmente sin crear datos. La prueba func
 El código de esta etapa quedó en `c19b08a`, subido a `main`, y Vercel confirmó su despliegue. Pasaron TypeScript, ESLint sin errores (seis advertencias preexistentes), compilación, tres pruebas del parser y 16 pruebas de seguridad. Sigue pendiente que Alejandro confirme la presentación de Propiedad en producción; no se ha realizado la importación funcional ni una prueba de exportación.
 
 El ajuste posterior que retiró «Datos generales» y «Gestión manual de unidades» quedó en `fe86f87`, subido a `main` y desplegado por Vercel. Pasaron TypeScript, ESLint sin errores (las mismas seis advertencias), compilación y las 16 pruebas de seguridad. Falta que Alejandro confirme visualmente la ausencia de ambos bloques en producción.
+
+## Ajuste de presentación y conteo solicitado el 20 de octubre
+
+- Las tarjetas «Torres o bloques», «Apartamentos» y «Residentes registrados» aparecen primero en la página.
+- «Residentes registrados» cuenta las respuestas guardadas en `census_records`, no las cuentas con acceso. Cada respuesta del Excel representa un registro; la tarjeta aclara que no concede acceso a ResiQ. Alejandro eligió expresamente esta definición para que, por ejemplo, 70 residentes importados muestren 70.
+- Importar Excel y explorar las torres quedan dentro de una sola tarjeta. El botón de selección de archivo es compacto y usa el color primario de los demás botones.
+- No se modifica el flujo de importación, invitaciones ni permisos. La comprobación visual y funcional en producción sigue pendiente de Alejandro; no se han creado registros de prueba con este ajuste.
+
+Verificación local del ajuste: TypeScript, ESLint sin errores (seis advertencias preexistentes), compilación de producción y 16 pruebas de seguridad aprobadas. El conteo real tras importar y la presentación móvil quedan pendientes de comprobar con Alejandro en producción.

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { CensusDetail } from "@/components/census/census-detail";
+import { CensusImportForm } from "@/components/census/census-import-form";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { BuildingForm, EndMembershipForm, MemberForm } from "./management-forms";
@@ -30,7 +31,7 @@ function ConciergeCard({ member, propertyId }: { member: Member; propertyId: str
   return <Card><CardContent><div className="flex flex-wrap items-start justify-between gap-3"><div><h4 className="text-lg font-semibold">{one(member.profiles)?.display_name ?? "Miembro"}</h4><p className="break-all text-sm text-muted-foreground">{member.email ?? "Correo no disponible"}</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{statusLabel(member.status)}</span></div><details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Administrar acceso</summary><MemberForm propertyId={propertyId} member={member} /></details></CardContent></Card>;
 }
 
-export async function PropertyManagementSections({ propertyId }: { propertyId: string }) {
+export async function PropertyManagementSections({ propertyId, canImport, imported }: { propertyId: string; canImport: boolean; imported: boolean }) {
   const supabase = await createClient();
   const [{ data: buildingData, error: buildingError }, { data: memberData, error: memberError }, { data: censusData, error: censusError }, { data: importData, error: importError }] = await Promise.all([
     supabase.from("buildings").select("id,name,code,active,units(id,building_id,code,floor,status)").eq("property_id", propertyId).order("name"),
@@ -81,9 +82,12 @@ export async function PropertyManagementSections({ propertyId }: { propertyId: s
   }));
 
   return <>
-    <section id="apartamentos" className="mt-10 scroll-mt-6"><h2 className="text-2xl font-semibold">Torres de la propiedad</h2><p className="mt-1 text-sm text-muted-foreground">Abre una torre y después un apartamento para consultar cada respuesta importada y sus vinculaciones, sin mezclar personas.</p>
-      <div className="mt-4"><PropertyUnitExplorer towers={explorerTowers} /></div>
-    </section>
+    <Card className="mt-6"><CardContent>
+      <section aria-labelledby="importar-unidades"><h2 id="importar-unidades" className="text-xl font-semibold">Importar unidades desde Excel</h2><p className="mb-5 mt-1 text-sm text-muted-foreground">Importa un archivo Excel para crear automáticamente las torres, apartamentos y registrar su información.</p>{imported && <p role="status" className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900">Importación completada. Los correos del Excel no envían invitaciones ni conceden acceso.</p>}{canImport ? <CensusImportForm propertyId={propertyId} /> : <p className="rounded-lg bg-secondary p-3 text-sm">Esta propiedad ya tiene torres. Para evitar cruces, esta primera versión no permite importar otro archivo sobre la estructura existente.</p>}</section>
+      <section id="apartamentos" className="mt-8 scroll-mt-6 border-t pt-8"><h2 className="text-xl font-semibold">Torres de la propiedad</h2><p className="mt-1 text-sm text-muted-foreground">Abre una torre y después un apartamento para consultar cada respuesta importada y sus vinculaciones, sin mezclar personas.</p>
+        <div className="mt-4"><PropertyUnitExplorer towers={explorerTowers} /></div>
+      </section>
+    </CardContent></Card>
     <section id="porteria" className="mt-10 scroll-mt-6"><h2 className="text-2xl font-semibold">Personal de portería</h2><p className="mt-1 text-sm text-muted-foreground">Suspende el acceso temporalmente o selecciona «Revocado — quitar acceso» cuando un portero deje de trabajar. Se conserva el historial.</p><div className="mt-4 grid gap-4">{conciergeMembers.map((member) => <ConciergeCard key={member.id} member={member} propertyId={propertyId} />)}{!conciergeMembers.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay personal de portería registrado.</p></CardContent></Card>}</div></section>
   </>;
 }
