@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CensusDetail } from "@/components/census/census-detail";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { BuildingForm, EndMembershipForm, MemberForm, UnitForm } from "./management-forms";
+import { BuildingForm, EndMembershipForm, MemberForm } from "./management-forms";
 import { PropertyUnitExplorer } from "./property-unit-explorer";
 
 type Unit = { id: string; building_id: string; code: string; floor: string | null; status: string };
@@ -58,7 +58,6 @@ export async function PropertyManagementSections({ propertyId }: { propertyId: s
     }
   }
   const conciergeMembers = members.filter((member) => member.roles.includes("concierge") && !member.roles.includes("administrator"));
-  const buildingOptions = buildings.map(({ id, name, active }) => ({ id, name, active }));
   const headersByImport = new Map((importData as CensusImport[] ?? []).map((item) => [item.id, Array.isArray(item.headers) ? item.headers.map(String) : []]));
   const censusByUnit = new Map<string, CensusRecord[]>();
   for (const record of (censusData as CensusRecord[] ?? [])) censusByUnit.set(record.unit_id, [...(censusByUnit.get(record.unit_id) ?? []), record]);
@@ -84,7 +83,6 @@ export async function PropertyManagementSections({ propertyId }: { propertyId: s
   return <>
     <section id="apartamentos" className="mt-10 scroll-mt-6"><h2 className="text-2xl font-semibold">Torres de la propiedad</h2><p className="mt-1 text-sm text-muted-foreground">Abre una torre y después un apartamento para consultar cada respuesta importada y sus vinculaciones, sin mezclar personas.</p>
       <div className="mt-4"><PropertyUnitExplorer towers={explorerTowers} /></div>
-      <details className="mt-6 rounded-xl border p-4"><summary className="cursor-pointer font-medium">Gestión manual de unidades</summary><p className="mt-3 text-sm text-muted-foreground">Usa estas opciones solo cuando necesites crear una torre o apartamento sin el Excel. No se mezclan con una importación posterior.</p><div className="mt-4 grid gap-4"><Card><CardContent><h3 className="mb-5 font-semibold">Crear torre o bloque</h3><BuildingForm propertyId={propertyId} /></CardContent></Card><Card><CardContent><h3 className="mb-5 font-semibold">Crear apartamento</h3><UnitForm propertyId={propertyId} buildings={buildingOptions} /></CardContent></Card></div></details>
     </section>
     <section id="porteria" className="mt-10 scroll-mt-6"><h2 className="text-2xl font-semibold">Personal de portería</h2><p className="mt-1 text-sm text-muted-foreground">Suspende el acceso temporalmente o selecciona «Revocado — quitar acceso» cuando un portero deje de trabajar. Se conserva el historial.</p><div className="mt-4 grid gap-4">{conciergeMembers.map((member) => <ConciergeCard key={member.id} member={member} propertyId={propertyId} />)}{!conciergeMembers.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay personal de portería registrado.</p></CardContent></Card>}</div></section>
   </>;

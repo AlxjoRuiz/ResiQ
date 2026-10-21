@@ -7,7 +7,7 @@ Alejandro pidió el 20 de octubre de 2026 que la importación y la consulta torr
 - «Propiedad» presenta la importación como primera acción. La vista previa sigue siendo obligatoria y muestra errores antes de guardar.
 - Las torres aparecen en orden natural, cerradas inicialmente. Dentro de cada una se abren los apartamentos, ordenados por piso registrado y luego por número. Si el piso está vacío se muestra «Sin información»; no se deduce del número.
 - Cada respuesta del Excel aparece separada dentro de su apartamento, con secciones temáticas y todos los encabezados y valores originales. Los vínculos de acceso a ResiQ se distinguen de los datos censales.
-- Crear o editar manualmente una torre/apartamento sigue disponible en una sección secundaria plegable. Las invitaciones, Portería y los demás módulos conservan sus funciones.
+- Las invitaciones, Portería y los demás módulos conservan sus funciones. Después de la revisión visual, Alejandro pidió retirar de Propiedad las secciones «Gestión manual de unidades» y «Datos generales»; esto no borra registros, tablas ni las funciones de servidor existentes.
 - La antigua ruta `/censo` redirige a «Propiedad» para no mantener una segunda vista.
 
 ## Límites y prueba pendiente
