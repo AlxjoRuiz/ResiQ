@@ -43,12 +43,17 @@ function invitationLabel(invitation: UnitInvitation) {
   return "Invitación pendiente";
 }
 
-function InvitationStatus({ invitation, propertyId }: { invitation: UnitInvitation; propertyId: string }) {
-  const open = invitation.invitation_status === "pending" || invitation.invitation_status === "expired";
+function invitationOpen(invitation: UnitInvitation | undefined) {
+  return invitation?.invitation_status === "pending" || invitation?.invitation_status === "expired";
+}
+
+function InvitationStatus({ invitation, propertyId, canChange }: { invitation: UnitInvitation; propertyId: string; canChange: boolean }) {
+  const open = invitationOpen(invitation);
   return <div className="min-w-0 space-y-2 rounded-lg border p-3 text-sm">
     <p className="font-medium">{invitationLabel(invitation)}</p>
     <p className="break-all text-muted-foreground">{invitation.email} · {invitation.relationship === "owner" ? "Propietario" : "Residente"}</p>
     {open && <RevealInvitationLinkForm propertyId={propertyId} invitationId={invitation.invitation_id} />}
+    {open && canChange && <details className="border-t pt-2"><summary className="cursor-pointer font-medium">Cambiar correo de la invitación</summary><div className="mt-3"><UnitResidentInvitationForm propertyId={propertyId} unitId={invitation.unit_id} /></div></details>}
   </div>;
 }
 
@@ -120,7 +125,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
           const cells = Array.isArray(record.cells) ? record.cells.map((value) => value === null ? null : String(value)) : [];
           return <div key={record.id} className="min-w-0 rounded-lg border p-3 sm:p-4"><p className="mb-4 font-medium">{record.full_name || record.email_normalized || `Residente ${index + 1}`}{record.invitation_primary && <span className="ml-2 rounded-full bg-secondary px-2 py-1 text-xs">Principal para futura invitación · {record.invitation_relationship === "owner" ? "Propietario" : "Arrendatario"}</span>}</p>{headers.length ? <CensusDetail headers={headers} cells={cells} /> : <p className="text-sm text-muted-foreground">No se pudieron mostrar los encabezados de esta respuesta.</p>}</div>;
         })}{!censusByUnit.get(unit.id)?.length && <p className="text-sm text-muted-foreground">Este apartamento no tiene respuestas importadas.</p>}</div>
-        <div className="space-y-3 border-t pt-4"><h4 className="font-semibold">Vinculaciones y acceso a ResiQ</h4>{(occupantsByUnit.get(unit.id) ?? []).map((occupant) => <OccupantCard key={occupant.link.id} occupant={occupant} propertyId={propertyId} />)}{!occupantsByUnit.get(unit.id)?.length && <><p className="text-sm text-muted-foreground">Sin residente vinculado. Un correo del Excel no concede acceso hasta aceptar la invitación.</p>{invitationByUnit.get(unit.id) && <InvitationStatus invitation={invitationByUnit.get(unit.id)!} propertyId={propertyId} />}{building.active && unit.status === "active" && <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Agregar residente</summary><p className="mt-2 text-xs text-muted-foreground">Si ya hay una invitación pendiente, la nueva la reemplaza.</p><div className="mt-3"><UnitResidentInvitationForm propertyId={propertyId} unitId={unit.id} /></div></details>}</>}</div>
+        <div className="space-y-3 border-t pt-4"><h4 className="font-semibold">Vinculaciones y acceso a ResiQ</h4>{(occupantsByUnit.get(unit.id) ?? []).map((occupant) => <OccupantCard key={occupant.link.id} occupant={occupant} propertyId={propertyId} />)}{!occupantsByUnit.get(unit.id)?.length && <><p className="text-sm text-muted-foreground">Sin residente vinculado. Un correo del Excel no concede acceso hasta aceptar la invitación.</p>{invitationByUnit.get(unit.id) && <InvitationStatus invitation={invitationByUnit.get(unit.id)!} propertyId={propertyId} canChange={building.active && unit.status === "active"} />}{building.active && unit.status === "active" && !invitationOpen(invitationByUnit.get(unit.id)) && <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Agregar residente</summary><div className="mt-3"><UnitResidentInvitationForm propertyId={propertyId} unitId={unit.id} /></div></details>}</>}</div>
       </>,
     })),
   }));
