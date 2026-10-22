@@ -60,3 +60,12 @@ Alejandro decidió que cada apartamento guarde solo la respuesta de quien vive a
 - La lista de apartamentos de Propiedad muestra el tipo junto al número, por ejemplo «Apartamento 101 · Propietario».
 - El censo de prueba de Mirador tenía dos personas por apartamento. `supabase/operations/clean_mirador_census_test.sql` borra solo ese censo ficticio y sus torres y apartamentos (aborta si otro dato los usa) para reimportarlo con un Excel de 1.000 filas, una por apartamento.
 - Volver a subir un Excel para actualizar datos existentes todavía no está disponible: una propiedad con torres no admite otra importación. Queda pendiente su diseño (actualizar el mismo apartamento sin crear otro).
+
+## Cola de invitaciones con modo de prueba (23/10/2026)
+
+Alejandro aprobó el diseño: las invitaciones se crean y encolan en `email_jobs`, nunca se envían directo, y el modo de prueba queda activo hasta tener dominio verificado.
+
+- Base de datos (`20261023140000_invitation_queue_test_mode.sql`, confirmada por Alejandro con cinco columnas `true`): estado `held` en `email_jobs`, que el trabajador no reclama; interruptor `private.invitation_delivery` (apagado); plantilla `resident_invitation`; una invitación por principal al importar el censo. La invitación nace con un hash inutilizable: el código del enlace se genera al pulsar «Ver enlace» (o, más adelante, justo antes de enviar) con 72 horas de vigencia, tras revalidar que siga pendiente, que el apartamento esté activo y sin residente vigente y que el correo no tenga rol de administración o portería. El código no queda guardado en la cola. Ver enlace y crear invitación quedan en auditoría.
+- Mirador importó su censo antes de la migración: `supabase/operations/backfill_census_invitations.sql` creó 1.000 invitaciones retenidas (confirmado por Alejandro).
+- Pantalla: la ficha de un apartamento sin residente muestra el estado de su invitación (retenida, en cola, enviada, aceptada, cancelada o vencida) y «Ver enlace». «Agregar residente» usa la cola en lugar de mostrar el enlace al crear; una invitación nueva reemplaza a la pendiente del mismo apartamento o correo.
+- Pendiente (entrega 3): que el trabajador genere el código y envíe el correo cuando se active el envío real, con lotes acordes al límite diario de Resend.

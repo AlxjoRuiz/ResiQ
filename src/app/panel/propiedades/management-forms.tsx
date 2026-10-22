@@ -1,9 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { createInvitation, type InvitationState } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
-import { endUnitMembership, manageMember, saveBuilding, saveUnit, updateProperty, type ManagementState } from "./actions";
+import { endUnitMembership, manageMember, queueResidentInvitation, revealInvitationLink, saveBuilding, saveUnit, updateProperty, type InvitationLinkState, type ManagementState } from "./actions";
 
 const inputClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass = "block text-sm font-medium";
@@ -80,18 +79,27 @@ export function EndMembershipForm({ propertyId, unitMembershipId }: { propertyId
   </form>;
 }
 
-// Apartamento vacío: el admin agrega un residente y obtiene el enlace de invitación (72 horas).
-export function UnitResidentInvitationForm({ propertyId, buildingId, unitId }: { propertyId: string; buildingId: string; unitId: string }) {
-  const [state, action, pending] = useActionState(createInvitation, undefined as InvitationState);
+// Apartamento vacío: el admin agrega un residente; la invitación entra a la cola de correos.
+export function UnitResidentInvitationForm({ propertyId, unitId }: { propertyId: string; unitId: string }) {
+  const [state, action, pending] = useActionState(queueResidentInvitation, undefined as ManagementState);
   return <form action={action} className="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
-    <input type="hidden" name="role" value="member" />
-    <input type="hidden" name="buildingId" value={buildingId} />
     <input type="hidden" name="unitId" value={unitId} />
     <label className={labelClass}>Correo del residente<input className={inputClass} name="email" type="email" required autoComplete="off" /></label>
-    <label className={labelClass}>Tipo de residente<select className={inputClass} name="relationship" defaultValue="resident"><option value="resident">Arrendatario</option><option value="owner">Propietario</option></select></label>
+    <label className={labelClass}>Tipo de residente<select className={inputClass} name="relationship" defaultValue="resident"><option value="resident">Residente</option><option value="owner">Propietario</option></select></label>
     <Button disabled={pending}>{pending ? "Creando…" : "Crear invitación"}</Button>
-    {state?.error && <p role="alert" className="text-sm text-destructive sm:col-span-3">{state.error}</p>}
-    {state?.invitationUrl && <div className="rounded-lg bg-secondary p-3 sm:col-span-3"><p className="text-sm font-medium">Enlace de invitación válido durante 72 horas</p><p className="mt-1 text-xs text-muted-foreground">Compártelo con el residente; ResiQ todavía no envía correos.</p><p className="mt-2 break-all text-xs">{state.invitationUrl}</p></div>}
+    <div className="sm:col-span-3"><Result state={state} /></div>
+  </form>;
+}
+
+// «Ver enlace»: genera un enlace nuevo de 72 horas; el anterior deja de funcionar.
+export function RevealInvitationLinkForm({ propertyId, invitationId }: { propertyId: string; invitationId: string }) {
+  const [state, action, pending] = useActionState(revealInvitationLink, undefined as InvitationLinkState);
+  return <form action={action} className="space-y-2">
+    <input type="hidden" name="propertyId" value={propertyId} />
+    <input type="hidden" name="invitationId" value={invitationId} />
+    <Button type="submit" size="sm" variant="outline" disabled={pending}>{pending ? "Generando…" : "Ver enlace"}</Button>
+    {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
+    {state?.link && <div className="rounded-lg bg-secondary p-3"><p className="text-sm font-medium">Enlace válido durante 72 horas</p><p className="mt-1 text-xs text-muted-foreground">Si generas otro, este deja de funcionar.</p><p className="mt-2 break-all text-xs">{state.link}</p></div>}
   </form>;
 }

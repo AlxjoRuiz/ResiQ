@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type ManagementState = { error?: string; success?: string } | undefined;
@@ -83,4 +84,38 @@ export async function endUnitMembership(_: ManagementState, formData: FormData):
   if (error) return { error: databaseError(error.code) };
   propertyPaths(propertyId);
   return { success: "Vínculo finalizado. El acceso histórico operativo fue retirado." };
+}
+
+export async function queueResidentInvitation(_: ManagementState, formData: FormData): Promise<ManagementState> {
+  const propertyId = field(formData, "propertyId");
+  const unitId = field(formData, "unitId");
+  const email = field(formData, "email").toLowerCase();
+  const relationship = field(formData, "relationship");
+  if (!propertyId || !unitId || !email.includes("@") || !["owner", "resident"].includes(relationship)) return { error: "Escribe un correo válido y el tipo de residente." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("queue_resident_invitation", { target_property_id: propertyId, target_unit_id: unitId, target_email: email, target_relationship: relationship });
+  if (error) {
+    if (error.message.includes("unit_not_empty")) return { error: "Este apartamento ya tiene un residente vinculado." };
+    if (error.message.includes("not_a_resident")) return { error: "Ese correo tiene rol de administración o portería en esta propiedad." };
+    return { error: "No pudimos crear la invitación. Comprueba que la torre y el apartamento sigan activos." };
+  }
+  propertyPaths(propertyId);
+  return { success: "Invitación creada. Mientras el envío de correos esté en modo de prueba, usa «Ver enlace» para compartirla." };
+}
+
+export type InvitationLinkState = { error?: string; link?: string } | undefined;
+
+export async function revealInvitationLink(_: InvitationLinkState, formData: FormData): Promise<InvitationLinkState> {
+  const propertyId = field(formData, "propertyId");
+  const invitationId = field(formData, "invitationId");
+  if (!propertyId || !invitationId) return { error: "No encontramos la invitación." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reveal_invitation_link", { target_property_id: propertyId, target_invitation_id: invitationId });
+  if (error) return { error: "No pudimos generar el enlace. Intenta de nuevo." };
+  if (typeof data !== "string") {
+    propertyPaths(propertyId);
+    return { error: "Esta invitación ya no está disponible: el apartamento cambió o el correo tiene otro rol. Crea una nueva si hace falta." };
+  }
+  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
+  return { link: `${origin}/invitacion?token=${encodeURIComponent(data)}` };
 }
