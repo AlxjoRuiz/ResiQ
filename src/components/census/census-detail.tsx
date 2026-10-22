@@ -23,7 +23,7 @@ const lockedField = (header: string) => ["torre", "apartamento"].includes(normal
 function fieldHint(header: string, occupied: boolean) {
   const key = normalizeCensusHeader(header);
   if (key === "correo electronico") return occupied
-    ? "Este apartamento ya tiene un residente con cuenta: cambiar este dato no cambia su acceso. Para cambiarlo, desvincúlalo e invita el nuevo correo."
+    ? "Este apartamento tiene un residente con cuenta. Si cambias el correo, al guardar se desvinculará al residente actual y se enviará la invitación al correo nuevo."
     : "Este es el correo que recibe la invitación y con el que se entra a ResiQ. Si lo cambias, la invitación pendiente se reemplaza.";
   if (key === "a que correo se le hace el envio de las facturas") return "Los avisos de cartera de este apartamento también llegarán a este correo si «¿Autoriza recibir las facturas…?» dice Sí.";
   return null;
@@ -39,6 +39,8 @@ export function CensusDetail({ headers, cells, propertyId, recordId, occupied }:
     return result;
   }, undefined as ManagementState);
   const values = editing ? draft : cells;
+  const emailIndex = headers.findIndex((header) => normalizeCensusHeader(header) === "correo electronico");
+  const emailChanged = emailIndex >= 0 && (draft[emailIndex] ?? "").trim().toLowerCase() !== (cells[emailIndex] ?? "").trim().toLowerCase();
 
   return <form action={action} className="space-y-6">
     <input type="hidden" name="propertyId" value={propertyId} />
@@ -51,6 +53,7 @@ export function CensusDetail({ headers, cells, propertyId, recordId, occupied }:
     <section aria-label={active}><dl className="divide-y">{headers.map((header, index) => sectionFor(header) === active && <div key={index} className="grid gap-1 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"><dt className="font-medium">{header}</dt><dd className="break-words text-muted-foreground">{editing && !lockedField(header)
       ? <><input className="h-10 w-full rounded-md border bg-white px-3 text-foreground" aria-label={header} value={values[index] ?? ""} maxLength={1000} onChange={(event) => { const next = [...draft]; next[index] = event.target.value === "" ? null : event.target.value; setDraft(next); }} />{fieldHint(header, occupied) && <span className="mt-1 block text-xs">{fieldHint(header, occupied)}</span>}</>
       : values[index] || "Sin información"}</dd></div>)}</dl></section>
+    {editing && occupied && emailChanged && <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Cambiaste el correo de un apartamento con residente. Al guardar, se desvinculará al residente actual y se creará la invitación para el correo nuevo.</p>}
     {editing && <div className="flex flex-wrap items-center gap-2"><Button disabled={pending}>{pending ? "Guardando…" : "Guardar cambios"}</Button><Button type="button" variant="outline" disabled={pending} onClick={() => { setDraft(cells); setEditing(false); }}>Cancelar</Button><p className="text-xs text-muted-foreground">La torre y el apartamento no se pueden cambiar. Si cambias el correo o el tipo de usuario, la invitación pendiente se reemplaza.</p></div>}
     {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
     {state?.success && !editing && <p role="status" className="text-sm text-primary">{state.success}</p>}

@@ -127,7 +127,7 @@ export async function updateCensusRecord(_: ManagementState, formData: FormData)
   try { cells = JSON.parse(String(formData.get("cells") ?? "")); } catch { return { error: "No pudimos leer los cambios." }; }
   if (!propertyId || !recordId || !Array.isArray(cells) || cells.some((cell) => cell !== null && typeof cell !== "string")) return { error: "No pudimos leer los cambios." };
   const supabase = await createClient();
-  const { error } = await supabase.rpc("update_census_record", { target_property_id: propertyId, target_record_id: recordId, target_cells: cells });
+  const { data, error } = await supabase.rpc("update_census_record", { target_property_id: propertyId, target_record_id: recordId, target_cells: cells });
   if (error) {
     if (error.message.includes("locked_field")) return { error: "La torre y el apartamento no se pueden cambiar." };
     if (error.message.includes("invalid_census_email")) return { error: "El correo electrónico no es válido." };
@@ -136,5 +136,7 @@ export async function updateCensusRecord(_: ManagementState, formData: FormData)
     return { error: "No pudimos guardar los cambios. Revisa los datos e intenta de nuevo." };
   }
   propertyPaths(propertyId);
+  if (data === "resident_replaced") return { success: "Cambios guardados. Se desvinculó al residente anterior y se creó la invitación para el correo nuevo (retenida mientras el envío esté en modo de prueba)." };
+  if (data === "invitation_replaced") return { success: "Cambios guardados. La invitación pendiente se reemplazó por una para el correo nuevo." };
   return { success: "Cambios guardados." };
 }
