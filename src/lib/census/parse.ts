@@ -49,21 +49,6 @@ const expectedHeaders = [
   "cuantos menores de edad viven en su apto", "autoriacion autorizo a la administracion",
 ];
 
-export type CensusTowerSummary = { code: string; name: string; units: number; rows: number };
-
-export function censusTowerSummary(rows: CensusImportRow[]): CensusTowerSummary[] {
-  const towers = new Map<string, { name: string; units: Set<string>; rows: number }>();
-  for (const row of rows) {
-    const tower = towers.get(row.building_code) ?? { name: row.building_name, units: new Set<string>(), rows: 0 };
-    tower.units.add(row.unit_code.toLocaleLowerCase("es"));
-    tower.rows++;
-    towers.set(row.building_code, tower);
-  }
-  return [...towers.entries()]
-    .map(([code, tower]) => ({ code, name: tower.name, units: tower.units.size, rows: tower.rows }))
-    .sort((a, b) => a.code.localeCompare(b.code, "es", { numeric: true }));
-}
-
 export function normalizeCensusHeader(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");

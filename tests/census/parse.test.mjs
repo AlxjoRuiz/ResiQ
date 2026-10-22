@@ -58,12 +58,3 @@ test("accepts 2,000 responses across towers and rejects one more", async () => {
   const over = parseCensusRows([headers, ...data, row("Torre A", "999", "Extra", "extra@resiq.invalid")]);
   assert.ok(over.errors.some((error) => error.includes("2.000")));
 });
-
-test("resume las torres detectadas en orden natural", async () => {
-  const { censusTowerSummary } = await import("../../src/lib/census/parse.ts");
-  const preview = parseCensusRows([headers, row("Torre 10", "101", "A", "a@resiq.invalid"), row("2", "101", "B", "b@resiq.invalid"), row("torre 2", "102", "C", ""), row("Torre 2", "102", "D", "")]);
-  assert.deepEqual(censusTowerSummary(preview.rows), [
-    { code: "T10", name: "Torre 10", units: 1, rows: 1 },
-    { code: "T2", name: "Torre 2", units: 2, rows: 3 },
-  ].sort((a, b) => a.code.localeCompare(b.code, "es", { numeric: true })));
-});
