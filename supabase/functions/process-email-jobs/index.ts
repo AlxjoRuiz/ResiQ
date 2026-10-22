@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { cleanupRejectedDocuments } from "./cleanup-documents.ts";
 
-type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string; attempt_count: number };
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string; attempt_count: number; census_record_id?: string | null };
 const jsonHeaders = { "content-type": "application/json" };
 type InvitationDetails = { token: string; property_name: string; building_name: string; unit_code: string; relationship: string; expires_at: string };
 
@@ -112,7 +112,10 @@ export default {
         // Cada intento lleva un código nuevo, así que la clave de idempotencia es por intento.
         idempotencyKey = `${job.dedupe_key}:${job.attempt_count}`;
       } else {
-        const authorization = await supabase.rpc("authorize_email_job", { target_job_id: job.id, worker_name: workerName });
+        // Avisos al correo de facturas del censo: no hay cuenta, se revalida la autorización del censo.
+        const authorization = job.census_record_id
+          ? await supabase.rpc("authorize_billing_email_job", { target_job_id: job.id, worker_name: workerName })
+          : await supabase.rpc("authorize_email_job", { target_job_id: job.id, worker_name: workerName });
         if (authorization.error) throw new Error("email_authorization_unavailable");
         if (authorization.data !== true) { results.push({ id: job.id, status: "cancelled" }); continue; }
         content = emailContent(job, appUrl);

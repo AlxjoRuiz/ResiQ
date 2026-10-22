@@ -20,7 +20,16 @@ function sectionFor(header: string): Section {
 // Torre y apartamento identifican la unidad: no se editan.
 const lockedField = (header: string) => ["torre", "apartamento"].includes(normalizeCensusHeader(header));
 
-export function CensusDetail({ headers, cells, propertyId, recordId }: { headers: string[]; cells: (string | null)[]; propertyId: string; recordId: string }) {
+function fieldHint(header: string, occupied: boolean) {
+  const key = normalizeCensusHeader(header);
+  if (key === "correo electronico") return occupied
+    ? "Este apartamento ya tiene un residente con cuenta: cambiar este dato no cambia su acceso. Para cambiarlo, desvincúlalo e invita el nuevo correo."
+    : "Este es el correo que recibe la invitación y con el que se entra a ResiQ. Si lo cambias, la invitación pendiente se reemplaza.";
+  if (key === "a que correo se le hace el envio de las facturas") return "Los avisos de cartera de este apartamento también llegarán a este correo si «¿Autoriza recibir las facturas…?» dice Sí.";
+  return null;
+}
+
+export function CensusDetail({ headers, cells, propertyId, recordId, occupied }: { headers: string[]; cells: (string | null)[]; propertyId: string; recordId: string; occupied: boolean }) {
   const [active, setActive] = useState<Section>("Residente");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(cells);
@@ -40,7 +49,7 @@ export function CensusDetail({ headers, cells, propertyId, recordId }: { headers
       {!editing && <Button type="button" size="sm" variant="outline" onClick={() => { setDraft(cells); setEditing(true); }}>Editar</Button>}
     </div>
     <section aria-label={active}><dl className="divide-y">{headers.map((header, index) => sectionFor(header) === active && <div key={index} className="grid gap-1 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"><dt className="font-medium">{header}</dt><dd className="break-words text-muted-foreground">{editing && !lockedField(header)
-      ? <input className="h-10 w-full rounded-md border bg-white px-3 text-foreground" aria-label={header} value={values[index] ?? ""} maxLength={1000} onChange={(event) => { const next = [...draft]; next[index] = event.target.value === "" ? null : event.target.value; setDraft(next); }} />
+      ? <><input className="h-10 w-full rounded-md border bg-white px-3 text-foreground" aria-label={header} value={values[index] ?? ""} maxLength={1000} onChange={(event) => { const next = [...draft]; next[index] = event.target.value === "" ? null : event.target.value; setDraft(next); }} />{fieldHint(header, occupied) && <span className="mt-1 block text-xs">{fieldHint(header, occupied)}</span>}</>
       : values[index] || "Sin información"}</dd></div>)}</dl></section>
     {editing && <div className="flex flex-wrap items-center gap-2"><Button disabled={pending}>{pending ? "Guardando…" : "Guardar cambios"}</Button><Button type="button" variant="outline" disabled={pending} onClick={() => { setDraft(cells); setEditing(false); }}>Cancelar</Button><p className="text-xs text-muted-foreground">La torre y el apartamento no se pueden cambiar. Si cambias el correo o el tipo de usuario, la invitación pendiente se reemplaza.</p></div>}
     {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}

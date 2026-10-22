@@ -19,3 +19,7 @@ El worker elimina hasta cinco archivos rechazados por ejecución mediante Storag
 Aplicar `20261023160000_invitation_delivery_worker.sql` y volver a desplegar este worker. Los trabajos `resident_invitation` no usan `authorize_email_job`: `issue_invitation_for_job` revalida la invitación y genera el código del enlace (72 horas) justo antes de enviar; si ya no corresponde, el trabajo se cancela sin llamar a Resend. El texto guardado en `email_logs` reemplaza el enlace por «[enlace de invitación omitido]», así que el código nunca queda almacenado. Cada intento usa una clave de idempotencia propia porque lleva un código nuevo.
 
 El worker solo recibe invitaciones si el envío real está activo y dentro de `private.invitation_delivery.daily_limit` (90 por defecto). Con el modo de prueba los trabajos quedan `held` y no se reclaman.
+
+## Correo de facturas del censo
+
+Aplicar `20261023200000_census_billing_email.sql` y volver a desplegar este worker. Los trabajos con `census_record_id` son avisos de cartera al correo de facturas del censo: el worker usa `authorize_billing_email_job` en lugar de `authorize_email_job` y se cancelan si se retiró la autorización o cambió el correo.
