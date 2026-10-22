@@ -141,3 +141,17 @@ export async function updateCensusRecord(_: ManagementState, formData: FormData)
   if (data === "invitation_replaced") return { success: "Cambios guardados. La invitación pendiente se reemplazó por una para el correo nuevo." };
   return { success: "Cambios guardados." };
 }
+
+// Desvincula a los residentes vigentes de un apartamento desde su ficha (tras confirmar).
+export async function unlinkUnitResidents(_: ManagementState, formData: FormData): Promise<ManagementState> {
+  const propertyId = field(formData, "propertyId");
+  const linkIds = formData.getAll("unitMembershipId").map((value) => String(value).trim()).filter(Boolean);
+  if (!propertyId || !linkIds.length) return { error: "No encontramos el vínculo." };
+  const supabase = await createClient();
+  for (const linkId of linkIds) {
+    const { error } = await supabase.rpc("end_unit_membership", { target_property_id: propertyId, target_unit_membership_id: linkId });
+    if (error) return { error: databaseError(error.code) };
+  }
+  propertyPaths(propertyId);
+  return { success: "Residente desvinculado. El apartamento quedó libre para una nueva invitación." };
+}
