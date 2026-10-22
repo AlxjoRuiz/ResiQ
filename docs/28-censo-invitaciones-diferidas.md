@@ -92,6 +92,8 @@ Alejandro probó en el piloto (23/10/2026) la edición de apartamentos y el camb
 2. Invitaciones reales: activar con `select private.set_invitation_delivery(true, false);` y probar con 1 a 3 correos propios en una propiedad de prueba (Conjunto Carga de Prueba): recibir el correo, abrir el enlace, aceptar y entrar. Revisar que `email_logs` no guarde el enlace.
 3. Cartera al correo de facturas: con un apartamento cuyo censo tenga «¿Autoriza recibir las facturas…?» = Sí y un correo de facturas propio, registrar un cobro y un pago y comprobar que llegan a la cuenta del residente y al correo de facturas. Cambiar el correo de facturas y comprobar que el siguiente aviso llega al nuevo; poner la autorización en No y comprobar que deja de llegar.
 4. Solo después, decidir si se liberan las invitaciones retenidas de los conjuntos reales (`set_invitation_delivery(true, true)`), respetando el límite diario.
+5. SMTP propio para Supabase Auth (anotado el 24/10/2026): configurar en Authentication › SMTP Settings el envío por Resend con el dominio verificado. Sin eso, crear cuenta con correo y contraseña desde una invitación falla («No fue posible crear la cuenta…»): Supabase necesita enviar el correo de confirmación y su servicio básico solo permite pocos envíos, normalmente a correos del equipo. Con Google sí funciona, porque Google ya verifica el correo; así lo comprobó Alejandro el 24/10/2026 al aceptar una invitación de Bosques Torre A · 101.
+6. Con el SMTP propio, probar: crear cuenta con contraseña desde una invitación y confirmar el correo; aceptar la invitación con esa cuenta; activar `PASSWORD_RECOVERY_ENABLED` y probar «¿Olvidaste tu contraseña?» de punta a punta.
 
 ## Apartamento libre y nueva invitación (24/10/2026)
 
