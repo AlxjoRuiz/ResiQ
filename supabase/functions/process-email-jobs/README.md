@@ -13,3 +13,9 @@ El remitente `onboarding@resend.dev` sirve únicamente para pruebas dirigidas al
 ## Limpieza de adjuntos rechazados
 
 El worker elimina hasta cinco archivos rechazados por ejecución mediante Storage API y libera su cuota solo después de confirmar que el objeto desapareció. La limpieza espera dos horas y cinco minutos desde el rechazo para que expiren los enlaces de carga firmados de dos horas. Los rechazos siguen ocupando uno de los cinco cupos hasta completar la limpieza. Aplicar `20261007173000_attachment_quota_cleanup.sql` y volver a desplegar este worker; el cron existente lo ejecuta cada minuto. Los errores de eliminación conservan el cupo para reintentar. No eliminar filas de `storage.objects` directamente.
+
+## Invitaciones de residentes
+
+Aplicar `20261023160000_invitation_delivery_worker.sql` y volver a desplegar este worker. Los trabajos `resident_invitation` no usan `authorize_email_job`: `issue_invitation_for_job` revalida la invitación y genera el código del enlace (72 horas) justo antes de enviar; si ya no corresponde, el trabajo se cancela sin llamar a Resend. El texto guardado en `email_logs` reemplaza el enlace por «[enlace de invitación omitido]», así que el código nunca queda almacenado. Cada intento usa una clave de idempotencia propia porque lleva un código nuevo.
+
+El worker solo recibe invitaciones si el envío real está activo y dentro de `private.invitation_delivery.daily_limit` (90 por defecto). Con el modo de prueba los trabajos quedan `held` y no se reclaman.

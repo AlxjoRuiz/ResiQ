@@ -1,8 +1,25 @@
 import { createClient } from "@supabase/supabase-js";
 import { cleanupRejectedDocuments } from "./cleanup-documents.ts";
 
-type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string };
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number }; dedupe_key: string; attempt_count: number };
 const jsonHeaders = { "content-type": "application/json" };
+type InvitationDetails = { token: string; property_name: string; building_name: string; unit_code: string; relationship: string; expires_at: string };
+
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
+
+export function invitationContent(invitation: InvitationDetails, link: string) {
+  const role = invitation.relationship === "owner" ? "propietario" : "residente";
+  const expires = new Date(invitation.expires_at).toLocaleString("es-CO", { timeZone: "America/Bogota" });
+  const subject = `Invitación a ResiQ · ${invitation.property_name}`;
+  const lines = [
+    `Te invitaron a ResiQ como ${role} de ${invitation.building_name} · Apartamento ${invitation.unit_code}, en ${invitation.property_name}.`,
+    "Para aceptar, abre este enlace e ingresa con este mismo correo:",
+    link,
+    `El enlace vence el ${expires}. Si no esperabas esta invitación, ignora este mensaje.`,
+  ];
+  const html = `<h1>${escapeHtml(subject)}</h1><p>${escapeHtml(lines[0])}</p><p>${escapeHtml(lines[1])}</p><p><a href="${escapeHtml(link)}">Aceptar invitación</a></p><p>${escapeHtml(lines[3])}</p>`;
+  return { subject, text: lines.join("\n\n"), html };
+}
 
 function emailContent(job: EmailJob, appUrl: string) {
   if (job.template_key.startsWith("assembly_")) {
@@ -80,19 +97,35 @@ export default {
   const results = [];
   for (const job of (data ?? []) as EmailJob[]) {
     let content = { subject: "", html: "", text: "" };
+    // Lo que se guarda en email_logs; en invitaciones nunca incluye el enlace con el código.
+    let logged = { subject: "", text: "" };
+    let idempotencyKey = job.dedupe_key;
     try {
-      const authorization = await supabase.rpc("authorize_email_job", { target_job_id: job.id, worker_name: workerName });
-      if (authorization.error) throw new Error("email_authorization_unavailable");
-      if (authorization.data !== true) { results.push({ id: job.id, status: "cancelled" }); continue; }
-      content = emailContent(job, appUrl);
-      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": job.dedupe_key }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text }) });
+      if (job.template_key === "resident_invitation") {
+        const issued = await supabase.rpc("issue_invitation_for_job", { target_job_id: job.id, worker_name: workerName });
+        if (issued.error) throw new Error("invitation_unavailable");
+        if (!issued.data) { results.push({ id: job.id, status: "skipped" }); continue; }
+        const invitation = issued.data as InvitationDetails;
+        const link = `${appUrl}/invitacion?token=${encodeURIComponent(invitation.token)}`;
+        content = invitationContent(invitation, link);
+        logged = { subject: content.subject, text: content.text.replace(link, "[enlace de invitación omitido]") };
+        // Cada intento lleva un código nuevo, así que la clave de idempotencia es por intento.
+        idempotencyKey = `${job.dedupe_key}:${job.attempt_count}`;
+      } else {
+        const authorization = await supabase.rpc("authorize_email_job", { target_job_id: job.id, worker_name: workerName });
+        if (authorization.error) throw new Error("email_authorization_unavailable");
+        if (authorization.data !== true) { results.push({ id: job.id, status: "cancelled" }); continue; }
+        content = emailContent(job, appUrl);
+        logged = { subject: content.subject, text: content.text };
+      }
+      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text }) });
       const responseBody = await response.json() as { id?: string; message?: string; name?: string };
       if (!response.ok || !responseBody.id) throw new Error(responseBody.message ?? responseBody.name ?? `http_${response.status}`);
-      await supabase.rpc("complete_email_job", { target_job_id: job.id, provider_id: responseBody.id, target_subject: content.subject, target_body: content.text });
+      await supabase.rpc("complete_email_job", { target_job_id: job.id, provider_id: responseBody.id, target_subject: logged.subject, target_body: logged.text });
       results.push({ id: job.id, status: "accepted" });
     } catch (failure) {
       const message = failure instanceof Error ? failure.message : "unknown_error";
-      await supabase.rpc("fail_email_job", { target_job_id: job.id, error_code: "resend_error", error_message: message, target_subject: content.subject, target_body: content.text });
+      await supabase.rpc("fail_email_job", { target_job_id: job.id, error_code: "resend_error", error_message: message, target_subject: logged.subject, target_body: logged.text });
       results.push({ id: job.id, status: "failed" });
     }
   }
