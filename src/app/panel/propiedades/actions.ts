@@ -36,14 +36,13 @@ export async function saveBuilding(_: ManagementState, formData: FormData): Prom
   const name = field(formData, "name");
   const code = field(formData, "code");
   const active = field(formData, "active") !== "false";
-  if (!propertyId || !name || !code) return { error: "Completa el nombre y el código de la torre." };
+  // Las torres solo se crean al importar el censo; aquí únicamente se editan.
+  if (!propertyId || !buildingId || !name || !code) return { error: "Completa el nombre y el código de la torre." };
   const supabase = await createClient();
-  const result = buildingId
-    ? await supabase.rpc("update_building", { target_property_id: propertyId, target_building_id: buildingId, target_name: name, target_code: code, target_active: active })
-    : await supabase.rpc("create_building", { target_property_id: propertyId, target_name: name, target_code: code });
+  const result = await supabase.rpc("update_building", { target_property_id: propertyId, target_building_id: buildingId, target_name: name, target_code: code, target_active: active });
   if (result.error) return { error: databaseError(result.error.code) };
   propertyPaths(propertyId);
-  return { success: buildingId ? "Torre actualizada." : "Torre creada." };
+  return { success: "Torre actualizada." };
 }
 
 export async function saveUnit(_: ManagementState, formData: FormData): Promise<ManagementState> {
@@ -53,14 +52,13 @@ export async function saveUnit(_: ManagementState, formData: FormData): Promise<
   const code = field(formData, "code");
   const floor = field(formData, "floor");
   const status = field(formData, "status") || "active";
-  if (!propertyId || !buildingId || !code) return { error: "Completa la torre y el número del apartamento." };
+  // Los apartamentos solo se crean al importar el censo; aquí únicamente se editan.
+  if (!propertyId || !unitId || !buildingId || !code) return { error: "Completa la torre y el número del apartamento." };
   const supabase = await createClient();
-  const result = unitId
-    ? await supabase.rpc("update_unit", { target_property_id: propertyId, target_unit_id: unitId, target_building_id: buildingId, target_code: code, target_floor: floor, target_status: status })
-    : await supabase.rpc("create_unit", { target_property_id: propertyId, target_building_id: buildingId, target_code: code, target_floor: floor });
+  const result = await supabase.rpc("update_unit", { target_property_id: propertyId, target_unit_id: unitId, target_building_id: buildingId, target_code: code, target_floor: floor, target_status: status });
   if (result.error) return { error: databaseError(result.error.code) };
   propertyPaths(propertyId);
-  return { success: unitId ? "Apartamento actualizado." : "Apartamento creado." };
+  return { success: "Apartamento actualizado." };
 }
 
 export async function manageMember(_: ManagementState, formData: FormData): Promise<ManagementState> {

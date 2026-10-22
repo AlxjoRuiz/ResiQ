@@ -76,8 +76,8 @@ En la siguiente tabla, SELECT indica quién puede obtener datos y por qué super
 | platform_admins | Propio estado mínimo; gestión fuera de interfaz ordinaria | Proceso de plataforma restringido; sin autoalta |
 | properties | Miembros propia P; plataforma datos SaaS | Plataforma crea/suspende; A cambia solo nombre/dirección/configuración autorizada |
 | property_members | Propio; A miembros de P; G proyección operativa | A gestiona member/concierge; designación de administrator por plataforma; sin autoescalación |
-| buildings | Miembros activos de P | A crea/actualiza/desactiva |
-| units | A/G de P; miembro unidades vinculadas | A crea/actualiza/desactiva |
+| buildings | Miembros activos de P | Se crean solo al importar el censo (A, operación atómica); A actualiza/desactiva |
+| units | A/G de P; miembro unidades vinculadas | Se crean solo al importar el censo (A, operación atómica); A actualiza/desactiva |
 | unit_memberships | Propios; A de P; G proyección de ocupantes vigentes | A vincula/termina vínculo y concede finanzas explícitamente |
 | invitations | A proyección sin token_hash; destinatario no lista | A invita member/concierge, revoca; plataforma invita administrador; destinatario canjea |
 | property_policies | A completa; miembros/G configuración operativa mínima | A cambia opciones autorizadas y auditadas |

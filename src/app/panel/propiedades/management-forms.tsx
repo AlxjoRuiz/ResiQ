@@ -26,15 +26,15 @@ export function PropertyForm({ property }: { property: { id: string; name: strin
   </form>;
 }
 
-export function BuildingForm({ propertyId, building }: { propertyId: string; building?: { id: string; name: string; code: string; active: boolean } }) {
+export function BuildingForm({ propertyId, building }: { propertyId: string; building: { id: string; name: string; code: string; active: boolean } }) {
   const [state, action, pending] = useActionState(saveBuilding, undefined as ManagementState);
   return <form action={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_8rem_9rem_auto] lg:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
-    <input type="hidden" name="buildingId" value={building?.id ?? ""} />
-    <label className={labelClass}>Nombre<input className={inputClass} name="name" defaultValue={building?.name ?? ""} required maxLength={80} placeholder="Torre 2" /></label>
-    <label className={labelClass}>Código<input className={inputClass} name="code" defaultValue={building?.code ?? ""} required maxLength={20} placeholder="T2" /></label>
-    <label className={labelClass}>Estado<select className={inputClass} name="active" defaultValue={building?.active === false ? "false" : "true"}><option value="true">Activa</option><option value="false">Inactiva</option></select></label>
-    <Button variant={building ? "outline" : "default"} disabled={pending}>{pending ? "Guardando…" : building ? "Actualizar" : "Crear torre"}</Button>
+    <input type="hidden" name="buildingId" value={building.id} />
+    <label className={labelClass}>Nombre<input className={inputClass} name="name" defaultValue={building.name} required maxLength={80} placeholder="Torre 2" /></label>
+    <label className={labelClass}>Código<input className={inputClass} name="code" defaultValue={building.code} required maxLength={20} placeholder="T2" /></label>
+    <label className={labelClass}>Estado<select className={inputClass} name="active" defaultValue={building.active ? "true" : "false"}><option value="true">Activa</option><option value="false">Inactiva</option></select></label>
+    <Button variant="outline" disabled={pending}>{pending ? "Guardando…" : "Actualizar"}</Button>
     <div className="sm:col-span-2 lg:col-span-4"><Result state={state} /></div>
   </form>;
 }
@@ -42,17 +42,17 @@ export function BuildingForm({ propertyId, building }: { propertyId: string; bui
 export function UnitForm({ propertyId, buildings, unit }: {
   propertyId: string;
   buildings: { id: string; name: string; active: boolean }[];
-  unit?: { id: string; building_id: string; code: string; floor: string | null; status: string };
+  unit: { id: string; building_id: string; code: string; floor: string | null; status: string };
 }) {
   const [state, action, pending] = useActionState(saveUnit, undefined as ManagementState);
   return <form action={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
-    <input type="hidden" name="unitId" value={unit?.id ?? ""} />
-    <label className={labelClass}>Torre<select className={inputClass} name="buildingId" defaultValue={unit?.building_id ?? ""} required><option value="" disabled>Selecciona</option>{buildings.filter((item) => item.active || item.id === unit?.building_id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-    <label className={labelClass}>Apartamento<input className={inputClass} name="code" defaultValue={unit?.code ?? ""} required maxLength={30} placeholder="301" /></label>
-    <label className={labelClass}>Piso<input className={inputClass} name="floor" defaultValue={unit?.floor ?? ""} maxLength={20} placeholder="3" /></label>
-    <label className={labelClass}>Estado<select className={inputClass} name="status" defaultValue={unit?.status ?? "active"}><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
-    <Button variant={unit ? "outline" : "default"} disabled={pending}>{pending ? "Guardando…" : unit ? "Actualizar" : "Crear apartamento"}</Button>
+    <input type="hidden" name="unitId" value={unit.id} />
+    <label className={labelClass}>Torre<select className={inputClass} name="buildingId" defaultValue={unit.building_id} required><option value="" disabled>Selecciona</option>{buildings.filter((item) => item.active || item.id === unit.building_id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+    <label className={labelClass}>Apartamento<input className={inputClass} name="code" defaultValue={unit.code} required maxLength={30} placeholder="301" /></label>
+    <label className={labelClass}>Piso<input className={inputClass} name="floor" defaultValue={unit.floor ?? ""} maxLength={20} placeholder="3" /></label>
+    <label className={labelClass}>Estado<select className={inputClass} name="status" defaultValue={unit.status}><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
+    <Button variant="outline" disabled={pending}>{pending ? "Guardando…" : "Actualizar"}</Button>
     <div className="sm:col-span-2 lg:col-span-5"><Result state={state} /></div>
   </form>;
 }

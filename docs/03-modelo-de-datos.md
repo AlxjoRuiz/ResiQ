@@ -72,7 +72,7 @@ Propósito: torres o bloques de una propiedad.
 
 Columnas: `name text`, `code text`, `active boolean`.
 
-Índices: UNIQUE(property_id,code). RLS: L M/A/G de la propiedad; E A. Propiedad con una sola edificación puede tener un bloque único real; no obliga a inventar varias torres.
+Índices: UNIQUE(property_id,code). RLS: L M/A/G de la propiedad; E A solo actualiza/desactiva: la creación ocurre únicamente al importar el censo desde Excel (decisión de Alejandro, 23/10/2026). Propiedad con una sola edificación puede tener un bloque único real; no obliga a inventar varias torres.
 
 ### 06. units — T
 Propósito: apartamento o unidad física, independiente de quién la ocupa.
@@ -81,7 +81,7 @@ Columnas: `building_id uuid → buildings`, `code text`, `floor text?`, `status 
 
 Índices: UNIQUE(property_id,building_id,code), UNIQUE(property_id,id,building_id). Restricciones: torre de la misma propiedad. No almacenar propietario como único campo: se resuelve por vínculos.
 
-RLS: L A/G para operaciones, M unidades vinculadas; E A. Directorios más amplios requieren decisión explícita.
+RLS: L A/G para operaciones, M unidades vinculadas; E A solo actualiza/desactiva: la creación ocurre únicamente al importar el censo desde Excel. Directorios más amplios requieren decisión explícita.
 
 ### 07. unit_memberships — T
 Propósito: vínculo histórico entre miembro y unidad, con tipo y vigencia.
