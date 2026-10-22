@@ -79,3 +79,17 @@ En Notificaciones, Alejandro confirmó que el aviso de vencimiento es legible en
 6. **Otros tamaños:** repetir un recorrido representativo en tableta y escritorio para cerrar el alcance de la etapa 18. La revisión en iPhone no sustituye estas dos comprobaciones.
 
 Fuera de la revisión responsive siguen aplazadas la comprobación del enlace directo del nuevo archivo de Asambleas con Portería, el inicio/asistencia/cierre de la asamblea cuando llegue su fecha, el correo con dominio propio, el aislamiento visual de una segunda cuenta administradora y el respaldo externo. No son requisitos para hacer las comprobaciones móviles anteriores.
+
+## Revisión en celular de Propiedad y censo (24/10/2026)
+
+Se recorrió en vista de 375 px el login, el inicio de la comunidad, la ficha del apartamento (lectura, edición y confirmación de Desvincular) y el formulario de actualización del censo, con la cuenta `pruebaadmin`. Correcciones aprobadas por Alejandro:
+
+1. Ficha del apartamento con menos margen interno en celular (página, tarjeta, torre, apartamento y registro), para que el contenido use casi todo el ancho.
+2. La etiqueta «Principal para futura invitación» va debajo del nombre en celular.
+3. Las pestañas Residente, Familia, Vehículos, Mascotas y Otros quedan en una sola fila deslizable en celular.
+4. Los campos de edición usan letra de 16 px en celular para que iPhone no acerque la pantalla al tocarlos.
+5. Se quitó «Invitar miembro» del inicio: llevaba a una sección retirada; se invita desde la ficha del apartamento.
+6. Los roles del inicio se muestran en español (Administración, Residente, Portería).
+7. En una propiedad con torres, el título dice «Actualizar censo desde Excel».
+
+Pendiente de decisión: el encabezado fijo del módulo ocupa cerca de una séptima parte de la pantalla del celular.
