@@ -51,3 +51,12 @@ Alejandro aprobó subir el límite a 4 MB y 2.000 respuestas por archivo, y que 
 ## Agregar residente en un apartamento vacío (23/10/2026)
 
 En la ficha de un apartamento sin residente vinculado, con torre y apartamento activos, Administración puede abrir «Agregar residente», escribir el correo y el tipo (Propietario o Arrendatario) y crear una invitación de 72 horas con `create_resident_invitation`. ResiQ muestra el enlace para compartirlo; todavía no envía ni encola correos. Cuando exista la cola de invitaciones con modo de prueba, este formulario la usará en lugar de mostrar el enlace. La ficha del apartamento ahora lee hasta 2.000 respuestas del censo (antes 500).
+
+## Una persona por apartamento (23/10/2026)
+
+Alejandro decidió que cada apartamento guarde solo la respuesta de quien vive ahí, y que su tipo salga de «Tipo de usuario»: Propietario, o Residente para Residente y Arrendatario. Esto reemplaza las decisiones iniciales de guardar todas las filas y dejar sin invitación las adicionales.
+
+- Si el Excel trae más de una fila para un mismo apartamento (torre + número, aunque la torre esté escrita distinto), la vista previa lo bloquea e indica las filas repetidas; el admin debe dejar una sola. El servidor aplica la misma validación y `20261023120000_census_one_record_per_unit.sql` agrega un índice único `census_records(property_id, unit_id)` como última barrera.
+- La lista de apartamentos de Propiedad muestra el tipo junto al número, por ejemplo «Apartamento 101 · Propietario».
+- El censo de prueba de Mirador tenía dos personas por apartamento. `supabase/operations/clean_mirador_census_test.sql` borra solo ese censo ficticio y sus torres y apartamentos (aborta si otro dato los usa) para reimportarlo con un Excel de 1.000 filas, una por apartamento.
+- Volver a subir un Excel para actualizar datos existentes todavía no está disponible: una propiedad con torres no admite otra importación. Queda pendiente su diseño (actualizar el mismo apartamento sin crear otro).

@@ -23,25 +23,31 @@ const row = (tower, apartment, name, email) => {
   return result;
 };
 
-test("reconoce 27 columnas, conserva vacíos y permite dos respuestas de una unidad", () => {
-  const result = parseCensusRows([headers, row("1", "101", "Persona Uno", "uno@example.invalid"), row("Torre 1", "101", "Persona Dos", "dos@example.invalid")]);
+test("reconoce 27 columnas, conserva vacíos y crea una respuesta por apartamento", () => {
+  const result = parseCensusRows([headers, row("1", "101", "Persona Uno", "uno@example.invalid"), row("Torre 1", "102", "Persona Dos", "dos@example.invalid")]);
   assert.deepEqual(result.errors, []);
   assert.equal(result.headers.length, 27);
   assert.equal(result.headers[1], "APARTAMENTO ");
   assert.equal(result.rows.length, 2);
   assert.equal(result.towerCount, 1);
-  assert.equal(result.unitCount, 1);
+  assert.equal(result.unitCount, 2);
   assert.equal(result.rows[0].cells[4], null);
   assert.equal(result.rows[0].building_name, "Torre 1");
 });
 
-test("detecta respuestas duplicadas y preserva columnas adicionales", () => {
+test("bloquea un apartamento repetido aunque la torre esté escrita distinto", () => {
+  const result = parseCensusRows([headers, row("1", "101", "Persona Uno", "uno@example.invalid"), row("torre 1", "101", "Persona Dos", "dos@example.invalid")]);
+  assert.deepEqual(result.duplicateRows, [3]);
+  assert.ok(result.errors.some((error) => error.includes("Torre 1 · Apto 101 está repetido en las filas 2, 3")));
+});
+
+test("detecta filas repetidas y preserva columnas adicionales", () => {
   const original = row("2", "201", "Persona Uno", "uno@example.invalid");
   const result = parseCensusRows([[...headers, "Marca de vehículo"], [...original, "Marca ficticia"], [...original, "Marca ficticia"]]);
   assert.equal(result.additionalHeaders.length, 1);
   assert.equal(result.rows[0].cells[27], "Marca ficticia");
   assert.deepEqual(result.duplicateRows, [3]);
-  assert.ok(result.errors.some((error) => error.includes("duplicadas")));
+  assert.ok(result.errors.some((error) => error.includes("más de una fila")));
 });
 
 test("rechaza columnas obligatorias ausentes", () => {

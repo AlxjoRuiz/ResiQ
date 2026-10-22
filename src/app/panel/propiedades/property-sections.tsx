@@ -18,12 +18,19 @@ type UnitRelation = { id: string; code: string };
 type UnitLink = { id: string; relationship: string; valid_to: string | null; units: UnitRelation | UnitRelation[] | null };
 type Member = { id: string; user_id: string; roles: string[]; status: string; profiles: { display_name: string } | { display_name: string }[] | null; unit_memberships: UnitLink[] | null; email?: string | null };
 type Occupant = { member: Member; link: UnitLink };
-type CensusRecord = { id: string; unit_id: string; import_id: string; full_name: string | null; email_normalized: string | null; invitation_primary: boolean; invitation_relationship: string | null; cells: unknown };
+type CensusRecord = { id: string; unit_id: string; import_id: string; full_name: string | null; email_normalized: string | null; user_type: string | null; invitation_primary: boolean; invitation_relationship: string | null; cells: unknown };
 type CensusImport = { id: string; headers: unknown };
 type ConciergeAccount = { id: string; member_id: string; username: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; email_normalized: string; address: string | null; photo_path: string | null; vehicles: unknown; status: string; photoUrl?: string | null };
 function ageFor(birthDate: string) { const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE); return Number(today.slice(0, 4)) - Number(birthDate.slice(0, 4)) - (today.slice(5) < birthDate.slice(5) ? 1 : 0); }
 
 function one<T>(value: T | T[] | null): T | null { return Array.isArray(value) ? value[0] ?? null : value; }
+// Tipo mostrado junto al apartamento, tomado de «Tipo de usuario» del censo.
+function censusKind(userType: string | null | undefined) {
+  const value = (userType ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  if (["propietario", "propietaria"].includes(value)) return "Propietario";
+  if (["residente", "arrendatario", "arrendataria"].includes(value)) return "Residente";
+  return null;
+}
 function statusLabel(status: string) { return status === "active" ? "Activo" : "Inactivo"; }
 
 function OccupantCard({ occupant, propertyId }: { occupant: Occupant; propertyId: string }) {
@@ -44,7 +51,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
   const [{ data: buildingData, error: buildingError }, { data: memberData, error: memberError }, { data: censusData, error: censusError }, { data: importData, error: importError }, { data: conciergeData, error: conciergeError }] = await Promise.all([
     supabase.from("buildings").select("id,name,code,active,units(id,building_id,code,floor,status)").eq("property_id", propertyId).order("name"),
     supabase.from("property_members").select("id,user_id,roles,status,profiles!property_members_user_id_fkey(display_name),unit_memberships(id,relationship,valid_to,units(id,code))").eq("property_id", propertyId).order("joined_at"),
-    supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,invitation_primary,invitation_relationship,cells").eq("property_id", propertyId).limit(CENSUS_MAX_ROWS),
+    supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,user_type,invitation_primary,invitation_relationship,cells").eq("property_id", propertyId).limit(CENSUS_MAX_ROWS),
     supabase.from("census_imports").select("id,headers").eq("property_id", propertyId),
     supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,photo_path,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
   ]);
@@ -81,7 +88,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
     units: (building.units ?? []).sort((a, b) => {
       const floorOrder = a.floor && b.floor ? a.floor.localeCompare(b.floor, "es", { numeric: true }) : a.floor ? -1 : b.floor ? 1 : 0;
       return floorOrder || a.code.localeCompare(b.code, "es", { numeric: true });
-    }).map((unit) => ({ id: unit.id, code: unit.code, floor: unit.floor,
+    }).map((unit) => ({ id: unit.id, code: unit.code, floor: unit.floor, kind: censusKind(censusByUnit.get(unit.id)?.[0]?.user_type),
       content: <>
         <p className="text-sm"><strong>Número:</strong> {unit.code} <span className="mx-2">·</span> <strong>Piso:</strong> {unit.floor || "Sin información"}</p>
         <div className="space-y-4"><h4 className="font-semibold">Información del Excel</h4>{(censusByUnit.get(unit.id) ?? []).map((record, index) => {

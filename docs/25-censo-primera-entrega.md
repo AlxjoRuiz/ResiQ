@@ -8,7 +8,7 @@ Alejandro autorizó esta entrega el 20 de octubre de 2026. Es una ampliación fu
 - El servidor vuelve a leer y validar el mismo archivo. La RPC `import_census` crea en una sola transacción las torres, apartamentos, lote y respuestas completas. Si una fila falla, no queda una importación parcial.
 - Esta primera entrega exige que la propiedad no tenga torres ni apartamentos. Una repetición exacta del mismo contenido devuelve el lote existente; otro archivo se rechaza si ya hay estructura. La importación incremental y conciliación de datos existentes quedan para un diseño posterior.
 - El Excel de referencia tiene 27 encabezados y una sola respuesta poblada, aunque contiene 255 filas físicas por formato. Se conservan encabezados y valores en orden, incluso vacíos y columnas adicionales con encabezado.
-- La ficha del administrador organiza las respuestas en Residente, Familia, Vehículos, Mascotas y Otros, además de «Todos los campos originales». Permite consultar varias respuestas del mismo apartamento.
+- La ficha del administrador organiza las respuestas en Residente, Familia, Vehículos, Mascotas y Otros, además de «Todos los campos originales». Desde el 23/10/2026 cada apartamento admite una sola respuesta; ver `28-censo-invitaciones-diferidas.md`.
 - No se infiere el piso, porque el archivo no lo contiene. Los pisos quedan «Sin información» hasta definir una regla confirmada.
 - La importación no crea usuarios, membresías ni invitaciones. Un correo censal no concede acceso. El envío de invitaciones se hará después, seleccionando apartamento y destinatario.
 - El Excel ficticio de prueba coloca `pruebaresidente@resiq.invalid` en Torre 1 · 101, como pidió Alejandro. No se importa automáticamente ni reanuda el acceso de esa cuenta.

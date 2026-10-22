@@ -67,7 +67,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
       <div className="grid gap-2 text-sm sm:grid-cols-3">
         <p>Respuestas: <strong>{preview.rows.length}</strong></p><p>Torres: <strong>{preview.towerCount}</strong></p>
         <p>Apartamentos: <strong>{preview.unitCount}</strong></p><p>Residentes identificados: <strong>{preview.residentCount}</strong></p>
-        <p>Columnas: <strong>{preview.headers.length}</strong></p><p>Duplicados: <strong>{preview.duplicateRows.length}</strong></p>
+        <p>Columnas: <strong>{preview.headers.length}</strong></p><p>Filas repetidas: <strong>{preview.duplicateRows.length}</strong></p>
       </div>
       {preview.additionalHeaders.length > 0 && <p className="text-sm">Columnas adicionales: {preview.additionalHeaders.join(", ")}</p>}
       {preview.errors.length > 0 && <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900"><p className="font-semibold">Corrige el archivo antes de importar:</p><ul className="mt-2 list-disc pl-5">{preview.errors.map((error, index) => <li key={`${error}-${index}`}>{error}</li>)}</ul></div>}

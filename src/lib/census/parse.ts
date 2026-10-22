@@ -95,9 +95,9 @@ export function parseCensusRows(sheetRows: readonly (readonly unknown[])[]): Cen
   }
   const index = (name: string) => normalized.indexOf(name);
   const rows: CensusImportRow[] = [];
-  const seen = new Set<string>();
+  // Una sola respuesta por apartamento: la de quien vive ahí (decisión de Alejandro, 23/10/2026).
+  const rowsByUnit = new Map<string, { label: string; sources: number[] }>();
   const towers = new Set<string>();
-  const units = new Set<string>();
   for (const [offset, raw] of sheetRows.slice(1).entries()) {
     if (!raw.some((value) => cellText(value))) continue;
     const sourceRow = offset + 2;
@@ -111,18 +111,23 @@ export function parseCensusRows(sheetRows: readonly (readonly unknown[])[]): Cen
     if (!tower || !unitCode || unitCode.length > 30) { errors.push(`Fila ${sourceRow}: torre o apartamento inválido.`); continue; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push(`Fila ${sourceRow}: correo inválido.`);
     const unitKey = `${tower.code}|${unitCode.toLocaleLowerCase("es")}`;
-    const rowKey = `${unitKey}|${fullName.toLocaleLowerCase("es")}|${email}`;
-    if (seen.has(rowKey)) duplicateRows.push(sourceRow);
-    seen.add(rowKey);
+    const unit = rowsByUnit.get(unitKey) ?? { label: `${tower.name} · Apto ${unitCode}`, sources: [] };
+    if (unit.sources.length) duplicateRows.push(sourceRow);
+    unit.sources.push(sourceRow);
+    rowsByUnit.set(unitKey, unit);
     towers.add(tower.code);
-    units.add(unitKey);
     rows.push({ source_row: sourceRow, building_name: tower.name, building_code: tower.code,
       unit_code: unitCode, full_name: fullName, user_type: userType, email, phone, cells });
   }
   if (!rows.length) errors.push("El Excel no contiene respuestas con torre y apartamento.");
   if (rows.length > CENSUS_MAX_ROWS) errors.push(`El Excel supera el máximo de ${CENSUS_MAX_ROWS.toLocaleString("es-CO")} respuestas.`);
-  if (duplicateRows.length) errors.push(`Hay ${duplicateRows.length} respuestas duplicadas.`);
+  const repeatedUnits = [...rowsByUnit.values()].filter((unit) => unit.sources.length > 1);
+  if (repeatedUnits.length) {
+    errors.push(`Hay ${repeatedUnits.length} apartamentos con más de una fila. Deja una sola fila por apartamento: la de quien vive ahí.`);
+    for (const unit of repeatedUnits.slice(0, 20)) errors.push(`${unit.label} está repetido en las filas ${unit.sources.join(", ")}.`);
+    if (repeatedUnits.length > 20) errors.push(`Y ${repeatedUnits.length - 20} apartamentos repetidos más.`);
+  }
   const additionalHeaders = headers.filter((_, position) => !expectedHeaders.includes(normalized[position]) && !normalized[position].startsWith("autoriacion autorizo"));
-  return { headers, rows, errors, duplicateRows, towerCount: towers.size, unitCount: units.size,
+  return { headers, rows, errors, duplicateRows, towerCount: towers.size, unitCount: rowsByUnit.size,
     residentCount: rows.filter((row) => row.full_name || row.email).length, additionalHeaders };
 }
