@@ -48,3 +48,13 @@ test("rechaza columnas obligatorias ausentes", () => {
   const result = parseCensusRows([[...headers.slice(0, 6), ...headers.slice(7)], row("1", "101", "Persona", "uno@example.invalid")]);
   assert.ok(result.errors.some((error) => error.includes("correo electronico")));
 });
+
+test("accepts 2,000 responses across towers and rejects one more", async () => {
+  const { CENSUS_MAX_ROWS } = await import("../../src/lib/census/parse.ts");
+  const data = Array.from({ length: CENSUS_MAX_ROWS }, (_, i) => row(["Torre A", "B", "torre c"][i % 3], String(100 + Math.floor(i / 3)), `Persona ${i}`, `p${i}@resiq.invalid`));
+  const preview = parseCensusRows([headers, ...data]);
+  assert.deepEqual(preview.errors, []);
+  assert.equal(preview.towerCount, 3);
+  const over = parseCensusRows([headers, ...data, row("Torre A", "999", "Extra", "extra@resiq.invalid")]);
+  assert.ok(over.errors.some((error) => error.includes("2.000")));
+});

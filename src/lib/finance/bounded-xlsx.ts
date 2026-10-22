@@ -1,31 +1,35 @@
 import { Unzip, UnzipInflate, zipSync } from "fflate";
 
 const maxEntries = 64;
-const maxEntryBytes = 2 * 1024 * 1024;
-const maxExpandedBytes = 8 * 1024 * 1024;
 
-function checkWorksheetBounds(xml: string, maxColumns: number) {
+export type XlsxLimits = { maxRows?: number; maxInputBytes?: number; maxEntryBytes?: number; maxExpandedBytes?: number };
+const defaultLimits = { maxRows: 500, maxInputBytes: 2 * 1024 * 1024, maxEntryBytes: 2 * 1024 * 1024, maxExpandedBytes: 8 * 1024 * 1024 };
+
+function checkWorksheetBounds(xml: string, maxColumns: number, maxRows: number) {
+  const maxRowNumber = maxRows + 1;
   const rows = xml.match(/<(?:[\w.-]+:)?row\b[^>]*>/g) ?? [];
-  if (rows.length > 501) throw new Error("xlsx_row_limit");
+  if (rows.length > maxRowNumber) throw new Error("xlsx_row_limit");
   for (const row of rows) {
     const index = row.match(/\br\s*=\s*["']([^"']*)["']/)?.[1];
-    if (index !== undefined && (!/^\d+$/.test(index) || Number(index) < 1 || Number(index) > 501)) throw new Error("xlsx_row_limit");
+    if (index !== undefined && (!/^\d+$/.test(index) || Number(index) < 1 || Number(index) > maxRowNumber)) throw new Error("xlsx_row_limit");
   }
   const cells = xml.match(/<(?:[\w.-]+:)?c\b[^>]*>/g) ?? [];
-  if (cells.length > 501 * maxColumns) throw new Error("xlsx_cell_limit");
+  if (cells.length > maxRowNumber * maxColumns) throw new Error("xlsx_cell_limit");
   for (const cell of cells) {
     const reference = cell.match(/\br\s*=\s*["']([^"']*)["']/)?.[1];
     if (reference === undefined) continue;
     const match = /^([A-Z]{1,2})([0-9]+)$/.exec(reference);
     const column = match?.[1].split("").reduce((sum, letter) => sum * 26 + letter.charCodeAt(0) - 64, 0);
-    if (!match || !column || column > maxColumns || Number(match[2]) < 1 || Number(match[2]) > 501) throw new Error("xlsx_cell_limit");
+    if (!match || !column || column > maxColumns || Number(match[2]) < 1 || Number(match[2]) > maxRowNumber) throw new Error("xlsx_cell_limit");
   }
 }
 
 /** Repack bounded XML entries before a parser can allocate from untrusted ZIP sizes. */
-export function boundedXlsx(input: Uint8Array, maxColumns = 32): Uint8Array {
+export function boundedXlsx(input: Uint8Array, maxColumns = 32, limits: XlsxLimits = {}): Uint8Array {
+  const { maxRows, maxInputBytes, maxEntryBytes, maxExpandedBytes } = { ...defaultLimits, ...limits };
   if (!Number.isInteger(maxColumns) || maxColumns < 1 || maxColumns > 80) throw new Error("invalid_xlsx_columns");
-  if (input.length > 2 * 1024 * 1024 || input[0] !== 0x50 || input[1] !== 0x4b) throw new Error("invalid_xlsx");
+  if (!Number.isInteger(maxRows) || maxRows < 1 || maxRows > 5000) throw new Error("invalid_xlsx_rows");
+  if (input.length > maxInputBytes || input[0] !== 0x50 || input[1] !== 0x4b) throw new Error("invalid_xlsx");
   const files: Record<string, Uint8Array> = Object.create(null);
   const names = new Set<string>();
   let total = 0, unfinished = 0;
@@ -54,7 +58,7 @@ export function boundedXlsx(input: Uint8Array, maxColumns = 32): Uint8Array {
         const xml = new TextDecoder().decode(content);
         if (/<!DOCTYPE|<!ENTITY/i.test(xml)) { failure = new Error("invalid_xlsx_xml"); return; }
         if (file.name.startsWith("xl/worksheets/")) {
-          try { checkWorksheetBounds(xml, maxColumns); } catch (error) { failure = error as Error; return; }
+          try { checkWorksheetBounds(xml, maxColumns, maxRows); } catch (error) { failure = error as Error; return; }
         }
         files[file.name] = content;
         unfinished--;

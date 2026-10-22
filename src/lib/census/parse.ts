@@ -1,3 +1,16 @@
+// Límites del censo compartidos por la vista previa, el servidor y el lector del Excel.
+// La base de datos repite CENSUS_MAX_ROWS en 20261022120000_census_capacity_2000.sql.
+export const CENSUS_MAX_ROWS = 2000;
+export const CENSUS_MAX_FILE_BYTES = 4 * 1024 * 1024;
+export const CENSUS_MAX_FILE_LABEL = "4 MB";
+export const CENSUS_MAX_COLUMNS = 80;
+export const censusXlsxLimits = {
+  maxRows: CENSUS_MAX_ROWS,
+  maxInputBytes: CENSUS_MAX_FILE_BYTES,
+  maxEntryBytes: 12 * 1024 * 1024,
+  maxExpandedBytes: 32 * 1024 * 1024,
+};
+
 export type CensusImportRow = {
   source_row: number;
   building_name: string;
@@ -71,7 +84,7 @@ export function parseCensusRows(sheetRows: readonly (readonly unknown[])[]): Cen
   let lastUsedColumn = width - 1;
   while (lastUsedColumn >= 0 && sheetRows.every((row) => !cellText(row[lastUsedColumn]))) lastUsedColumn--;
   const headers = Array.from({ length: lastUsedColumn + 1 }, (_, index) => originalCell(sheetRows[0][index]) ?? "");
-  if (headers.length > 80) errors.push("El Excel tiene más de 80 columnas con datos.");
+  if (headers.length > CENSUS_MAX_COLUMNS) errors.push(`El Excel tiene más de ${CENSUS_MAX_COLUMNS} columnas con datos.`);
   if (headers.some((header) => !header.trim())) errors.push("Todas las columnas con datos necesitan encabezado.");
   const normalized = headers.map(normalizeCensusHeader);
   if (new Set(normalized).size !== normalized.length) errors.push("Hay encabezados repetidos.");
@@ -107,7 +120,7 @@ export function parseCensusRows(sheetRows: readonly (readonly unknown[])[]): Cen
       unit_code: unitCode, full_name: fullName, user_type: userType, email, phone, cells });
   }
   if (!rows.length) errors.push("El Excel no contiene respuestas con torre y apartamento.");
-  if (rows.length > 500) errors.push("El Excel supera el máximo de 500 respuestas.");
+  if (rows.length > CENSUS_MAX_ROWS) errors.push(`El Excel supera el máximo de ${CENSUS_MAX_ROWS.toLocaleString("es-CO")} respuestas.`);
   if (duplicateRows.length) errors.push(`Hay ${duplicateRows.length} respuestas duplicadas.`);
   const additionalHeaders = headers.filter((_, position) => !expectedHeaders.includes(normalized[position]) && !normalized[position].startsWith("autoriacion autorizo"));
   return { headers, rows, errors, duplicateRows, towerCount: towers.size, unitCount: units.size,

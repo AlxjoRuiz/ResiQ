@@ -29,3 +29,12 @@ test("the app template remains readable by the spreadsheet parser", async () => 
   });
   assert.deepEqual(await readSheet(Buffer.from(boundedXlsx(input))), [["Valor"]]);
 });
+
+test("census limits allow 2,000 data rows and keep finance at 500", async () => {
+  const { censusXlsxLimits } = await import("../../src/lib/census/parse.ts");
+  const rows = (count) => `<worksheet>${Array.from({ length: count }, (_, i) => `<row r="${i + 1}"/>`).join("")}</worksheet>`;
+  assert.doesNotThrow(() => boundedXlsx(archive(rows(2001)), 80, censusXlsxLimits));
+  assert.throws(() => boundedXlsx(archive(rows(2002)), 80, censusXlsxLimits), /row_limit/);
+  assert.throws(() => boundedXlsx(archive(rows(502))), /row_limit/);
+  assert.throws(() => boundedXlsx(new Uint8Array(4 * 1024 * 1024 + 1), 80, censusXlsxLimits), /invalid_xlsx/);
+});

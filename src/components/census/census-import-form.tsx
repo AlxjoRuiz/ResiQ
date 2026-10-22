@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { readSheet } from "read-excel-file/browser";
 import { importCensus, type CensusImportState } from "@/app/panel/propiedades/[propertyId]/censo/actions";
-import { parseCensusRows, type CensusPreview } from "@/lib/census/parse";
+import { CENSUS_MAX_COLUMNS, CENSUS_MAX_FILE_BYTES, CENSUS_MAX_FILE_LABEL, censusXlsxLimits, parseCensusRows, type CensusPreview } from "@/lib/census/parse";
 import { censusRelationship, censusUnitKey, eligiblePrimary, validatePrimarySelections } from "@/lib/census/primary-selection";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 import { Button } from "@/components/ui/button";
@@ -29,13 +29,13 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
     setReadingError("");
     setReading(false);
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".xlsx") || file.size > 2 * 1024 * 1024) {
-      setReadingError("Selecciona un .xlsx de máximo 2 MB.");
+    if (!file.name.toLowerCase().endsWith(".xlsx") || file.size > CENSUS_MAX_FILE_BYTES) {
+      setReadingError(`Selecciona un .xlsx de máximo ${CENSUS_MAX_FILE_LABEL}.`);
       return;
     }
     setReading(true);
     try {
-      const safeArchive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), 80);
+      const safeArchive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), CENSUS_MAX_COLUMNS, censusXlsxLimits);
       const safeFile = new File([safeArchive as BlobPart], file.name, { type: file.type });
       const result = parseCensusRows(await readSheet(safeFile));
       if (selection.current === currentSelection) setPreview(result);
@@ -60,7 +60,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
   return <form action={action} className="grid min-w-0 gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="primarySelections" value={JSON.stringify(selected)} />
-    <FilePicker inputRef={fileInput} files={selectedFile ? [selectedFile] : []} onFilesChange={(files) => { void onFile(files[0]); }} title="Archivo del censo" hint="Excel .xlsx · máximo 2 MB" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" name="file" disabled={pending || reading} />
+    <FilePicker inputRef={fileInput} files={selectedFile ? [selectedFile] : []} onFilesChange={(files) => { void onFile(files[0]); }} title="Archivo del censo" hint={`Excel .xlsx · máximo ${CENSUS_MAX_FILE_LABEL}`} accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" name="file" disabled={pending || reading} />
     <p className="text-sm text-muted-foreground">Si hay varias respuestas por apartamento, elige un principal. El correo sale de la columna G y la relación de «Tipo de usuario». Por ahora no se envían invitaciones ni se vinculan cuentas.</p>
     {reading && <p role="status" className="text-sm">Leyendo el Excel…</p>}
     {readingError && <p role="alert" className="text-sm text-destructive">{readingError}</p>}

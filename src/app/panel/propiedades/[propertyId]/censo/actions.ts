@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { readSheet } from "read-excel-file/node";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
-import { parseCensusRows } from "@/lib/census/parse";
+import { CENSUS_MAX_COLUMNS, CENSUS_MAX_FILE_BYTES, CENSUS_MAX_FILE_LABEL, CENSUS_MAX_ROWS, censusXlsxLimits, parseCensusRows } from "@/lib/census/parse";
 import { validatePrimarySelections } from "@/lib/census/primary-selection";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 
@@ -15,12 +15,12 @@ export async function importCensus(_: CensusImportState, form: FormData): Promis
   const propertyId = String(form.get("propertyId") ?? "");
   const file = form.get("file");
   const rawSelections = form.get("primarySelections");
-  if (!uuidPattern.test(propertyId) || !(file instanceof File) || !file.name.toLowerCase().endsWith(".xlsx") || file.size < 1 || file.size > 2 * 1024 * 1024) {
-    return { error: "Selecciona un Excel .xlsx de máximo 2 MB." };
+  if (!uuidPattern.test(propertyId) || !(file instanceof File) || !file.name.toLowerCase().endsWith(".xlsx") || file.size < 1 || file.size > CENSUS_MAX_FILE_BYTES) {
+    return { error: `Selecciona un Excel .xlsx de máximo ${CENSUS_MAX_FILE_LABEL}.` };
   }
   const { supabase } = await requirePropertyAdmin(propertyId);
   try {
-    const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), 80);
+    const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), CENSUS_MAX_COLUMNS, censusXlsxLimits);
     const sheet = await readSheet(Buffer.from(archive));
     const preview = parseCensusRows(sheet);
     if (preview.errors.length) return { error: preview.errors.slice(0, 3).join(" ") };
@@ -46,6 +46,6 @@ export async function importCensus(_: CensusImportState, form: FormData): Promis
     redirect(`/panel/propiedades/${propertyId}?importado=1`);
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
-    return { error: "No pudimos leer el Excel. Verifica que sea un .xlsx válido y menor de 2 MB." };
+    return { error: `No pudimos leer el Excel. Verifica que sea un .xlsx válido de máximo ${CENSUS_MAX_FILE_LABEL} y ${CENSUS_MAX_ROWS.toLocaleString("es-CO")} filas.` };
   }
 }
