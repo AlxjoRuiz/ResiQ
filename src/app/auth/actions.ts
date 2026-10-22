@@ -68,7 +68,18 @@ export async function registerWithInvitation(_: AuthState, formData: FormData): 
       emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
-  if (error) return { error: "No fue posible crear la cuenta. Verifica los datos o intenta iniciar sesión." };
+  // Mensajes según la causa, sin confirmar si un correo ya tiene cuenta (evita enumerar usuarios).
+  const existingAccount = "Si ya tienes una cuenta con este correo, usa «Iniciar sesión» o «Continuar con Google» y luego acepta la invitación.";
+  if (error) {
+    if (error.code === "user_already_exists" || error.code === "email_exists") return { error: existingAccount };
+    if (error.code === "weak_password") return { error: "La contraseña es muy débil. Usa al menos 8 caracteres combinando letras y números." };
+    if (error.code === "over_email_send_rate_limit" || error.code === "email_address_not_authorized" || error.code === "signup_disabled" || error.code === "email_provider_disabled") {
+      return { error: "Por ahora no podemos crear cuentas con contraseña. Usa «Continuar con Google» con el correo invitado." };
+    }
+    return { error: "No fue posible crear la cuenta. Verifica los datos o usa «Continuar con Google»." };
+  }
+  // Supabase responde sin identidades cuando el correo ya estaba registrado.
+  if (data.user && !data.user.identities?.length) return { error: existingAccount };
   if (data.session) redirect(next);
   return { success: "Revisa tu correo para confirmar la cuenta y continuar con la invitación." };
 }

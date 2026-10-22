@@ -62,3 +62,7 @@ No quedan pruebas de cierre pendientes para el alcance de la etapa 5.
 - Acceso directo ajeno: la ruta administrativa de la propiedad no vinculada respondió 404.
 - RLS directo: como la segunda identidad se obtuvieron `visible_profiles=1`, `visible_property_members=1`, `visible_unit_memberships=1` y `foreign_property_members=0`.
 - Perfil: una prueba transaccional permitió `own_profile_updates=1` y devolvió `foreign_profile_updates=0`; el rollback evitó cambios persistentes.
+
+## Mensajes al crear cuenta desde una invitación (24/10/2026)
+
+«Crear cuenta con invitación» ya no muestra un error genérico. Si el correo ya está registrado (error de Supabase o respuesta sin identidades), indica «Si ya tienes una cuenta con este correo, usa Iniciar sesión o Continuar con Google…», sin confirmar si la cuenta existe para no permitir enumerar usuarios. Si Supabase no puede enviar el correo de confirmación (límite de envíos, correo no autorizado sin SMTP propio o registro desactivado), sugiere «Continuar con Google». Una contraseña débil tiene su propio mensaje. El registro con contraseña funcionará con cualquier correo cuando se configure el SMTP propio (ver pendientes con dominio en `28-censo-invitaciones-diferidas.md`).
