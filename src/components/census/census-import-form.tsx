@@ -102,7 +102,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
     <input type="hidden" name="primarySelections" value={JSON.stringify(selected)} />
     <input type="hidden" name="confirmedTowers" value={towersConfirmed ? JSON.stringify(towers.map((tower) => tower.code)) : ""} />
     <FilePicker inputRef={fileInput} files={selectedFile ? [selectedFile] : []} onFilesChange={(files) => { void onFile(files[0]); }} title="Archivo del censo" hint={`Excel .xlsx · máximo ${CENSUS_MAX_FILE_LABEL}`} accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" name="file" disabled={pending || reading} />
-    <p className="text-sm text-muted-foreground">En cada apartamento se preselecciona como principal la primera fila con nombre y correo de la columna G; puedes cambiarla. Por ahora no se envían invitaciones ni se vinculan cuentas.</p>
+    <p className="text-sm text-muted-foreground">En cada apartamento se preselecciona como principal la primera fila con nombre y correo de la columna G; puedes cambiarla en la columna «Principal». Por ahora no se envían invitaciones ni se vinculan cuentas.</p>
     {reading && <p role="status" className="text-sm">Leyendo el Excel…</p>}
     {readingError && <p role="alert" className="text-sm text-destructive">{readingError}</p>}
     {preview && <section className="min-w-0 space-y-5 rounded-xl border p-3 sm:p-5" aria-label="Vista previa del censo">
@@ -124,7 +124,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
       </div>}
 
       {units.length > 0 && <div className="space-y-3">
-        <h4 className="font-semibold">Apartamentos y principal</h4>
+        <h4 className="font-semibold">Respuestas por apartamento</h4>
         {attentionCount > 0 && <p className="text-sm text-amber-800">{attentionCount} apartamentos tienen varias personas con correo o un dato por revisar.</p>}
         <div className="grid gap-2 sm:grid-cols-3">
           <label className="grid gap-1 text-sm"><span>Torre</span><select className="h-10 rounded-md border bg-white px-3" value={towerFilter} onChange={(event) => filterChange(() => setTowerFilter(event.target.value))}><option value="">Todas</option>{towers.map((tower) => <option key={tower.code} value={tower.code}>{tower.name}</option>)}</select></label>
@@ -132,17 +132,26 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
           <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" checked={onlyAttention} onChange={(event) => filterChange(() => setOnlyAttention(event.target.checked))} />Solo los que requieren revisión</label>
         </div>
         <p className="text-xs text-muted-foreground">Mostrando {visible.length ? currentPage * pageSize + 1 : 0}–{Math.min((currentPage + 1) * pageSize, visible.length)} de {visible.length.toLocaleString("es-CO")} apartamentos.</p>
-        {pageUnits.map((unit) => {
-          const chosen = chosenFor(unit);
-          const selectedRow = unit.eligible.find((row) => row.source_row === chosen);
-          const relationship = selectedRow ? censusRelationship(selectedRow) : null;
-          const repeated = selectedRow && (chosenEmails.get(selectedRow.email) ?? 0) > 1;
-          return <div key={unit.key} className={`grid min-w-0 gap-2 rounded-lg border p-3 ${needsAttention(unit) ? "border-amber-300 bg-amber-50/40" : ""}`}>
-            <label className="grid min-w-0 gap-1 text-sm"><span className="font-medium">{unit.buildingName} · Apto {unit.unitCode} <span className="font-normal text-muted-foreground">({unit.rows.length} {unit.rows.length === 1 ? "persona" : "personas"})</span></span><select className="h-10 w-full min-w-0 rounded-md border bg-white px-3" value={chosen} disabled={!unit.eligible.length} onChange={(event) => setChosenRows((current) => ({ ...current, [unit.key]: Number(event.target.value) }))}><option value={0}>{unit.eligible.length ? "Selecciona residente principal" : "Sin nombre y correo elegibles"}</option>{unit.eligible.map((row) => <option key={row.source_row} value={row.source_row}>{row.full_name} · {row.email} (fila {row.source_row})</option>)}</select></label>
-            {selectedRow && <p className="text-xs text-muted-foreground">Tipo de usuario del Excel: {selectedRow.user_type || "Sin información"}{relationship ? ` · ${relationship === "owner" ? "Propietario" : "Residente"} para acceso futuro` : " · Corrige este valor antes de importar"}{repeated ? " · Este correo es principal en otro apartamento" : ""}</p>}
-            <details className="text-sm"><summary className="cursor-pointer text-primary">Ver respuestas del apartamento</summary>{unit.rows.map((row) => <dl key={row.source_row} className="mt-3 grid gap-2 border-t pt-3"><p className="font-medium">Fila {row.source_row}: {row.full_name || "Sin nombre"}</p>{preview.headers.map((header, index) => <div key={index}><dt className="font-medium">{header}</dt><dd className="break-words text-muted-foreground">{row.cells[index] || "Sin información"}</dd></div>)}</dl>)}</details>
-          </div>;
-        })}
+        <div className="overflow-auto rounded-lg border"><table className="w-full min-w-[46rem] text-left text-sm"><thead className="bg-secondary"><tr><th className="p-2">Torre</th><th className="p-2">Apto</th><th className="p-2">Residente</th><th className="p-2">Correo</th><th className="p-2">Tipo de usuario</th><th className="p-2">Principal</th><th className="p-2">Detalle</th></tr></thead><tbody>
+          {pageUnits.flatMap((unit) => {
+            const chosen = chosenFor(unit);
+            const attention = needsAttention(unit);
+            return unit.rows.map((row, position) => {
+              const eligible = eligiblePrimary(row);
+              const isPrincipal = eligible && row.source_row === chosen;
+              const warning = isPrincipal && (!censusRelationship(row) ? "Tipo de usuario no reconocido" : (chosenEmails.get(row.email) ?? 0) > 1 ? "Correo principal en otro apartamento" : "");
+              return <tr key={row.source_row} className={`align-top ${position === 0 ? "border-t-2" : "border-t"} ${attention ? "bg-amber-50/60" : ""}`}>
+                <td className="p-2">{position === 0 ? unit.buildingName : ""}</td>
+                <td className="p-2">{position === 0 ? unit.unitCode : ""}</td>
+                <td className="p-2">{row.full_name || "Sin información"}</td>
+                <td className="p-2 break-all">{row.email || "Sin correo"}</td>
+                <td className="p-2">{row.user_type || "Sin información"}{warning && <span className="block text-xs text-amber-800">{warning}</span>}</td>
+                <td className="p-2">{eligible ? <input type="radio" aria-label={`Principal de ${unit.buildingName} apto ${unit.unitCode}: ${row.full_name}`} checked={isPrincipal} onChange={() => setChosenRows((current) => ({ ...current, [unit.key]: row.source_row }))} /> : <span className="text-xs text-muted-foreground">No elegible</span>}</td>
+                <td className="p-2"><details><summary className="cursor-pointer text-primary">Ver</summary><dl className="mt-2 grid min-w-[16rem] gap-2">{preview.headers.map((header, index) => <div key={index}><dt className="font-medium">{header}</dt><dd className="break-words text-muted-foreground">{row.cells[index] || "Sin información"}</dd></div>)}</dl></details></td>
+              </tr>;
+            });
+          })}
+        </tbody></table></div>
         {pageCount > 1 && <div className="flex items-center gap-3"><Button type="button" variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Anterior</Button><span className="text-sm">Página {currentPage + 1} de {pageCount}</span><Button type="button" variant="outline" size="sm" disabled={currentPage >= pageCount - 1} onClick={() => setPage(currentPage + 1)}>Siguiente</Button></div>}
         {primaryCheck?.error && <p role="status" className="text-sm text-amber-800">{primaryCheck.error}</p>}
       </div>}
