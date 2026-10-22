@@ -4,7 +4,7 @@ Alejandro autorizó esta entrega el 20 de octubre de 2026. Es una ampliación fu
 
 ## Alcance
 
-- Administración carga un `.xlsx` de hasta 2 MB y 500 respuestas. La vista previa lee el archivo localmente, muestra conteos, errores, duplicados y todos los campos de cada fila. No guarda nada hasta «Confirmar importación».
+- Administración carga un `.xlsx` de hasta 4 MB y 2.000 respuestas (ampliado el 22/10/2026; antes 2 MB y 500). La vista previa lee el archivo localmente y no guarda nada hasta «Confirmar importación». Ver «Capacidad y vista previa para censos grandes» en `28-censo-invitaciones-diferidas.md`.
 - El servidor vuelve a leer y validar el mismo archivo. La RPC `import_census` crea en una sola transacción las torres, apartamentos, lote y respuestas completas. Si una fila falla, no queda una importación parcial.
 - Esta primera entrega exige que la propiedad no tenga torres ni apartamentos. Una repetición exacta del mismo contenido devuelve el lote existente; otro archivo se rechaza si ya hay estructura. La importación incremental y conciliación de datos existentes quedan para un diseño posterior.
 - El Excel de referencia tiene 27 encabezados y una sola respuesta poblada, aunque contiene 255 filas físicas por formato. Se conservan encabezados y valores en orden, incluso vacíos y columnas adicionales con encabezado.

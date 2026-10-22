@@ -40,3 +40,11 @@ test("reconoce variantes claras y bloquea tipos ambiguos", () => {
   assert.equal(censusRelationship({ ...rows[0], user_type: "arrendataria" }), "resident");
   assert.match(validatePrimarySelections([{ ...rows[0], user_type: "Familiar" }], [{ source_row: 2 }]).error, /Tipo de usuario/);
 });
+
+test("preselecciona la primera fila elegible con tipo de usuario reconocido", async () => {
+  const { defaultPrimaryRow } = await import("../../src/lib/census/primary-selection.ts");
+  assert.equal(defaultPrimaryRow([rows[1], rows[0]]).source_row, 2);
+  assert.equal(defaultPrimaryRow([{ ...rows[0], user_type: "Familiar" }, rows[1]]).source_row, 3);
+  assert.equal(defaultPrimaryRow([{ ...rows[0], user_type: "Familiar" }]).source_row, 2);
+  assert.equal(defaultPrimaryRow([{ ...rows[0], email: "" }]), undefined);
+});

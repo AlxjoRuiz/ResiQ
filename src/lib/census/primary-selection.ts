@@ -17,6 +17,13 @@ export function eligiblePrimary(row: CensusImportRow): boolean {
   return Boolean(row.full_name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email));
 }
 
+// Preselección aprobada: la primera fila elegible con tipo de usuario reconocido;
+// si ninguna lo tiene, la primera elegible para que el admin vea qué corregir.
+export function defaultPrimaryRow(rows: CensusImportRow[]): CensusImportRow | undefined {
+  const eligible = rows.filter(eligiblePrimary).sort((a, b) => a.source_row - b.source_row);
+  return eligible.find((row) => censusRelationship(row)) ?? eligible[0];
+}
+
 export function validatePrimarySelections(rows: CensusImportRow[], input: unknown): { selections: PrimarySelection[]; error?: string } {
   if (!Array.isArray(input) || input.length > rows.length) return { selections: [], error: "La selección de principales no es válida." };
   const bySource = new Map(rows.map((row) => [row.source_row, row]));

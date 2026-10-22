@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { readSheet } from "read-excel-file/node";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
-import { CENSUS_MAX_COLUMNS, CENSUS_MAX_FILE_BYTES, CENSUS_MAX_FILE_LABEL, CENSUS_MAX_ROWS, censusXlsxLimits, parseCensusRows } from "@/lib/census/parse";
+import { CENSUS_MAX_COLUMNS, CENSUS_MAX_FILE_BYTES, CENSUS_MAX_FILE_LABEL, CENSUS_MAX_ROWS, censusTowerSummary, censusXlsxLimits, parseCensusRows } from "@/lib/census/parse";
 import { validatePrimarySelections } from "@/lib/census/primary-selection";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 
@@ -24,6 +24,15 @@ export async function importCensus(_: CensusImportState, form: FormData): Promis
     const sheet = await readSheet(Buffer.from(archive));
     const preview = parseCensusRows(sheet);
     if (preview.errors.length) return { error: preview.errors.slice(0, 3).join(" ") };
+    // El admin confirma en pantalla las torres detectadas; si el archivo cambió, se rechaza.
+    let confirmedTowers: unknown;
+    try { confirmedTowers = JSON.parse(String(form.get("confirmedTowers") ?? "")); }
+    catch { return { error: "Confirma las torres detectadas antes de importar." }; }
+    const detectedTowers = censusTowerSummary(preview.rows).map((tower) => tower.code);
+    if (!Array.isArray(confirmedTowers) || confirmedTowers.length !== detectedTowers.length
+        || detectedTowers.some((code, position) => confirmedTowers[position] !== code)) {
+      return { error: "Las torres confirmadas no coinciden con el archivo. Vuelve a cargarlo y revisa las torres." };
+    }
     let submitted: unknown;
     try { submitted = JSON.parse(String(rawSelections ?? "")); }
     catch { return { error: "Elige los residentes principales antes de importar." }; }
