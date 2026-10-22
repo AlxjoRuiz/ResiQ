@@ -10,3 +10,10 @@ coverage/
 *.log
 .npm-cache/
 outputs/
+
+# Datos de censo, exportaciones y respaldos: nunca versionar
+*.xlsx
+*.xls
+*.csv
+*.bak
+*.dump

@@ -1,4 +1,5 @@
 -- Verificacion de solo lectura de la convocatoria funcional del 2026-10-06.
+-- pruebaresidente@resiq.invalid es un marcador: en el SQL Editor usar el correo de la cuenta de prueba, sin guardarlo en el repo.
 -- Ejecutar en SQL Editor de Supabase. No modifica datos ni reenvia correos.
 select a.title, a.status, aa.rsvp, aa.responded_at,
        aa.attendance_status, aa.attended_at
@@ -18,7 +19,7 @@ join public.notifications n on n.id = j.notification_id
 left join public.email_logs l on l.email_job_id = j.id
 where n.target_type = 'assembly'
   and n.target_id = '25777224-2bc0-4892-89ef-06b19b65b933'
-  and j.recipient_email = 'alejoruizm11@gmail.com'
+  and j.recipient_email = 'pruebaresidente@resiq.invalid'
 order by j.created_at, l.attempt_number;
 -- accepted acredita aceptacion del proveedor, no recepcion en la bandeja.
 -- Los recordatorios futuros pueden permanecer queued; no son fallos.

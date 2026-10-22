@@ -41,7 +41,7 @@ La validación técnica está completa. La etapa no se considera aprobada hasta 
 
 ## Evidencia de validación — 2026-09-30
 
-- La sesión real de `alejoruizm11@gmail.com` leyó inicialmente solo el apartamento 101.
+- La sesión real de `pruebaresidente@resiq.invalid` leyó inicialmente solo el apartamento 101.
 - Después de crear temporalmente un segundo vínculo mediante la RPC administrativa, la misma sesión leyó los apartamentos 101 y 102.
 - La RPC administrativa invocada con la sesión miembro devolvió `not_authorized`, y la ruta administrativa respondió 404.
 - Al finalizar el vínculo 102, la sesión miembro volvió a leer únicamente el apartamento 101 y dejó de ver el vínculo terminado.

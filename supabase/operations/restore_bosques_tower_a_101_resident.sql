@@ -1,4 +1,5 @@
 -- Reparación puntual solicitada: restaura el vínculo de la cuenta confirmada
+-- pruebaresidente@resiq.invalid es un marcador: en el SQL Editor usar el correo de la cuenta de prueba, sin guardarlo en el repo.
 -- con Torre A · 101. Conserva el vínculo anterior y su acceso financiero.
 -- Ejecutar una sola vez en el SQL Editor de Supabase ResiQ.
 begin;
@@ -6,7 +7,7 @@ begin;
 do $restore$
 declare
   target_property_id constant uuid := '1bde3475-3ed2-4f57-bd13-39784b12d2a6';
-  target_email constant text := 'alejoruizm11@gmail.com';
+  target_email constant text := 'pruebaresidente@resiq.invalid';
   target_member public.property_members%rowtype;
   target_unit_id uuid;
   historical_link public.unit_memberships%rowtype;
@@ -80,6 +81,6 @@ join auth.users au on au.id = pm.user_id
 join public.units u on u.id = um.unit_id
 join public.buildings b on b.id = u.building_id
 where um.property_id = '1bde3475-3ed2-4f57-bd13-39784b12d2a6'
-  and lower(au.email) = 'alejoruizm11@gmail.com'
+  and lower(au.email) = 'pruebaresidente@resiq.invalid'
   and b.name = 'Torre A' and u.code = '101'
   and um.valid_to is null;

@@ -56,7 +56,7 @@ No quedan pruebas de cierre pendientes para el alcance de la etapa 5.
 
 - Cierre de sesión: redirección correcta al login; una ruta protegida volvió a exigir autenticación.
 - Renovación/persistencia: la segunda cuenta conservó la sesión al recargar el panel.
-- Invitación real: `alejoruizm11@gmail.com` aceptó desde la interfaz una invitación de miembro residente para el apartamento 101 de `Conjunto Bosques de ResiQ`.
+- Invitación real: `pruebaresidente@resiq.invalid` aceptó desde la interfaz una invitación de miembro residente para el apartamento 101 de `Conjunto Bosques de ResiQ`.
 - Selección de cuenta: el acceso de Google solicita elegir cuenta cuando el destino es una invitación, evitando reutilizar accidentalmente la cuenta administradora.
 - Aislamiento visual: el panel de la cuenta invitada mostró una sola comunidad y no mostró `Edificio Mirador ResiQ`.
 - Acceso directo ajeno: la ruta administrativa de la propiedad no vinculada respondió 404.

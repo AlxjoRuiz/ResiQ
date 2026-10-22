@@ -1,10 +1,11 @@
 -- Solo lectura. Localiza el apartamento 101 por código, sin asumir el nombre de la torre.
+-- pruebaresidente@resiq.invalid es un marcador: en el SQL Editor usar el correo de la cuenta de prueba, sin guardarlo en el repo.
 with target_member as (
   select pm.id, pm.status, pm.roles
   from public.property_members pm
   join auth.users au on au.id = pm.user_id
   where pm.property_id = '1bde3475-3ed2-4f57-bd13-39784b12d2a6'
-    and lower(au.email) = 'alejoruizm11@gmail.com'
+    and lower(au.email) = 'pruebaresidente@resiq.invalid'
 )
 select
   b.name as torre,

@@ -35,7 +35,7 @@ El 2026-10-09 Alejandro confirmó en producción que el borrador muestra asunto,
 El 2026-10-09 Alejandro abrió desde Portería la URL directa del comunicado dirigido solo a su cuenta de Administración: recibió 404 y no vio el contenido. Esta prueba confirma en la interfaz la restricción por destinatario dentro de la misma propiedad. La prueba visual de una cuenta sin membresía en esa propiedad sigue pendiente; el aislamiento entre propiedades del residente piloto ya se comprobó por otras rutas.
 
 ## Pendientes externos
-Para enviar a alejoruizm11@gmail.com u otros destinatarios falta un dominio verificado en Resend y un remitente autorizado. El remitente de pruebas solo permite el correo propietario de la cuenta. APP_URL del worker debe verificarse y actualizarse a https://resi-q.vercel.app. La falta de dominio no impide desarrollar y probar la bandeja con rollback, pero impide cerrar la recepción real de correo a otros usuarios.
+Para enviar a pruebaresidente@resiq.invalid u otros destinatarios falta un dominio verificado en Resend y un remitente autorizado. El remitente de pruebas solo permite el correo propietario de la cuenta. APP_URL del worker debe verificarse y actualizarse a https://resi-q.vercel.app. La falta de dominio no impide desarrollar y probar la bandeja con rollback, pero impide cerrar la recepción real de correo a otros usuarios.
 
 ## Decisiones para aprobación
 Aprobar bandeja personal y lectura propia, comunicados administrativos con audiencia explícita y publicación inmutable, sin adjuntos en esta primera entrega. No incluye WhatsApp, SMS, push, facturación ni cambios visuales del dashboard.

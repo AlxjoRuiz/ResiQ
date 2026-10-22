@@ -1,10 +1,11 @@
 -- Solo lectura. Comprueba la cuenta confirmada y los vínculos de Torre 1 · 101.
+-- pruebaresidente@resiq.invalid es un marcador: en el SQL Editor usar el correo de la cuenta de prueba, sin guardarlo en el repo.
 with target_member as (
   select pm.id, pm.user_id, pm.roles, pm.status
   from public.property_members pm
   join auth.users au on au.id = pm.user_id
   where pm.property_id = '1bde3475-3ed2-4f57-bd13-39784b12d2a6'
-    and lower(au.email) = 'alejoruizm11@gmail.com'
+    and lower(au.email) = 'pruebaresidente@resiq.invalid'
 ), target_unit as (
   select u.id, u.status, b.name as building_name
   from public.units u

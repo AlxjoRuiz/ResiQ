@@ -11,7 +11,7 @@ Alejandro autorizó esta entrega el 20 de octubre de 2026. Es una ampliación fu
 - La ficha del administrador organiza las respuestas en Residente, Familia, Vehículos, Mascotas y Otros, además de «Todos los campos originales». Permite consultar varias respuestas del mismo apartamento.
 - No se infiere el piso, porque el archivo no lo contiene. Los pisos quedan «Sin información» hasta definir una regla confirmada.
 - La importación no crea usuarios, membresías ni invitaciones. Un correo censal no concede acceso. El envío de invitaciones se hará después, seleccionando apartamento y destinatario.
-- El Excel ficticio de prueba coloca `alejoruizm11@gmail.com` en Torre 1 · 101, como pidió Alejandro. No se importa automáticamente ni reanuda el acceso de esa cuenta.
+- El Excel ficticio de prueba coloca `pruebaresidente@resiq.invalid` en Torre 1 · 101, como pidió Alejandro. No se importa automáticamente ni reanuda el acceso de esa cuenta.
 
 ## Datos sensibles y acceso
 
