@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { CensusDetail } from "@/components/census/census-detail";
 import { CensusImportForm } from "@/components/census/census-import-form";
+import { CensusUpdateForm } from "@/components/census/census-update-form";
 import { CENSUS_MAX_ROWS } from "@/lib/census/parse";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -132,7 +133,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
 
   return <>
     <Card className="mt-6"><CardContent>
-      <section aria-labelledby="importar-unidades"><h2 id="importar-unidades" className="text-xl font-semibold">Importar unidades desde Excel</h2><p className="mb-5 mt-1 text-sm text-muted-foreground">Importa un archivo Excel para crear automáticamente las torres, apartamentos y registrar su información.</p>{imported && <p role="status" className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900">Importación completada. Se creó una invitación por apartamento, retenida en modo de prueba: no se envió ningún correo ni se concedió acceso.</p>}{canImport ? <CensusImportForm propertyId={propertyId} /> : <p className="rounded-lg bg-secondary p-3 text-sm">Esta propiedad ya tiene torres. Para evitar cruces, esta primera versión no permite importar otro archivo sobre la estructura existente.</p>}</section>
+      <section aria-labelledby="importar-unidades"><h2 id="importar-unidades" className="text-xl font-semibold">Importar unidades desde Excel</h2><p className="mb-5 mt-1 text-sm text-muted-foreground">Importa un archivo Excel para crear automáticamente las torres, apartamentos y registrar su información.</p>{imported && <p role="status" className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900">Importación completada. Se creó una invitación por apartamento, retenida en modo de prueba: no se envió ningún correo ni se concedió acceso.</p>}{canImport ? <CensusImportForm propertyId={propertyId} /> : <CensusUpdateForm propertyId={propertyId} />}</section>
       <section id="apartamentos" className="mt-8 scroll-mt-6 border-t pt-8"><h2 className="text-xl font-semibold">Torres de la propiedad</h2><p className="mt-1 text-sm text-muted-foreground">Abre una torre y después un apartamento para consultar cada respuesta importada y sus vinculaciones, sin mezclar personas.</p>
         <div className="mt-4"><PropertyUnitExplorer towers={explorerTowers} /></div>
       </section>

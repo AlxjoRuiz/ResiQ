@@ -49,3 +49,51 @@ export async function importCensus(_: CensusImportState, form: FormData): Promis
     return { error: `No pudimos leer el Excel. Verifica que sea un .xlsx válido de máximo ${CENSUS_MAX_FILE_LABEL} y ${CENSUS_MAX_ROWS.toLocaleString("es-CO")} filas.` };
   }
 }
+
+export type CensusUpdateSummary = { updated: number; created: number; unchanged: number; towers_created: number; invitations: number; replaced_residents: string[]; preview: boolean };
+export type CensusUpdateState = { error?: string; summary?: CensusUpdateSummary } | undefined;
+
+function censusUpdateError(message: string) {
+  const row = /fila (\d+)/.exec(message)?.[1];
+  const prefix = row ? `Fila ${row}: ` : "";
+  if (message.includes("headers_mismatch")) return "Las columnas del Excel no coinciden con las del censo existente.";
+  if (message.includes("no_existing_census")) return "Esta propiedad no tiene un censo previo para actualizar.";
+  if (message.includes("email_in_use")) return `${prefix}ese correo ya está invitado en otro apartamento.`;
+  if (message.includes("invalid_user_type")) return `${prefix}«Tipo de usuario» debe ser Propietario, Residente o Arrendatario para invitar.`;
+  if (message.includes("invalid_census_email")) return `${prefix}el correo electrónico no es válido.`;
+  if (message.includes("invalid_census")) return `${prefix}revisa la torre, el apartamento y las columnas.`;
+  return "No se pudo procesar la actualización. No se guardó ningún cambio.";
+}
+
+// Vista previa (dry_run) y aplicación comparten la misma lectura del Excel y la misma función.
+async function runCensusUpdate(form: FormData, dryRun: boolean): Promise<CensusUpdateState> {
+  const propertyId = String(form.get("propertyId") ?? "");
+  const file = form.get("file");
+  if (!uuidPattern.test(propertyId) || !(file instanceof File) || !file.name.toLowerCase().endsWith(".xlsx") || file.size < 1 || file.size > CENSUS_MAX_FILE_BYTES) {
+    return { error: `Selecciona un Excel .xlsx de máximo ${CENSUS_MAX_FILE_LABEL}.` };
+  }
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  let preview;
+  try {
+    const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), CENSUS_MAX_COLUMNS, censusXlsxLimits);
+    preview = parseCensusRows(await readSheet(Buffer.from(archive)));
+  } catch {
+    return { error: `No pudimos leer el Excel. Verifica que sea un .xlsx válido de máximo ${CENSUS_MAX_FILE_LABEL} y ${CENSUS_MAX_ROWS.toLocaleString("es-CO")} filas.` };
+  }
+  if (preview.errors.length) return { error: preview.errors.slice(0, 3).join(" ") };
+  const { data, error } = await supabase.rpc("update_census_from_excel", {
+    target_property_id: propertyId, target_file_name: file.name, target_headers: preview.headers, target_rows: preview.rows, dry_run: dryRun,
+  });
+  if (error) return { error: censusUpdateError(error.message) };
+  return { summary: data as CensusUpdateSummary };
+}
+
+export async function previewCensusUpdate(_: CensusUpdateState, form: FormData): Promise<CensusUpdateState> {
+  return runCensusUpdate(form, true);
+}
+
+export async function applyCensusUpdate(_: CensusUpdateState, form: FormData): Promise<CensusUpdateState> {
+  const result = await runCensusUpdate(form, false);
+  if (result?.summary) revalidatePath(`/panel/propiedades/${String(form.get("propertyId"))}`);
+  return result;
+}
