@@ -40,13 +40,16 @@ function UnlinkResidents({ propertyId, residents }: { propertyId: string; reside
     <Button type="button" size="sm" variant="outline" onClick={() => setConfirming(true)}>Desvincular</Button>
     {state?.error && <p role="alert" className="w-full text-sm text-destructive">{state.error}</p>}
   </>;
-  return <form action={action} className="w-full space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-    <input type="hidden" name="propertyId" value={propertyId} />
-    {residents.map((resident) => <input key={resident.linkId} type="hidden" name="unitMembershipId" value={resident.linkId} />)}
-    <p>¿Seguro que quieres desvincular a {residents.map((resident) => resident.label).join(" y ")}? Perderá el acceso a ResiQ para este apartamento. El apartamento y su historial se conservan.</p>
-    <div className="flex flex-wrap gap-2"><Button size="sm" disabled={pending}>{pending ? "Desvinculando…" : "Sí, desvincular"}</Button><Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => setConfirming(false)}>Cancelar</Button></div>
-    {state?.error && <p role="alert" className="text-destructive">{state.error}</p>}
-  </form>;
+  // Confirmación centrada sobre la ficha, con el contenido desenfocado detrás.
+  return <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Confirmar desvinculación">
+    <form action={action} className="w-full max-w-md space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-lg">
+      <input type="hidden" name="propertyId" value={propertyId} />
+      {residents.map((resident) => <input key={resident.linkId} type="hidden" name="unitMembershipId" value={resident.linkId} />)}
+      <p>¿Seguro que quieres desvincular a {residents.map((resident) => resident.label).join(" y ")}? Perderá el acceso a ResiQ para este apartamento. El apartamento y su historial se conservan.</p>
+      <div className="flex flex-wrap gap-2"><Button size="sm" disabled={pending}>{pending ? "Desvinculando…" : "Sí, desvincular"}</Button><Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => setConfirming(false)}>Cancelar</Button></div>
+      {state?.error && <p role="alert" className="text-destructive">{state.error}</p>}
+    </form>
+  </div>;
 }
 
 export function CensusDetail({ headers, cells, propertyId, recordId, residents, vacant }: { headers: string[]; cells: (string | null)[]; propertyId: string; recordId: string; residents: LinkedResident[]; vacant: boolean }) {
@@ -75,7 +78,7 @@ export function CensusDetail({ headers, cells, propertyId, recordId, residents, 
   </div>;
 
   // La barra superior queda fuera del formulario de edición: Desvincular tiene su propio formulario.
-  return <div className="space-y-6">
+  return <div className="relative space-y-6">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <nav aria-label="Secciones del censo" className="flex flex-wrap gap-2">{sections.map((section) => <button key={section} type="button" aria-pressed={active === section} onClick={() => setActive(section)} className={`rounded-full border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active === section ? "border-foreground bg-foreground text-background" : "bg-white hover:bg-secondary"}`}>{section}</button>)}</nav>
       {!editing && <div className="flex flex-wrap items-center gap-2"><Button type="button" size="sm" variant="outline" onClick={() => { setDraft(cells); setEditing(true); }}>Editar</Button>{occupied && <UnlinkResidents propertyId={propertyId} residents={residents} />}</div>}
