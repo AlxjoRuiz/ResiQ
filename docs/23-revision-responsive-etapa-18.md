@@ -2,6 +2,9 @@
 
 Estado: iniciada por aprobación de Alejandro el 14 de octubre de 2026. Alcance del prompt maestro: escritorio, tableta y móvil, con prioridad para Residente. Este registro distingue mejoras de código de comprobaciones reales en dispositivos.
 
+En Propiedad → Torres de la propiedad, Alejandro pidió retirar el campo «Buscar torre o apartamento». Se conserva la navegación desplegable por torre y apartamento. La comprobación visual publicada queda pendiente de Alejandro.
+Verificación local: TypeScript, compilación y 20 pruebas de seguridad aprobaron. ESLint no dio errores; persistieron seis advertencias preexistentes en otros módulos.
+
 ## Cambios preparados
 
 - Calendario de disponibilidad: en móvil cada celda muestra un día compacto y una leyenda de colores; el detalle y los horarios se leen al seleccionar el día.

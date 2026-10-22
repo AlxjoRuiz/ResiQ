@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Building2, House } from "lucide-react";
 
 export type ExplorerTower = {
@@ -13,20 +11,8 @@ export type ExplorerTower = {
 };
 
 export function PropertyUnitExplorer({ towers }: { towers: ExplorerTower[] }) {
-  const [search, setSearch] = useState("");
-  const query = search.trim().toLocaleLowerCase("es");
-  const visible = towers.map((tower) => ({
-    ...tower,
-    units: query && !`${tower.name} ${tower.code}`.toLocaleLowerCase("es").includes(query)
-      ? tower.units.filter((unit) => `${unit.code} ${unit.floor ?? ""}`.toLocaleLowerCase("es").includes(query))
-      : tower.units,
-  })).filter((tower) => !query || `${tower.name} ${tower.code}`.toLocaleLowerCase("es").includes(query) || tower.units.length > 0);
-
   return <div className="space-y-4">
-    <label className="grid max-w-lg gap-2 text-sm font-medium">Buscar torre o apartamento
-      <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Torre 1 o apartamento 101" className="h-11 min-w-0 rounded-lg border bg-white px-3" />
-    </label>
-    {visible.map((tower) => <details key={tower.id} className="min-w-0 overflow-hidden rounded-xl border bg-white">
+    {towers.map((tower) => <details key={tower.id} className="min-w-0 overflow-hidden rounded-xl border bg-white">
       <summary className="flex cursor-pointer list-none items-center gap-3 p-4 marker:hidden sm:p-5"><Building2 size={19} aria-hidden="true" className="shrink-0 text-primary" /><span className="min-w-0 flex-1"><strong className="block">{tower.name}</strong><span className="text-xs text-muted-foreground">{tower.units.length} apartamentos {tower.active ? "" : "· Inactiva"}</span></span><span aria-hidden="true" className="text-muted-foreground">▾</span></summary>
       <div className="border-t p-3 sm:p-5">
         <div className="space-y-2">{tower.units.map((unit) => <details key={unit.id} id={`apartamento-${unit.id}`} className="min-w-0 rounded-lg border bg-background">
@@ -36,7 +22,6 @@ export function PropertyUnitExplorer({ towers }: { towers: ExplorerTower[] }) {
         <details className="mt-5 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Editar esta torre</summary><div className="mt-4">{tower.edit}</div></details>
       </div>
     </details>)}
-    {visible.length === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">No encontramos torres ni apartamentos con esa búsqueda.</p>}
     {towers.length === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">Todavía no hay torres. Puedes importarlas con el Excel de arriba.</p>}
   </div>;
 }
