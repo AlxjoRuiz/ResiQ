@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { readSheet } from "read-excel-file/node";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
-import { CENSUS_MAX_COLUMNS, CENSUS_MAX_FILE_BYTES, CENSUS_MAX_FILE_LABEL, CENSUS_MAX_ROWS, censusXlsxLimits, parseCensusRows } from "@/lib/census/parse";
+import { CENSUS_MAX_COLUMNS, CENSUS_MAX_FILE_BYTES, CENSUS_MAX_FILE_LABEL, CENSUS_MAX_ROWS, censusXlsxLimits, normalizeCensusHeader, parseCensusRows } from "@/lib/census/parse";
 import { validatePrimarySelections } from "@/lib/census/primary-selection";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 
@@ -81,8 +81,25 @@ async function runCensusUpdate(form: FormData, dryRun: boolean): Promise<CensusU
     return { error: `No pudimos leer el Excel. Verifica que sea un .xlsx válido de máximo ${CENSUS_MAX_FILE_LABEL} y ${CENSUS_MAX_ROWS.toLocaleString("es-CO")} filas.` };
   }
   if (preview.errors.length) return { error: preview.errors.slice(0, 3).join(" ") };
+
+  // Las columnas se comparan por nombre, no por posición; la de autorización se reconoce
+  // aunque su texto cambie. Las celdas se reordenan al orden del censo existente.
+  const { data: existing } = await supabase.from("census_imports").select("headers").eq("property_id", propertyId).order("created_at").limit(1).maybeSingle();
+  const existingHeaders = Array.isArray(existing?.headers) ? existing.headers.map(String) : [];
+  if (!existingHeaders.length) return { error: "Esta propiedad no tiene un censo previo para actualizar." };
+  const columnKey = (header: string) => { const key = normalizeCensusHeader(header); return key.startsWith("autoriacion autorizo") ? "autoriacion autorizo" : key; };
+  const existingKeys = existingHeaders.map(columnKey);
+  const newKeys = preview.headers.map(columnKey);
+  const missing = existingHeaders.filter((_, index) => !newKeys.includes(existingKeys[index]));
+  const extra = preview.headers.filter((_, index) => !existingKeys.includes(newKeys[index]));
+  if (missing.length || extra.length) {
+    return { error: ["Las columnas del Excel no coinciden con las del censo existente.", missing.length ? `Faltan: ${missing.slice(0, 5).join(", ")}.` : "", extra.length ? `Sobran: ${extra.slice(0, 5).join(", ")}.` : ""].filter(Boolean).join(" ") };
+  }
+  const positions = existingKeys.map((key) => newKeys.indexOf(key));
+  const rows = preview.rows.map((row) => ({ ...row, cells: positions.map((position) => row.cells[position] ?? null) }));
+
   const { data, error } = await supabase.rpc("update_census_from_excel", {
-    target_property_id: propertyId, target_file_name: file.name, target_headers: preview.headers, target_rows: preview.rows, dry_run: dryRun,
+    target_property_id: propertyId, target_file_name: file.name, target_headers: existingHeaders, target_rows: rows, dry_run: dryRun,
   });
   if (error) return { error: censusUpdateError(error.message) };
   return { summary: data as CensusUpdateSummary };
