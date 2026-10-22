@@ -29,7 +29,7 @@ function fieldHint(header: string, occupied: boolean) {
   return null;
 }
 
-export function CensusDetail({ headers, cells, propertyId, recordId, occupied }: { headers: string[]; cells: (string | null)[]; propertyId: string; recordId: string; occupied: boolean }) {
+export function CensusDetail({ headers, cells, propertyId, recordId, occupied, vacant }: { headers: string[]; cells: (string | null)[]; propertyId: string; recordId: string; occupied: boolean; vacant: boolean }) {
   const [active, setActive] = useState<Section>("Residente");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(cells);
@@ -50,6 +50,7 @@ export function CensusDetail({ headers, cells, propertyId, recordId, occupied }:
       <nav aria-label="Secciones del censo" className="flex flex-wrap gap-2">{sections.map((section) => <button key={section} type="button" aria-pressed={active === section} onClick={() => setActive(section)} className={`rounded-full border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active === section ? "border-foreground bg-foreground text-background" : "bg-white hover:bg-secondary"}`}>{section}</button>)}</nav>
       {!editing && <Button type="button" size="sm" variant="outline" onClick={() => { setDraft(cells); setEditing(true); }}>Editar</Button>}
     </div>
+    {vacant && !editing && <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><p>Apartamento sin residente. Para invitar a uno nuevo, pulsa «Nueva invitación» y completa sus datos.</p><Button type="button" size="sm" onClick={() => { setDraft(headers.map((header, index) => lockedField(header) ? cells[index] : null)); setActive("Residente"); setEditing(true); }}>Nueva invitación</Button></div>}
     <section aria-label={active}><dl className="divide-y">{headers.map((header, index) => sectionFor(header) === active && <div key={index} className="grid gap-1 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"><dt className="font-medium">{header}</dt><dd className="break-words text-muted-foreground">{editing && !lockedField(header)
       ? <><input className="h-10 w-full rounded-md border bg-white px-3 text-foreground" aria-label={header} value={values[index] ?? ""} maxLength={1000} onChange={(event) => { const next = [...draft]; next[index] = event.target.value === "" ? null : event.target.value; setDraft(next); }} />{fieldHint(header, occupied) && <span className="mt-1 block text-xs">{fieldHint(header, occupied)}</span>}</>
       : values[index] || "Sin información"}</dd></div>)}</dl></section>

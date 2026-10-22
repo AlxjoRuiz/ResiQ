@@ -137,6 +137,7 @@ export async function updateCensusRecord(_: ManagementState, formData: FormData)
   }
   propertyPaths(propertyId);
   if (data === "resident_replaced") return { success: "Cambios guardados. Se desvinculó al residente anterior y se creó la invitación para el correo nuevo (retenida mientras el envío esté en modo de prueba)." };
+  if (data === "invitation_created") return { success: "Datos guardados y se creó la invitación para el nuevo residente (retenida mientras el envío esté en modo de prueba)." };
   if (data === "invitation_replaced") return { success: "Cambios guardados. La invitación pendiente se reemplazó por una para el correo nuevo." };
   return { success: "Cambios guardados." };
 }
