@@ -50,7 +50,8 @@ export async function importCensus(_: CensusImportState, form: FormData): Promis
   }
 }
 
-export type CensusUpdateSummary = { updated: number; created: number; unchanged: number; towers_created: number; invitations: number; replaced_residents: string[]; preview: boolean };
+export type CensusUpdateChange = { source_row: number; building_name: string; unit_code: string; full_name: string | null; change: "updated" | "created"; invitation: "new" | "replaced" | "resident_replaced" | null };
+export type CensusUpdateSummary = { updated: number; created: number; unchanged: number; towers_created: number; invitations: number; replaced_residents: string[]; changes?: CensusUpdateChange[]; preview: boolean };
 export type CensusUpdateState = { error?: string; summary?: CensusUpdateSummary } | undefined;
 
 function censusUpdateError(message: string) {
