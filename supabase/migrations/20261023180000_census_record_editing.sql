@@ -1,0 +1,129 @@
+-- Edición de los datos del censo de un apartamento desde su ficha, sin subir otro Excel.
+-- * TORRE y APARTAMENTO no se pueden cambiar.
+-- * Cada edición queda en census_record_changes (quién, cuándo, antes y después).
+-- * Si el apartamento no tiene residente vinculado y cambian el correo (columna G) o el tipo
+--   de usuario, la invitación pendiente se reemplaza por una nueva, retenida en modo de
+--   prueba. Si queda sin nombre o correo, la invitación pendiente se cancela.
+-- * Con residente vinculado solo cambian los datos del censo; su cuenta no se toca.
+begin;
+
+create table public.census_record_changes (
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid not null references public.properties(id) on delete restrict,
+  census_record_id uuid not null references public.census_records(id) on delete restrict,
+  changed_by uuid not null references public.profiles(id) on delete restrict,
+  changed_at timestamptz not null default now(),
+  previous_cells jsonb not null check (jsonb_typeof(previous_cells) = 'array'),
+  new_cells jsonb not null check (jsonb_typeof(new_cells) = 'array')
+);
+create index census_record_changes_record_idx on public.census_record_changes(property_id, census_record_id, changed_at desc);
+alter table public.census_record_changes enable row level security;
+revoke all on public.census_record_changes from public, anon, authenticated;
+grant select on public.census_record_changes to authenticated;
+create policy census_record_changes_admin_read on public.census_record_changes for select to authenticated
+  using (private.is_active_member(property_id, 'administrator'));
+
+-- Misma normalización de encabezados que normalizeCensusHeader en la aplicación.
+create or replace function private.census_header_index(headers jsonb, target_name text)
+returns integer language sql immutable set search_path = '' as $$
+  select (h.position - 1)::integer
+  from jsonb_array_elements_text(headers) with ordinality as h(value, position)
+  where trim(regexp_replace(lower(translate(h.value, 'ÁÀÄÉÈËÍÌÏÓÒÖÚÙÜÑáàäéèëíìïóòöúùüñ', 'AAAEEEIIIOOOUUUNaaaeeeiiiooouuun')),
+                            '[^a-z0-9]+', ' ', 'g')) = target_name
+  order by h.position limit 1;
+$$;
+revoke all on function private.census_header_index(jsonb, text) from public, anon, authenticated;
+
+create or replace function public.update_census_record(target_property_id uuid, target_record_id uuid, target_cells jsonb)
+returns void language plpgsql security definer set search_path = '' as $$
+declare
+  rec public.census_records%rowtype;
+  headers_value jsonb;
+  tower_index integer; unit_index integer; name_index integer; type_index integer; email_index integer; phone_index integer;
+  new_name text; new_type text; new_email text; new_phone text; new_relationship text; normalized_type text;
+  occupied boolean;
+begin
+  if auth.uid() is null or not private.is_active_member(target_property_id, 'administrator') then raise exception 'not_authorized'; end if;
+  select * into rec from public.census_records where id = target_record_id and property_id = target_property_id for update;
+  if not found then raise exception 'record_not_found'; end if;
+  select headers into headers_value from public.census_imports where id = rec.import_id and property_id = target_property_id;
+
+  if jsonb_typeof(target_cells) is distinct from 'array' or jsonb_array_length(target_cells) <> jsonb_array_length(headers_value)
+     or exists (select 1 from jsonb_array_elements(target_cells) c
+                where jsonb_typeof(c) not in ('string', 'null') or (jsonb_typeof(c) = 'string' and char_length(c #>> '{}') > 1000)) then
+    raise exception 'invalid_cells';
+  end if;
+  if target_cells = rec.cells then return; end if;
+
+  tower_index := private.census_header_index(headers_value, 'torre');
+  unit_index := private.census_header_index(headers_value, 'apartamento');
+  if tower_index is null or unit_index is null
+     or (target_cells -> tower_index) is distinct from (rec.cells -> tower_index)
+     or (target_cells -> unit_index) is distinct from (rec.cells -> unit_index) then
+    raise exception 'locked_field';
+  end if;
+
+  name_index := private.census_header_index(headers_value, 'nombre completo');
+  type_index := private.census_header_index(headers_value, 'tipo de usuario');
+  email_index := private.census_header_index(headers_value, 'correo electronico');
+  phone_index := private.census_header_index(headers_value, 'numero de telefono');
+  new_name := nullif(trim(target_cells ->> name_index), '');
+  new_type := nullif(trim(target_cells ->> type_index), '');
+  new_email := nullif(lower(trim(target_cells ->> email_index)), '');
+  new_phone := nullif(trim(target_cells ->> phone_index), '');
+  if new_email is not null and (char_length(new_email) > 254 or new_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$') then
+    raise exception 'invalid_census_email';
+  end if;
+  normalized_type := lower(translate(coalesce(new_type, ''), 'ÁÉÍÓÚáéíóú', 'AEIOUaeiou'));
+  new_relationship := case when normalized_type in ('propietario', 'propietaria') then 'owner'
+                           when normalized_type in ('residente', 'arrendatario', 'arrendataria') then 'resident' end;
+  occupied := exists (select 1 from public.unit_memberships um where um.property_id = target_property_id and um.unit_id = rec.unit_id
+                      and um.valid_from <= now() and (um.valid_to is null or um.valid_to > now()));
+
+  if not occupied and new_name is not null and new_email is not null then
+    if new_relationship is null then raise exception 'invalid_user_type'; end if;
+    if exists (select 1 from public.census_records r where r.property_id = target_property_id and r.id <> rec.id
+               and r.invitation_primary and r.email_normalized = new_email)
+       or exists (select 1 from public.invitations i where i.property_id = target_property_id and i.status = 'pending'
+                  and i.email_normalized = new_email and i.unit_id is distinct from rec.unit_id) then
+      raise exception 'email_in_use';
+    end if;
+  end if;
+
+  insert into public.census_record_changes(property_id, census_record_id, changed_by, previous_cells, new_cells)
+  values (target_property_id, rec.id, auth.uid(), rec.cells, target_cells);
+  update public.census_records
+  set cells = target_cells, full_name = new_name, user_type = new_type, email_normalized = new_email, phone = new_phone
+  where id = rec.id;
+
+  if not occupied then
+    if new_name is not null and new_email is not null then
+      if not rec.invitation_primary or rec.email_normalized is distinct from new_email
+         or rec.invitation_relationship is distinct from new_relationship then
+        update public.census_records set invitation_primary = true, invitation_relationship = new_relationship where id = rec.id;
+        perform private.enqueue_resident_invitation(target_property_id, rec.unit_id, new_email, new_relationship, auth.uid());
+      end if;
+    elsif rec.invitation_primary then
+      update public.census_records set invitation_primary = false, invitation_relationship = null where id = rec.id;
+      update public.email_jobs j set status = 'cancelled', last_error_code = 'census_contact_removed', locked_by = null, locked_until = null
+      from public.invitations i
+      where j.invitation_id = i.id and i.property_id = target_property_id and i.unit_id = rec.unit_id
+        and i.status = 'pending' and j.status in ('held', 'queued');
+      update public.invitations set status = 'revoked', updated_at = now()
+      where property_id = target_property_id and unit_id = rec.unit_id and status = 'pending';
+    end if;
+  end if;
+
+  perform private.write_property_audit(target_property_id, 'census.record_updated', 'census_record', rec.id,
+    jsonb_build_object('unit_id', rec.unit_id, 'invitation_updated', not occupied));
+end;
+$$;
+revoke all on function public.update_census_record(uuid, uuid, jsonb) from public, anon;
+grant execute on function public.update_census_record(uuid, uuid, jsonb) to authenticated;
+
+commit;
+
+select
+  has_function_privilege('authenticated', 'public.update_census_record(uuid,uuid,jsonb)', 'execute') as editar_disponible,
+  private.census_header_index('["TORRE","APARTAMENTO ","CORREO ELECTRÓNICO"]'::jsonb, 'correo electronico') = 2 as encabezados_ok,
+  exists (select 1 from pg_policies where tablename = 'census_record_changes') as historial_protegido;

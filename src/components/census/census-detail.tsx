@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
+import { updateCensusRecord, type ManagementState } from "@/app/panel/propiedades/actions";
+import { Button } from "@/components/ui/button";
 import { normalizeCensusHeader } from "@/lib/census/parse";
 
 const sections = ["Residente", "Familia", "Vehículos", "Mascotas", "Otros"] as const;
@@ -15,9 +17,33 @@ function sectionFor(header: string): Section {
   return "Otros";
 }
 
-export function CensusDetail({ headers, cells }: { headers: string[]; cells: (string | null)[] }) {
+// Torre y apartamento identifican la unidad: no se editan.
+const lockedField = (header: string) => ["torre", "apartamento"].includes(normalizeCensusHeader(header));
+
+export function CensusDetail({ headers, cells, propertyId, recordId }: { headers: string[]; cells: (string | null)[]; propertyId: string; recordId: string }) {
   const [active, setActive] = useState<Section>("Residente");
-  return <div className="space-y-6">
-    <nav aria-label="Secciones del censo" className="flex flex-wrap gap-2">{sections.map((section) => <button key={section} type="button" aria-pressed={active === section} onClick={() => setActive(section)} className={`rounded-full border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active === section ? "border-foreground bg-foreground text-background" : "bg-white hover:bg-secondary"}`}>{section}</button>)}</nav>
-    <section aria-label={active}><dl className="divide-y">{headers.map((header, index) => sectionFor(header) === active && <div key={index} className="grid gap-1 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"><dt className="font-medium">{header}</dt><dd className="break-words text-muted-foreground">{cells[index] || "Sin información"}</dd></div>)}</dl></section>  </div>;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(cells);
+  const [state, action, pending] = useActionState(async (previous: ManagementState, formData: FormData) => {
+    const result = await updateCensusRecord(previous, formData);
+    if (result?.success) setEditing(false);
+    return result;
+  }, undefined as ManagementState);
+  const values = editing ? draft : cells;
+
+  return <form action={action} className="space-y-6">
+    <input type="hidden" name="propertyId" value={propertyId} />
+    <input type="hidden" name="recordId" value={recordId} />
+    <input type="hidden" name="cells" value={JSON.stringify(draft)} />
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <nav aria-label="Secciones del censo" className="flex flex-wrap gap-2">{sections.map((section) => <button key={section} type="button" aria-pressed={active === section} onClick={() => setActive(section)} className={`rounded-full border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active === section ? "border-foreground bg-foreground text-background" : "bg-white hover:bg-secondary"}`}>{section}</button>)}</nav>
+      {!editing && <Button type="button" size="sm" variant="outline" onClick={() => { setDraft(cells); setEditing(true); }}>Editar</Button>}
+    </div>
+    <section aria-label={active}><dl className="divide-y">{headers.map((header, index) => sectionFor(header) === active && <div key={index} className="grid gap-1 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"><dt className="font-medium">{header}</dt><dd className="break-words text-muted-foreground">{editing && !lockedField(header)
+      ? <input className="h-10 w-full rounded-md border bg-white px-3 text-foreground" aria-label={header} value={values[index] ?? ""} maxLength={1000} onChange={(event) => { const next = [...draft]; next[index] = event.target.value === "" ? null : event.target.value; setDraft(next); }} />
+      : values[index] || "Sin información"}</dd></div>)}</dl></section>
+    {editing && <div className="flex flex-wrap items-center gap-2"><Button disabled={pending}>{pending ? "Guardando…" : "Guardar cambios"}</Button><Button type="button" variant="outline" disabled={pending} onClick={() => { setDraft(cells); setEditing(false); }}>Cancelar</Button><p className="text-xs text-muted-foreground">La torre y el apartamento no se pueden cambiar. Si cambias el correo o el tipo de usuario, la invitación pendiente se reemplaza.</p></div>}
+    {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
+    {state?.success && !editing && <p role="status" className="text-sm text-primary">{state.success}</p>}
+  </form>;
 }

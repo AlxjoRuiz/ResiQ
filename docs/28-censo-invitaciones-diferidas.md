@@ -70,3 +70,11 @@ Alejandro aprobó el diseño: las invitaciones se crean y encolan en `email_jobs
 - Pantalla: la ficha de un apartamento sin residente muestra el estado de su invitación (retenida, en cola, enviada, aceptada, cancelada o vencida) y «Ver enlace». «Agregar residente» usa la cola en lugar de mostrar el enlace al crear. Si el apartamento ya tiene invitación pendiente, en su lugar aparece «Cambiar correo de la invitación» dentro del mismo recuadro; la nueva reemplaza a la pendiente del mismo apartamento o correo.
 - Pendiente (entrega 3): que el trabajador genere el código y envíe el correo cuando se active el envío real, con lotes acordes al límite diario de Resend.
 - Entrega 3 (envío real, apagado): `20261023160000_invitation_delivery_worker.sql` limita el reclamo de invitaciones al envío activo y a un máximo diario configurable (90), agrega `issue_invitation_for_job` (solo el trabajador) y el interruptor `private.set_invitation_delivery`. El worker genera el código justo antes de enviar y guarda el texto sin el enlace. Pruebas Deno: 6 aprobadas. Activar solo con dominio verificado en Resend, empezando con 1 a 3 correos propios en una propiedad de prueba.
+
+## Editar un apartamento desde su ficha (23/10/2026)
+
+Alejandro pidió poder corregir los datos de un apartamento (vehículos, mascotas, familia, contacto) sin subir otro Excel. En la ficha, «Editar» convierte la pestaña activa en campos editables; TORRE y APARTAMENTO no se pueden cambiar, y la base de datos lo vuelve a comprobar. `20261023180000_census_record_editing.sql` agrega `update_census_record` y el historial `census_record_changes` (quién, cuándo, celdas antes y después), legible solo por administración.
+
+- Si el apartamento no tiene residente vinculado y cambian el correo de la columna G o el tipo de usuario, la invitación pendiente se reemplaza por una nueva, retenida en modo de prueba. Si queda sin nombre o correo, la invitación pendiente se cancela. Un correo ya invitado en otro apartamento se rechaza.
+- Con residente vinculado solo cambian los datos del censo; la cuenta no se toca.
+- Por eso se retiró «Cambiar correo de la invitación» del recuadro de la invitación: el correo se cambia editando la pestaña Residente. «Agregar residente» sigue disponible en apartamentos sin invitación pendiente.

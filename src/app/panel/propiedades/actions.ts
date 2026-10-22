@@ -119,3 +119,22 @@ export async function revealInvitationLink(_: InvitationLinkState, formData: For
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   return { link: `${origin}/invitacion?token=${encodeURIComponent(data)}` };
 }
+
+export async function updateCensusRecord(_: ManagementState, formData: FormData): Promise<ManagementState> {
+  const propertyId = field(formData, "propertyId");
+  const recordId = field(formData, "recordId");
+  let cells: unknown;
+  try { cells = JSON.parse(String(formData.get("cells") ?? "")); } catch { return { error: "No pudimos leer los cambios." }; }
+  if (!propertyId || !recordId || !Array.isArray(cells) || cells.some((cell) => cell !== null && typeof cell !== "string")) return { error: "No pudimos leer los cambios." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_census_record", { target_property_id: propertyId, target_record_id: recordId, target_cells: cells });
+  if (error) {
+    if (error.message.includes("locked_field")) return { error: "La torre y el apartamento no se pueden cambiar." };
+    if (error.message.includes("invalid_census_email")) return { error: "El correo electrónico no es válido." };
+    if (error.message.includes("invalid_user_type")) return { error: "Para invitar, «Tipo de usuario» debe ser Propietario, Residente o Arrendatario." };
+    if (error.message.includes("email_in_use")) return { error: "Ese correo ya está invitado en otro apartamento de esta propiedad." };
+    return { error: "No pudimos guardar los cambios. Revisa los datos e intenta de nuevo." };
+  }
+  propertyPaths(propertyId);
+  return { success: "Cambios guardados." };
+}
