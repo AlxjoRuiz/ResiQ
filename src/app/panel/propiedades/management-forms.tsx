@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { createInvitation, type InvitationState } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { endUnitMembership, manageMember, saveBuilding, saveUnit, updateProperty, type ManagementState } from "./actions";
 
@@ -76,5 +77,21 @@ export function EndMembershipForm({ propertyId, unitMembershipId }: { propertyId
     <input type="hidden" name="unitMembershipId" value={unitMembershipId} />
     <Button type="submit" size="sm" variant="outline" disabled={pending}>{pending ? "Desvinculando…" : "Desvincular del apartamento"}</Button>
     <Result state={state} />
+  </form>;
+}
+
+// Apartamento vacío: el admin agrega un residente y obtiene el enlace de invitación (72 horas).
+export function UnitResidentInvitationForm({ propertyId, buildingId, unitId }: { propertyId: string; buildingId: string; unitId: string }) {
+  const [state, action, pending] = useActionState(createInvitation, undefined as InvitationState);
+  return <form action={action} className="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
+    <input type="hidden" name="propertyId" value={propertyId} />
+    <input type="hidden" name="role" value="member" />
+    <input type="hidden" name="buildingId" value={buildingId} />
+    <input type="hidden" name="unitId" value={unitId} />
+    <label className={labelClass}>Correo del residente<input className={inputClass} name="email" type="email" required autoComplete="off" /></label>
+    <label className={labelClass}>Tipo de residente<select className={inputClass} name="relationship" defaultValue="resident"><option value="resident">Arrendatario</option><option value="owner">Propietario</option></select></label>
+    <Button disabled={pending}>{pending ? "Creando…" : "Crear invitación"}</Button>
+    {state?.error && <p role="alert" className="text-sm text-destructive sm:col-span-3">{state.error}</p>}
+    {state?.invitationUrl && <div className="rounded-lg bg-secondary p-3 sm:col-span-3"><p className="text-sm font-medium">Enlace de invitación válido durante 72 horas</p><p className="mt-1 text-xs text-muted-foreground">Compártelo con el residente; ResiQ todavía no envía correos.</p><p className="mt-2 break-all text-xs">{state.invitationUrl}</p></div>}
   </form>;
 }

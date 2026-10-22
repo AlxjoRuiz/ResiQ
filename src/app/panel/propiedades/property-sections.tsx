@@ -2,9 +2,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { CensusDetail } from "@/components/census/census-detail";
 import { CensusImportForm } from "@/components/census/census-import-form";
+import { CENSUS_MAX_ROWS } from "@/lib/census/parse";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { BuildingForm, EndMembershipForm, MemberForm } from "./management-forms";
+import { BuildingForm, EndMembershipForm, MemberForm, UnitResidentInvitationForm } from "./management-forms";
 import { PropertyUnitExplorer } from "./property-unit-explorer";
 import { ConciergeRegistrationForm } from "./concierge-registration-form";
 import { ConciergeManagementForms } from "./concierge-management-forms";
@@ -43,7 +44,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
   const [{ data: buildingData, error: buildingError }, { data: memberData, error: memberError }, { data: censusData, error: censusError }, { data: importData, error: importError }, { data: conciergeData, error: conciergeError }] = await Promise.all([
     supabase.from("buildings").select("id,name,code,active,units(id,building_id,code,floor,status)").eq("property_id", propertyId).order("name"),
     supabase.from("property_members").select("id,user_id,roles,status,profiles!property_members_user_id_fkey(display_name),unit_memberships(id,relationship,valid_to,units(id,code))").eq("property_id", propertyId).order("joined_at"),
-    supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,invitation_primary,invitation_relationship,cells").eq("property_id", propertyId).limit(500),
+    supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,invitation_primary,invitation_relationship,cells").eq("property_id", propertyId).limit(CENSUS_MAX_ROWS),
     supabase.from("census_imports").select("id,headers").eq("property_id", propertyId),
     supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,photo_path,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
   ]);
@@ -88,7 +89,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
           const cells = Array.isArray(record.cells) ? record.cells.map((value) => value === null ? null : String(value)) : [];
           return <div key={record.id} className="min-w-0 rounded-lg border p-3 sm:p-4"><p className="mb-4 font-medium">{record.full_name || record.email_normalized || `Residente ${index + 1}`}{record.invitation_primary && <span className="ml-2 rounded-full bg-secondary px-2 py-1 text-xs">Principal para futura invitación · {record.invitation_relationship === "owner" ? "Propietario" : "Arrendatario"}</span>}</p>{headers.length ? <CensusDetail headers={headers} cells={cells} /> : <p className="text-sm text-muted-foreground">No se pudieron mostrar los encabezados de esta respuesta.</p>}</div>;
         })}{!censusByUnit.get(unit.id)?.length && <p className="text-sm text-muted-foreground">Este apartamento no tiene respuestas importadas.</p>}</div>
-        <div className="space-y-3 border-t pt-4"><h4 className="font-semibold">Vinculaciones y acceso a ResiQ</h4>{(occupantsByUnit.get(unit.id) ?? []).map((occupant) => <OccupantCard key={occupant.link.id} occupant={occupant} propertyId={propertyId} />)}{!occupantsByUnit.get(unit.id)?.length && <p className="text-sm text-muted-foreground">Sin residente vinculado. Un correo del Excel no concede acceso.</p>}</div>
+        <div className="space-y-3 border-t pt-4"><h4 className="font-semibold">Vinculaciones y acceso a ResiQ</h4>{(occupantsByUnit.get(unit.id) ?? []).map((occupant) => <OccupantCard key={occupant.link.id} occupant={occupant} propertyId={propertyId} />)}{!occupantsByUnit.get(unit.id)?.length && <><p className="text-sm text-muted-foreground">Sin residente vinculado. Un correo del Excel no concede acceso.</p>{building.active && unit.status === "active" && <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Agregar residente</summary><div className="mt-3"><UnitResidentInvitationForm propertyId={propertyId} buildingId={building.id} unitId={unit.id} /></div></details>}</>}</div>
       </>,
     })),
   }));
