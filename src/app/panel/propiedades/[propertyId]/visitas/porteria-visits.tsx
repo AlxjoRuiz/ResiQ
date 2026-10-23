@@ -5,14 +5,14 @@ import { visitKindLabel, visitStatusLabel } from "@/lib/visitors/constants";
 import { addDays, dateInputValue, zonedDayStart } from "@/lib/time-zone";
 
 // Visitas en portería: pestañas Hoy (todas las del día presente, también rechazadas, y las que
-// sigan dentro), Visitas y Mantenimiento (las que aún no llegan y las rechazadas, desde hoy,
-// agrupadas por día). Las tarjetas
+// sigan dentro) y Visitas (las que aún no llegan y las rechazadas, desde hoy, agrupadas por día).
+// Las de mantenimiento aparecen en ambas con su etiqueta. Las tarjetas
 // siguen el diseño de Notificaciones; la entrada y la salida se marcan desde la tarjeta, con
 // comentario. Verde: ya entró. Amarillo: ya salió.
 type Unit = { code: string; buildings: { name: string } | { name: string }[] | null };
 type Entry = { entered_at: string; exited_at: string | null; notes: string | null; exit_notes: string | null };
 type Visit = { id: string; visitor_name: string; kind: string; service_type: string | null; people_count: number; status: string; scheduled_start: string; scheduled_end: string; units: Unit | Unit[] | null; visitor_entries: Entry[] | null };
-type Tab = "hoy" | "visitas" | "mantenimiento";
+type Tab = "hoy" | "visitas";
 
 const acceptedOrRejected = ["authorized", "entered", "exited", "rejected"];
 const cardTone: Record<string, string> = {
@@ -47,9 +47,8 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab }: { 
       .or(`status.eq.entered,and(scheduled_start.lt."${tomorrowStart}",scheduled_end.gt."${todayStart}")`)
       .order("scheduled_start", { ascending: true });
   } else {
-    // Visitas y Mantenimiento: solo las que aún no llegan y las rechazadas, desde hoy.
+    // Visitas: solo las que aún no llegan y las rechazadas, desde hoy (personales y de mantenimiento).
     query = query.in("status", ["authorized", "rejected"]).gt("scheduled_end", todayStart).order("scheduled_start", { ascending: true }).limit(200);
-    if (tab === "mantenimiento") query = query.eq("kind", "maintenance");
   }
   const { data, error } = await query;
   const visits = (data ?? []) as Visit[];
@@ -59,13 +58,12 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab }: { 
   const dayLabel = (day: string) => day === today ? "Hoy" : day === addDays(today, 1) ? "Mañana"
     : new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`));
   const tabLink = (label: string, href: string, active: boolean) => <Link href={href} aria-current={active ? "page" : undefined} className={`inline-flex min-h-10 items-center rounded-full px-3 py-1.5 text-xs font-medium sm:min-h-0 ${active ? "bg-primary text-white" : "bg-secondary"}`}>{label}</Link>;
-  const empty = tab === "hoy" ? "No hay visitas para hoy." : tab === "visitas" ? "No hay visitas programadas desde hoy." : "No hay mantenimientos programados desde hoy.";
+  const empty = tab === "hoy" ? "No hay visitas para hoy." : "No hay visitas programadas desde hoy.";
 
   return <>
     <div className="mt-6 flex flex-wrap gap-2">
       {tabLink("Hoy", base, tab === "hoy")}
       {tabLink("Visitas", `${base}?vista=visitas`, tab === "visitas")}
-      {tabLink("Mantenimiento", `${base}?vista=mantenimiento`, tab === "mantenimiento")}
     </div>
     <section aria-label="Lista de visitas" className="mt-6 grid gap-3">
       {error ? <p role="alert" className="rounded-xl border bg-card p-5 text-sm">No pudimos cargar las visitas. Inténtalo de nuevo.</p>
