@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { statusCard, statusPill, type StatusTone } from "@/lib/ui/status-tones";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { HistoryDatePicker } from "@/components/visitors/history-date-picker";
 import { VisitQuickAction } from "@/components/visitors/visit-forms";
@@ -18,16 +19,8 @@ type Tab = "hoy" | "visitas" | "historial";
 const historyPageSize = 50;
 
 const acceptedOrRejected = ["authorized", "entered", "exited", "rejected"];
-const cardTone: Record<string, string> = {
-  entered: "border-emerald-300 bg-emerald-50 hover:bg-emerald-100/70",
-  exited: "border-amber-300 bg-amber-50 hover:bg-amber-100/70",
-  rejected: "border-red-300 bg-red-50 hover:bg-red-100/70",
-};
-const pillTone: Record<string, string> = {
-  entered: "bg-emerald-200 text-emerald-950",
-  exited: "bg-amber-200 text-amber-950",
-  rejected: "bg-red-200 text-red-950",
-};
+// Dentro: verde del proyecto. Salió: amarillo. Rechazada: rojo.
+const visitTone: Record<string, StatusTone> = { entered: "success", exited: "warning", rejected: "danger" };
 
 function unitLabel(units: Visit["units"]) {
   const unit = Array.isArray(units) ? units[0] : units;
@@ -91,10 +84,10 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page
           const visitDay = dateInputValue(new Date(visit.scheduled_start), timeZone);
           const showDay = tab !== "hoy" && (index === 0 || dateInputValue(new Date(visits[index - 1].scheduled_start), timeZone) !== visitDay);
           const entry = [...(visit.visitor_entries ?? [])].sort((a, b) => b.entered_at.localeCompare(a.entered_at))[0];
-          return <div key={visit.id} className="grid gap-3">{showDay && <h2 className="mt-3 text-sm font-semibold first-letter:uppercase">{dayLabel(visitDay)}</h2>}<article className={`rounded-xl border p-5 transition-colors motion-reduce:transition-none ${cardTone[visit.status] ?? "bg-card hover:bg-muted/50"}`}>
+          return <div key={visit.id} className="grid gap-3">{showDay && <h2 className="mt-3 text-sm font-semibold first-letter:uppercase">{dayLabel(visitDay)}</h2>}<article className={`rounded-xl border p-5 transition-colors motion-reduce:transition-none ${statusCard[visitTone[visit.status] ?? "neutral"]}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{visitKindLabel(visit.kind)} · {unitLabel(visit.units)}</p><h2 className="mt-1 text-lg font-semibold"><Link href={detailPath} className="hover:underline">{visit.visitor_name}</Link></h2></div>
-              <span className={`rounded-full px-3 py-1 text-xs font-medium ${pillTone[visit.status] ?? "bg-secondary"}`}>{tab === "historial" && visit.status === "authorized" ? "No llegó" : visitStatusLabel(visit.status)}</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[visitTone[visit.status] ?? "neutral"]}`}>{tab === "historial" && visit.status === "authorized" ? "No llegó" : visitStatusLabel(visit.status)}</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{visit.kind === "maintenance" && visit.service_type ? `${visit.service_type} · ` : ""}{visit.people_count} persona{visit.people_count === 1 ? "" : "s"} autorizada{visit.people_count === 1 ? "" : "s"}</p>
             {entry && <div className="mt-2 grid gap-1 text-sm">

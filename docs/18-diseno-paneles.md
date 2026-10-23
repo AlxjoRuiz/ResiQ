@@ -38,3 +38,7 @@ Alejandro solicitó extender el diseño a paquetes, reservas y los demás módul
 Las acciones, campos, enlaces, protección por página y consultas de cada módulo se conservan. El layout comprueba la membresía para presentar la navegación; no reemplaza las comprobaciones de autorización de páginas, RPC ni RLS. Al cambiar un rol, las páginas y acciones siguen comprobando permisos aunque un layout ya abierto mantenga su navegación hasta recargar.
 
 Verificaciones y capturas finales: registradas en el PR correspondiente a codex/diseno-modulos. No completa las etapas funcionales pendientes ni cambia permisos.
+
+## Colores de estado unificados (25/10/2026)
+
+A pedido de Alejandro, todas las tarjetas que cambian de color según su estado usan los mismos tonos, definidos en `src/lib/ui/status-tones.ts`: verde del proyecto (`--primary`, el mismo de Asambleas respondidas) para lo completado (visita dentro, paquete entregado, asamblea respondida, cartera al día); ámbar para lo pendiente (aviso sin leer, visita salida, paquete por entregar, asamblea por responder, pago pendiente); rojo para lo negativo (visita rechazada, reserva vencida, antes rosado); y neutro para el resto. Se aplicó en Notificaciones (lista y detalle), Visitas y Paquetes de portería, Asambleas (ambas páginas) y la etiqueta de saldo de Cartera. Los avisos sueltos (mensajes de alerta) no cambian.

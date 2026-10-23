@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { statusCard, statusPill, type StatusTone } from "@/lib/ui/status-tones";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PackageQuickDeliver } from "@/components/packages/package-forms";
 import { HistoryDatePicker } from "@/components/visitors/history-date-picker";
@@ -13,16 +14,8 @@ type Package = { id: string; kind: string; utility_service: string | null; recip
 type Tab = "pendientes" | "hoy" | "historial";
 const historyPageSize = 50;
 
-const cardTone: Record<string, string> = {
-  received: "border-amber-300 bg-amber-50 hover:bg-amber-100/70",
-  notified: "border-amber-300 bg-amber-50 hover:bg-amber-100/70",
-  delivered: "border-emerald-300 bg-emerald-50 hover:bg-emerald-100/70",
-};
-const pillTone: Record<string, string> = {
-  received: "bg-amber-200 text-amber-950",
-  notified: "bg-amber-200 text-amber-950",
-  delivered: "bg-emerald-200 text-emerald-950",
-};
+// Por entregar: amarillo. Entregado: verde del proyecto.
+const packageTone: Record<string, StatusTone> = { received: "warning", notified: "warning", delivered: "success" };
 
 function unitLabel(units: Package["units"]) {
   const unit = Array.isArray(units) ? units[0] : units;
@@ -79,10 +72,10 @@ export async function PorteriaPackages({ supabase, propertyId, timeZone, tab, pa
           const deliveredDay = item.delivered_at ? dateInputValue(new Date(item.delivered_at), timeZone) : "";
           const showDay = tab === "historial" && (index === 0 || dateInputValue(new Date(packages[index - 1].delivered_at ?? item.received_at), timeZone) !== deliveredDay);
           const details = [item.description, item.carrier, item.tracking_number ? `Guía ${item.tracking_number}` : null].filter(Boolean).join(" · ");
-          return <div key={item.id} className="grid gap-3">{showDay && <h2 className="mt-3 text-sm font-semibold first-letter:uppercase">{dayLabel(deliveredDay)}</h2>}<article className={`rounded-xl border p-5 transition-colors motion-reduce:transition-none ${cardTone[item.status] ?? "bg-card hover:bg-muted/50"}`}>
+          return <div key={item.id} className="grid gap-3">{showDay && <h2 className="mt-3 text-sm font-semibold first-letter:uppercase">{dayLabel(deliveredDay)}</h2>}<article className={`rounded-xl border p-5 transition-colors motion-reduce:transition-none ${statusCard[packageTone[item.status] ?? "neutral"]}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{receivedItemLabel(item.kind, item.utility_service)} · {unitLabel(item.units)}</p><h2 className="mt-1 text-lg font-semibold"><Link href={detailPath} className="hover:underline">{item.recipient_name}</Link></h2></div>
-              <span className={`rounded-full px-3 py-1 text-xs font-medium ${pillTone[item.status] ?? "bg-secondary"}`}>{packageStatusLabel(item.status)}</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[packageTone[item.status] ?? "neutral"]}`}>{packageStatusLabel(item.status)}</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{details}</p>
             <div className="mt-2 grid gap-1 text-sm">
