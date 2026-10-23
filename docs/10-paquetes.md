@@ -2,7 +2,7 @@
 
 ## Alcance aprobado
 
-El módulo permite a portería y administración registrar la recepción y la entrega de paquetes. El registro contiene apartamento, destinatario, transportadora, guía, remitente, origen, descripción y observaciones. El nombre de quien retira el paquete queda guardado aunque sea distinto del destinatario.
+El módulo permite a portería registrar la recepción y la entrega de paquetes; administración solo los consulta. El registro contiene apartamento, destinatario, transportadora, guía, remitente, origen, descripción y observaciones. El nombre de quien retira el paquete queda guardado aunque sea distinto del destinatario.
 
 El ingreso y la salida de visitantes o personal de mantenimiento se implementarán en la etapa 10. No forman parte del movimiento de un paquete.
 
@@ -12,13 +12,13 @@ El ingreso y la salida de visitantes o personal de mantenimiento se implementar�
 - Un residente solo puede leer un paquete si fue asociado expresamente como destinatario y conserva una membresía y un vínculo vigentes con el apartamento.
 - Otros ocupantes del mismo apartamento no obtienen acceso automático.
 - Cuando el destinatario todavía no tiene cuenta o vínculo, el paquete queda visible solo para portería y administración. Puede asociarse posteriormente a un residente activo de ese apartamento.
-- Administración y portería pueden registrar recepciones, asociar destinatarios y registrar entregas. La RLS aplica estas reglas incluso si se intenta usar la API directamente.
+- Solo portería puede registrar recepciones, asociar destinatarios y registrar entregas (desde `20261025160000_packages_concierge_only.sql`). Administración consulta la lista, el historial y el detalle. Las funciones de la base de datos aplican estas reglas incluso si se intenta usar la API directamente.
 
 ## Estados y trazabilidad
 
 1. `received`: el paquete fue recibido en portería.
 2. `notified`: Resend aceptó el correo para envío. Este estado no afirma que el destinatario lo leyó.
-3. `delivered`: portería o administración registró el nombre de quien retiró el paquete.
+3. `delivered`: portería registró el nombre de quien retiró el paquete.
 
 Cada operación genera un evento funcional y un registro de auditoría. La entrega directa puede ocurrir antes de que el proveedor acepte un correo; en ese caso el paquete queda entregado sin inventar una fecha de notificación.
 
@@ -59,4 +59,6 @@ Por decisión de Alejandro, portería ya no registra recibos de servicios públi
 
 ## Paquetes en portería con el estilo de Visitas (25/10/2026)
 
-A pedido de Alejandro, portería tiene una vista propia de Paquetes (administración y residentes conservan la anterior): pestañas **Por entregar** (todos los que están en portería, los más antiguos primero), **Hoy** (llegaron o se entregaron hoy) e **Historial** (entregados en días anteriores, agrupados por día, en páginas de 50 y con el mismo ícono de calendario de Visitas: al elegir una fecha muestra desde ese día hasta hoy). Las tarjetas siguen el diseño de Notificaciones: amarillo por entregar y verde entregado, con la hora de llegada, la hora de entrega y quién lo recogió. «Marcar entregado» se hace desde la tarjeta, escribiendo quién lo recoge.
+A pedido de Alejandro, portería tiene una vista propia de Paquetes (los residentes conservan la anterior): pestañas **Por entregar** (todos los que están en portería, los más antiguos primero), **Hoy** (llegaron o se entregaron hoy) e **Historial** (entregados en días anteriores, agrupados por día, en páginas de 50 y con el mismo ícono de calendario de Visitas: al elegir una fecha muestra desde ese día hasta hoy). Las tarjetas siguen el diseño de Notificaciones: amarillo por entregar y verde entregado, con la hora de llegada, la hora de entrega y quién lo recogió. «Marcar entregado» se hace desde la tarjeta, escribiendo quién lo recoge.
+
+Administración ve las mismas pestañas (Por entregar, Hoy e Historial) y el detalle de cada paquete, solo para consultar: sin «Registrar llegada», sin «Marcar entregado» y sin asociar destinatario. Si una cuenta tiene ambos roles, conserva las acciones de portería.

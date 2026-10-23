@@ -23,7 +23,8 @@ function unitLabel(units: Package["units"]) {
   return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento";
 }
 
-export async function PorteriaPackages({ supabase, propertyId, timeZone, tab, page = 1, date }: { supabase: SupabaseClient; propertyId: string; timeZone: string; tab: Tab; page?: number; date?: string }) {
+// readOnly: administración ve las mismas pestañas y el detalle, sin entregar desde la tarjeta.
+export async function PorteriaPackages({ supabase, propertyId, timeZone, tab, page = 1, date, readOnly = false }: { supabase: SupabaseClient; propertyId: string; timeZone: string; tab: Tab; page?: number; date?: string; readOnly?: boolean }) {
   const today = dateInputValue(new Date(), timeZone);
   const todayStart = zonedDayStart(today, timeZone).toISOString();
   const yesterday = addDays(today, -1);
@@ -84,7 +85,7 @@ export async function PorteriaPackages({ supabase, propertyId, timeZone, tab, pa
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-end gap-3 text-xs text-muted-foreground">
               <Link href={detailPath} className="font-medium text-primary hover:underline">Ver paquete →</Link>
-              {item.status !== "delivered" && <PackageQuickDeliver propertyId={propertyId} packageId={item.id} />}
+              {!readOnly && item.status !== "delivered" && <PackageQuickDeliver propertyId={propertyId} packageId={item.id} />}
             </div>
           </article></div>;
         })}

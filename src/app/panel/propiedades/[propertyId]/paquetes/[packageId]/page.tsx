@@ -18,7 +18,8 @@ export default async function PackageDetailPage({ params, searchParams }: { para
     supabase.from("activity_events").select("id,event_type,previous_state,new_state,description,occurred_at").eq("property_id", propertyId).eq("package_id", packageId).order("occurred_at", { ascending: false }),
   ]);
   if (!item) notFound();
-  const canManage = membership.roles.some((role: string) => role === "administrator" || role === "concierge");
+  // Solo portería asocia destinatarios y registra entregas; administración solo consulta.
+  const canManage = membership.roles.includes("concierge");
   let unitMembers: PackageDirectoryRow[] = [];
   if (canManage && !item.recipient_member_id && item.status !== "delivered") {
     const { data } = await supabase.rpc("get_package_registration_directory", { target_property_id: propertyId });
