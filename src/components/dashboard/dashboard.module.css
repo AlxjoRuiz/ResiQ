@@ -78,5 +78,6 @@
 .communityLink { padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease, color 150ms ease; }
 .moduleContent > main > a:not([data-slot="button"]), .moduleContent a[class~="hover:text-foreground"] { display: inline-flex; align-items: center; padding: 8px 12px; border-radius: 10px; transition: background-color 150ms ease, color 150ms ease; }
 .communityLink:hover, .communityLink:focus-visible, .moduleContent > main > a:hover, .moduleContent a[class~="hover:text-foreground"]:hover, .moduleContent > main > a:focus-visible, .moduleContent a[class~="hover:text-foreground"]:focus-visible { background-color: #dbe6d5; color: #244832; }
-@media (max-width: 900px) { .communityLink { padding: 8px 0 0; } }
+/* Área táctil de 40 px en celular. */
+@media (max-width: 900px) { .communityLink { display: inline-flex; align-items: center; min-height: 40px; padding: 0; } }
 @media (prefers-reduced-motion: reduce) { .communityLink, .moduleContent > main > a, .moduleContent a[class~="hover:text-foreground"] { transition: none; } }
