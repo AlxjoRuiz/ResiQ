@@ -97,3 +97,5 @@ El encabezado fijo del módulo ocupa cerca de una séptima parte de la pantalla 
 ## Revisión en celular de todas las secciones (24/10/2026)
 
 Con las cuentas de prueba de administración, residente y portería se midió en vista de 375 px cada sección del módulo de propiedad: contenido que se sale del ancho, campos con letra menor de 16 px (en iPhone acercan la pantalla) y enlaces o botones de menos de 32 px de alto. Ninguna página se sale del ancho (12 de administración, 13 de residente y 7 de portería) y todos los formularios (nueva PQRS, nueva visita, nueva reserva, nuevo paquete, cartera, zonas y propiedad) usan 16 px. Se agrandó a 40 px en celular el área táctil de tres enlaces pequeños: los filtros de Visitas (28 px), «Ver todo →» del inicio (18 px) y «← Mis comunidades» (28 px). En escritorio no cambian.
+
+Hueco bajo el menú en pantallas de hasta 900 px (24/10/2026): en páginas con poco contenido, la cuadrícula del módulo ocupaba toda la altura y estiraba la fila del menú (200 px de menú en una fila de 332 px). Con `grid-template-rows: auto 1fr` el menú mide lo que necesita; el hueco pasó de 132 px a 0 px, medido en Visitas de portería a 640 px de ancho.

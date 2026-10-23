@@ -28,7 +28,8 @@ export function buildContentSecurityPolicy(nonce: string, supabaseUrl: string, i
     // El inicio con Google redirige a Supabase y a Google.
     `form-action 'self' ${supabase} https://accounts.google.com`,
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests",
+    // El navegador ignora esta directiva en modo observación; solo se envía al activar el bloqueo.
+    ...(CSP_ENFORCED ? ["upgrade-insecure-requests"] : []),
     "report-uri /api/csp-report",
   ].join("; ");
 }
