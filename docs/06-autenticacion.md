@@ -66,3 +66,7 @@ No quedan pruebas de cierre pendientes para el alcance de la etapa 5.
 ## Mensajes al crear cuenta desde una invitación (24/10/2026)
 
 «Crear cuenta con invitación» ya no muestra un error genérico. Si el correo ya está registrado (error de Supabase o respuesta sin identidades), indica «Si ya tienes una cuenta con este correo, usa Iniciar sesión o Continuar con Google…», sin confirmar si la cuenta existe para no permitir enumerar usuarios. Si Supabase no puede enviar el correo de confirmación (límite de envíos, correo no autorizado sin SMTP propio o registro desactivado), sugiere «Continuar con Google». Una contraseña débil tiene su propio mensaje. El registro con contraseña funcionará con cualquier correo cuando se configure el SMTP propio (ver pendientes con dominio en `28-censo-invitaciones-diferidas.md`).
+
+## Registro de fallos de acceso (24/10/2026)
+
+Al probar los tres roles, un inicio de sesión falló con el mensaje genérico y no había forma de saber la causa. Ahora `src/lib/auth/log-auth-failure.ts` escribe en los logs del servidor (Vercel › proyecto › Logs) una línea `auth_failure` por cada fallo, con el método (`email`, `username` o `google`), la etapa (`concierge_lookup`, `password`, `concierge_mismatch`, `access`, `oauth_callback` o `signup`) y el código de Supabase, por ejemplo `invalid_credentials` (contraseña incorrecta) o `over_request_rate_limit` (límite de intentos). No registra contraseñas, correos ni usuarios. El usuario sigue viendo el mismo mensaje genérico.

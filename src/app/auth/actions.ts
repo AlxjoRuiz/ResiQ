@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAppAccessStatus } from "@/lib/auth/app-access";
 import { safeNext } from "@/lib/auth/safe-next";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAuthFailure } from "@/lib/auth/log-auth-failure";
 
 export type AuthState = { error?: string; success?: string } | undefined;
 export type InvitationState = { error?: string; invitationUrl?: string } | undefined;
@@ -26,21 +27,30 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
   if (!identifier.includes("@")) {
     const { data: account, error: lookupError } = await createAdminClient().from("concierge_accounts")
       .select("user_id,email_normalized,status").eq("username", identifier).maybeSingle();
-    if (lookupError || !account || account.status !== "active") return { error: "No pudimos iniciar sesión con esos datos." };
+    if (lookupError || !account || account.status !== "active") {
+      logAuthFailure("concierge_lookup", { method: "username", reason: lookupError ? "lookup_error" : !account ? "unknown_username" : `account_${account.status}` });
+      return { error: "No pudimos iniciar sesión con esos datos." };
+    }
     email = account.email_normalized;
     conciergeUserId = account.user_id;
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "No pudimos iniciar sesión con esos datos." };
+  const method = conciergeUserId ? "username" : "email";
+  if (error) {
+    logAuthFailure("password", { method, reason: error.code ?? error.name, status: error.status });
+    return { error: "No pudimos iniciar sesión con esos datos." };
+  }
   if (conciergeUserId && data.user?.id !== conciergeUserId) {
+    logAuthFailure("concierge_mismatch", { method });
     await supabase.auth.signOut({ scope: "local" });
     return { error: "No pudimos iniciar sesión con esos datos." };
   }
   if (!next.startsWith("/invitacion?")) {
     const access = data.user ? await getAppAccessStatus(supabase, data.user.id) : "error";
     if (access !== "authorized") {
+      logAuthFailure("access", { method, reason: access });
       await supabase.auth.signOut({ scope: "local" });
       return { error: access === "unauthorized" ? "No has sido invitado o aún no has aceptado tu invitación. Si recibiste un enlace, ábrelo y acéptalo con el correo invitado." : "No pudimos verificar tu acceso. Intenta nuevamente." };
     }
@@ -71,6 +81,7 @@ export async function registerWithInvitation(_: AuthState, formData: FormData): 
   // Mensajes según la causa, sin confirmar si un correo ya tiene cuenta (evita enumerar usuarios).
   const existingAccount = "Si ya tienes una cuenta con este correo, usa «Iniciar sesión» o «Continuar con Google» y luego acepta la invitación.";
   if (error) {
+    logAuthFailure("signup", { method: "email", reason: error.code ?? error.name, status: error.status });
     if (error.code === "user_already_exists" || error.code === "email_exists") return { error: existingAccount };
     if (error.code === "weak_password") return { error: "La contraseña es muy débil. Usa al menos 8 caracteres combinando letras y números." };
     if (error.code === "over_email_send_rate_limit" || error.code === "email_address_not_authorized" || error.code === "signup_disabled" || error.code === "email_provider_disabled") {
