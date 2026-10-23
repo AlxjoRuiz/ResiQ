@@ -56,3 +56,7 @@ La migración `20261009180000_utility_bills_at_concierge.sql` debe aplicarse **a
 ## Sin recepción de recibos en portería (25/10/2026)
 
 Por decisión de Alejandro, portería ya no registra recibos de servicios públicos (luz, gas, agua). El formulario de llegada registra solo paquetes, el servidor dejó de aceptar recibos y `20261025120000_remove_utility_bill_reception.sql` retira el permiso de `register_utility_bill`. No se borró nada: los recibos ya registrados siguen visibles con su etiqueta y se pueden entregar. Los textos «Paquetes y recibos» pasaron a «Paquetes».
+
+## Paquetes en portería con el estilo de Visitas (25/10/2026)
+
+A pedido de Alejandro, portería tiene una vista propia de Paquetes (administración y residentes conservan la anterior): pestañas **Por entregar** (todos los que están en portería, los más antiguos primero), **Hoy** (llegaron o se entregaron hoy) e **Historial** (entregados en días anteriores, agrupados por día, en páginas de 50 y con el mismo ícono de calendario de Visitas: al elegir una fecha muestra desde ese día hasta hoy). Las tarjetas siguen el diseño de Notificaciones: amarillo por entregar y verde entregado, con la hora de llegada, la hora de entrega y quién lo recogió. «Marcar entregado» se hace desde la tarjeta, escribiendo quién lo recoge.

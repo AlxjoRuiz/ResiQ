@@ -38,3 +38,16 @@ export function DeliverPackageForm({ propertyId, packageId }: { propertyId: stri
   const [state, action, pending] = useActionState(deliverPackage, undefined as PackageState);
   return <form action={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="packageId" value={packageId} /><label className={labelClass}>Nombre de quien recibe<input className={inputClass} name="collectedByName" minLength={2} maxLength={120} required placeholder="Puede ser el destinatario u otra persona" /></label><div className="flex items-center gap-4"><Button disabled={pending}>{pending ? "Registrando…" : "Marcar como entregado"}</Button><Result state={state} /></div></form>;
 }
+
+// Portería: marcar el paquete como entregado desde su tarjeta, indicando quién lo recoge.
+export function PackageQuickDeliver({ propertyId, packageId }: { propertyId: string; packageId: string }) {
+  const [open, setOpen] = useState(false);
+  const [state, action, pending] = useActionState(deliverPackage, undefined as PackageState);
+  if (!open) return <div className="flex flex-wrap items-center gap-2"><Button type="button" size="sm" onClick={() => setOpen(true)}>Marcar entregado</Button>{state?.error && <p role="alert" className="text-xs text-destructive">{state.error}</p>}</div>;
+  return <form action={action} className="grid w-full gap-2 sm:w-80">
+    <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="packageId" value={packageId} />
+    <label className="text-xs font-medium text-foreground">¿Quién lo recoge?<input name="collectedByName" required minLength={2} maxLength={120} autoFocus className="mt-1 h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:ring-2 focus:ring-ring sm:text-sm" placeholder="Destinatario u otra persona" /></label>
+    <div className="flex flex-wrap gap-2"><Button size="sm" disabled={pending}>{pending ? "Registrando…" : "Marcar entregado"}</Button><Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => setOpen(false)}>Cancelar</Button></div>
+    {state?.error && <p role="alert" className="text-xs text-destructive">{state.error}</p>}
+  </form>;
+}

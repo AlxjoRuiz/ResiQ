@@ -3,13 +3,21 @@ import { Button } from "@/components/ui/button";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { packageStatusLabel, receivedItemLabel } from "@/lib/packages/constants";
 import { dateTimeFormatter } from "@/lib/time-zone";
+import { PorteriaPackages } from "./porteria-packages";
 
 type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
 function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
 
-export default async function PackagesPage({ params }: { params: Promise<{ propertyId: string }> }) {
+export default async function PackagesPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ vista?: string; pagina?: string; fecha?: string }> }) {
   const { propertyId } = await params;
+  const filters = await searchParams;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  // Portería tiene su propia vista con pestañas y entrega desde la tarjeta.
+  if (membership.roles.includes("concierge") && !membership.roles.includes("administrator")) {
+    const tab = filters.vista === "hoy" || filters.vista === "historial" ? filters.vista : "pendientes";
+    const page = Math.max(1, Math.min(1000, Number.isSafeInteger(Number(filters.pagina)) ? Number(filters.pagina) : 1));
+    return <main className="mx-auto min-h-screen max-w-5xl px-5 py-8 sm:px-10"><header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6"><div><Link href={`/panel/propiedades/${propertyId}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Volver al inicio</Link><p className="mt-5 text-xs font-semibold tracking-wider text-primary uppercase">Recepción y entrega</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Paquetes</h1><p className="mt-2 text-sm text-muted-foreground">Paquetes en portería, entregas de hoy e historial.</p></div><Button asChild><Link href={`/panel/propiedades/${propertyId}/paquetes/nuevo`}>Registrar llegada</Link></Button></header><PorteriaPackages supabase={supabase} propertyId={propertyId} timeZone={property.timezone} tab={tab} page={page} date={filters.fecha} /></main>;
+  }
   const formatter = dateTimeFormatter(property.timezone);
   const canManage = membership.roles.some((role: string) => role === "administrator" || role === "concierge");
   const { data: packages } = await supabase.from("packages").select("id,kind,utility_service,recipient_name,carrier,description,status,received_at,units(code,buildings(name))").eq("property_id", propertyId).order("received_at", { ascending: false });
