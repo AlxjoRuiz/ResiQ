@@ -8,7 +8,7 @@ import { addDays, dateInputValue, zonedDayStart } from "@/lib/time-zone";
 // sigan dentro) y Visitas (las que aún no llegan y las rechazadas, desde hoy, agrupadas por día).
 // Las de mantenimiento aparecen en ambas con su etiqueta. Las tarjetas
 // siguen el diseño de Notificaciones; la entrada y la salida se marcan desde la tarjeta, con
-// comentario. Verde: ya entró. Amarillo: ya salió.
+// comentario. Verde: ya entró. Amarillo: ya salió. Rojo: rechazada.
 type Unit = { code: string; buildings: { name: string } | { name: string }[] | null };
 type Entry = { entered_at: string; exited_at: string | null; notes: string | null; exit_notes: string | null };
 type Visit = { id: string; visitor_name: string; kind: string; service_type: string | null; people_count: number; status: string; scheduled_start: string; scheduled_end: string; units: Unit | Unit[] | null; visitor_entries: Entry[] | null };
@@ -18,12 +18,12 @@ const acceptedOrRejected = ["authorized", "entered", "exited", "rejected"];
 const cardTone: Record<string, string> = {
   entered: "border-emerald-300 bg-emerald-50 hover:bg-emerald-100/70",
   exited: "border-amber-300 bg-amber-50 hover:bg-amber-100/70",
-  rejected: "border-rose-300 bg-rose-50 hover:bg-rose-100/70",
+  rejected: "border-red-300 bg-red-50 hover:bg-red-100/70",
 };
 const pillTone: Record<string, string> = {
   entered: "bg-emerald-200 text-emerald-950",
   exited: "bg-amber-200 text-amber-950",
-  rejected: "bg-rose-200 text-rose-950",
+  rejected: "bg-red-200 text-red-950",
 };
 
 function unitLabel(units: Visit["units"]) {

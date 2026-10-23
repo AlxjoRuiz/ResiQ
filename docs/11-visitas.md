@@ -62,6 +62,6 @@ Alejandro aprobó que el horario sea una referencia: Portería puede registrar e
 A pedido de Alejandro, la página de Visitas tiene una vista propia para portería (administración y residentes conservan la anterior):
 
 - Pestañas (ajustadas el 25/10/2026 a pedido de Alejandro): **Hoy** (todas las visitas del día presente: aceptadas, dentro, salidas y rechazadas, más cualquiera que siga dentro aunque sea de otro día, para poder marcar su salida; cambia sola cada día), **Visitas** (las programadas desde hoy que aún no llegan y las rechazadas, agrupadas por día; nunca las que están dentro o ya salieron). Se quitaron «Pendientes» (solo administración aprueba), «Dentro» (las visitas dentro y salidas se ven en Hoy con su color) y «Mantenimiento» (esas visitas aparecen en Hoy y Visitas con su etiqueta).
-- Tarjetas con el mismo diseño de Notificaciones. Verde cuando la visita ya entró, amarillo cuando ya salió y rosado si fue rechazada.
+- Tarjetas con el mismo diseño de Notificaciones. Verde cuando la visita ya entró, amarillo cuando ya salió y rojo si fue rechazada, con la misma escala de tonos de Notificaciones (fondo 50 en toda la tarjeta, borde 300 y etiqueta 200).
 - «Marcar entrada» y «Marcar salida» desde la tarjeta, con un comentario opcional (por ejemplo, «entraron 3 personas»). La tarjeta muestra la hora y el comentario de entrada y de salida.
 - `20261025100000_visit_exit_notes.sql` agrega `visitor_entries.exit_notes`: antes la nota de salida sobrescribía la de entrada.
