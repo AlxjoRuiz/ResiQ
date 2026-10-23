@@ -62,3 +62,5 @@ Por decisión de Alejandro, portería ya no registra recibos de servicios públi
 A pedido de Alejandro, portería tiene una vista propia de Paquetes (los residentes conservan la anterior): pestañas **Por entregar** (todos los que están en portería, los más antiguos primero), **Hoy** (llegaron o se entregaron hoy) e **Historial** (entregados en días anteriores, agrupados por día, en páginas de 50 y con el mismo ícono de calendario de Visitas: al elegir una fecha muestra desde ese día hasta hoy). Las tarjetas siguen el diseño de Notificaciones: amarillo por entregar y verde entregado, con la hora de llegada, la hora de entrega y quién lo recogió. «Marcar entregado» se hace desde la tarjeta, escribiendo quién lo recoge.
 
 Administración ve las mismas pestañas (Por entregar, Hoy e Historial) y el detalle de cada paquete, solo para consultar: sin «Registrar llegada», sin «Marcar entregado» y sin asociar destinatario. Si una cuenta tiene ambos roles, conserva las acciones de portería.
+
+El detalle del paquete ya no tiene la sección «Registrar entrega»: portería entrega solo desde la tarjeta, con «Marcar entregado».

@@ -34,11 +34,6 @@ export function AssignRecipientForm({ propertyId, packageId, members }: { proper
   return <form action={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="packageId" value={packageId} /><label className={labelClass}>Asociar destinatario<select className={inputClass} name="memberId" required defaultValue=""><option value="" disabled>Selecciona</option>{members.filter((row) => row.member_id && row.display_name).map((row) => <option key={row.member_id!} value={row.member_id!}>{row.display_name}</option>)}</select></label><div className="flex items-center gap-4"><Button variant="outline" disabled={pending}>{pending ? "Asociando…" : "Asociar y avisar"}</Button><Result state={state} /></div></form>;
 }
 
-export function DeliverPackageForm({ propertyId, packageId }: { propertyId: string; packageId: string }) {
-  const [state, action, pending] = useActionState(deliverPackage, undefined as PackageState);
-  return <form action={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="packageId" value={packageId} /><label className={labelClass}>Nombre de quien recibe<input className={inputClass} name="collectedByName" minLength={2} maxLength={120} required placeholder="Puede ser el destinatario u otra persona" /></label><div className="flex items-center gap-4"><Button disabled={pending}>{pending ? "Registrando…" : "Marcar como entregado"}</Button><Result state={state} /></div></form>;
-}
-
 // Portería: marcar el paquete como entregado desde su tarjeta, indicando quién lo recoge.
 export function PackageQuickDeliver({ propertyId, packageId }: { propertyId: string; packageId: string }) {
   const [open, setOpen] = useState(false);
