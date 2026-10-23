@@ -56,3 +56,12 @@ TypeScript, ESLint y build de producción con webpack correctos. Publicación ve
 
 ## Cambio aprobado — 2026-10-08 (pendiente de aplicar en Supabase)
 Alejandro aprobó que el horario sea una referencia: Portería puede registrar el ingreso de una visita aceptada antes del inicio o después del fin, sin tolerancia fija. Se conserva la hora real, el actor, un solo ingreso por autorización y el bloqueo de pendientes/rechazadas/canceladas. La migración 20261008220000_visit_entry_reference_schedule.sql incluye auditoría del horario planificado y su relación con el ingreso real. La prueba transaccional visit_entry_reference_schedule_transaction.sql está preparada, aún sin ejecutar. El acceso automatizado al panel fue rechazado por la política del navegador; se requiere ejecución manual de la migración. Lint de la pantalla modificada PASS; el texto nuevo de interfaz permanece pendiente de publicación hasta aplicar la migración.
+
+## Visitas en portería por día (25/10/2026)
+
+A pedido de Alejandro, la página de Visitas tiene una vista propia para portería (administración y residentes conservan la anterior):
+
+- Pestañas: **Hoy** (visitas aceptadas del día, con «← Anterior» y «Siguiente →» para ver mañana y los días siguientes, en la zona horaria del conjunto), **Dentro** (visitas que entraron y no han salido), **Mantenimiento** y **Todas** (solo aceptadas y rechazadas). Se quitó «Pendientes» para portería: solo administración aprueba solicitudes.
+- Tarjetas con el mismo diseño de Notificaciones. Verde cuando la visita ya entró, amarillo cuando ya salió y rosado si fue rechazada.
+- «Marcar entrada» y «Marcar salida» desde la tarjeta, con un comentario opcional (por ejemplo, «entraron 3 personas»). La tarjeta muestra la hora y el comentario de entrada y de salida.
+- `20261025100000_visit_exit_notes.sql` agrega `visitor_entries.exit_notes`: antes la nota de salida sobrescribía la de entrada.

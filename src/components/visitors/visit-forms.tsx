@@ -41,3 +41,17 @@ export function ReviewVisitForm({propertyId,visitorId}:{propertyId:string;visito
   const [state,action,pending]=useActionState(reviewVisit,undefined as VisitState);
   return <form action={action} className="grid gap-4"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="visitorId" value={visitorId}/><label className={labelClass}>Motivo de rechazo <span className="font-normal text-muted-foreground">(obligatorio para rechazar)</span><textarea className={areaClass} name="reason" maxLength={500}/></label><div className="flex flex-wrap gap-3"><Button name="decision" value="approve" disabled={pending}>Aceptar solicitud</Button><Button name="decision" value="reject" variant="outline" disabled={pending}>Rechazar solicitud</Button></div><Result state={state}/></form>;
 }
+
+// Portería: marcar entrada o salida desde la tarjeta de la visita, con un comentario opcional.
+export function VisitQuickAction({propertyId,visitorId,kind}:{propertyId:string;visitorId:string;kind:"entry"|"exit"}){
+  const [open,setOpen]=useState(false);
+  const [state,formAction,pending]=useActionState(kind==="entry"?registerVisitEntry:registerVisitExit,undefined as VisitState);
+  const label=kind==="entry"?"Marcar entrada":"Marcar salida";
+  if(!open)return <div className="flex flex-wrap items-center gap-2"><Button type="button" size="sm" onClick={()=>setOpen(true)}>{label}</Button>{state?.error&&<p role="alert" className="text-xs text-destructive">{state.error}</p>}</div>;
+  return <form action={formAction} className="grid w-full gap-2 sm:w-80">
+    <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="visitorId" value={visitorId}/>
+    <label className="text-xs font-medium text-foreground">Comentario <span className="font-normal text-muted-foreground">(opcional)</span><textarea name="notes" maxLength={1000} rows={2} autoFocus className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-base outline-none focus:ring-2 focus:ring-ring sm:text-sm" placeholder={kind==="entry"?"Ej.: entraron 3 personas":"Ej.: salieron sin novedad"}/></label>
+    <div className="flex flex-wrap gap-2"><Button size="sm" disabled={pending}>{pending?"Registrando…":label}</Button><Button type="button" size="sm" variant="outline" disabled={pending} onClick={()=>setOpen(false)}>Cancelar</Button></div>
+    {state?.error&&<p role="alert" className="text-xs text-destructive">{state.error}</p>}
+  </form>;
+}
