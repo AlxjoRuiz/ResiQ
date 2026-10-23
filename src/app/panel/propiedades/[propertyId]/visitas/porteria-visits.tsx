@@ -5,14 +5,16 @@ import { visitKindLabel, visitStatusLabel } from "@/lib/visitors/constants";
 import { addDays, dateInputValue, zonedDayStart } from "@/lib/time-zone";
 
 // Visitas en portería: pestañas Hoy (todas las del día presente, también rechazadas, y las que
-// sigan dentro) y Visitas (las que aún no llegan y las rechazadas, desde hoy, agrupadas por día).
+// sigan dentro), Visitas (las que aún no llegan y las rechazadas, desde hoy, agrupadas por día) e
+// Historial (días anteriores, de la más reciente a la más antigua, en páginas de 50).
 // Las de mantenimiento aparecen en ambas con su etiqueta. Las tarjetas
 // siguen el diseño de Notificaciones; la entrada y la salida se marcan desde la tarjeta, con
 // comentario. Verde: ya entró. Amarillo: ya salió. Rojo: rechazada.
 type Unit = { code: string; buildings: { name: string } | { name: string }[] | null };
 type Entry = { entered_at: string; exited_at: string | null; notes: string | null; exit_notes: string | null };
 type Visit = { id: string; visitor_name: string; kind: string; service_type: string | null; people_count: number; status: string; scheduled_start: string; scheduled_end: string; units: Unit | Unit[] | null; visitor_entries: Entry[] | null };
-type Tab = "hoy" | "visitas";
+type Tab = "hoy" | "visitas" | "historial";
+const historyPageSize = 50;
 
 const acceptedOrRejected = ["authorized", "entered", "exited", "rejected"];
 const cardTone: Record<string, string> = {
@@ -32,7 +34,7 @@ function unitLabel(units: Visit["units"]) {
   return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento";
 }
 
-export async function PorteriaVisits({ supabase, propertyId, timeZone, tab }: { supabase: SupabaseClient; propertyId: string; timeZone: string; tab: Tab }) {
+export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page = 1 }: { supabase: SupabaseClient; propertyId: string; timeZone: string; tab: Tab; page?: number }) {
   const today = dateInputValue(new Date(), timeZone);
   const todayStart = zonedDayStart(today, timeZone).toISOString();
   const base = `/panel/propiedades/${propertyId}/visitas`;
@@ -46,24 +48,31 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab }: { 
     query = query.in("status", acceptedOrRejected)
       .or(`status.eq.entered,and(scheduled_start.lt."${tomorrowStart}",scheduled_end.gt."${todayStart}")`)
       .order("scheduled_start", { ascending: true });
-  } else {
+  } else if (tab === "visitas") {
     // Visitas: solo las que aún no llegan y las rechazadas, desde hoy (personales y de mantenimiento).
     query = query.in("status", ["authorized", "rejected"]).gt("scheduled_end", todayStart).order("scheduled_start", { ascending: true }).limit(200);
+  } else {
+    // Historial: días anteriores, de la más reciente a la más antigua. Las que siguen dentro
+    // quedan en Hoy para poder marcar su salida. Se pide una de más para saber si hay otra página.
+    query = query.in("status", ["authorized", "exited", "rejected", "cancelled"]).lte("scheduled_end", todayStart)
+      .order("scheduled_start", { ascending: false }).range((page - 1) * historyPageSize, page * historyPageSize);
   }
   const { data, error } = await query;
-  const visits = (data ?? []) as Visit[];
+  const hasOlder = tab === "historial" && (data?.length ?? 0) > historyPageSize;
+  const visits = (data ?? []).slice(0, tab === "historial" ? historyPageSize : undefined) as Visit[];
 
   const time = new Intl.DateTimeFormat("es-CO", { timeStyle: "short", timeZone });
   const dateTime = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone });
-  const dayLabel = (day: string) => day === today ? "Hoy" : day === addDays(today, 1) ? "Mañana"
+  const dayLabel = (day: string) => day === today ? "Hoy" : day === addDays(today, 1) ? "Mañana" : day === addDays(today, -1) ? "Ayer"
     : new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`));
   const tabLink = (label: string, href: string, active: boolean) => <Link href={href} aria-current={active ? "page" : undefined} className={`inline-flex min-h-10 items-center rounded-full px-3 py-1.5 text-xs font-medium sm:min-h-0 ${active ? "bg-primary text-white" : "bg-secondary"}`}>{label}</Link>;
-  const empty = tab === "hoy" ? "No hay visitas para hoy." : "No hay visitas programadas desde hoy.";
+  const empty = tab === "hoy" ? "No hay visitas para hoy." : tab === "visitas" ? "No hay visitas programadas desde hoy." : "No hay visitas en el historial.";
 
   return <>
     <div className="mt-6 flex flex-wrap gap-2">
       {tabLink("Hoy", base, tab === "hoy")}
       {tabLink("Visitas", `${base}?vista=visitas`, tab === "visitas")}
+      {tabLink("Historial", `${base}?vista=historial`, tab === "historial")}
     </div>
     <section aria-label="Lista de visitas" className="mt-6 grid gap-3">
       {error ? <p role="alert" className="rounded-xl border bg-card p-5 text-sm">No pudimos cargar las visitas. Inténtalo de nuevo.</p>
@@ -76,7 +85,7 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab }: { 
           return <div key={visit.id} className="grid gap-3">{showDay && <h2 className="mt-3 text-sm font-semibold first-letter:uppercase">{dayLabel(visitDay)}</h2>}<article className={`rounded-xl border p-5 transition-colors motion-reduce:transition-none ${cardTone[visit.status] ?? "bg-card hover:bg-muted/50"}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{visitKindLabel(visit.kind)} · {unitLabel(visit.units)}</p><h2 className="mt-1 text-lg font-semibold"><Link href={detailPath} className="hover:underline">{visit.visitor_name}</Link></h2></div>
-              <span className={`rounded-full px-3 py-1 text-xs font-medium ${pillTone[visit.status] ?? "bg-secondary"}`}>{visitStatusLabel(visit.status)}</span>
+              <span className={`rounded-full px-3 py-1 text-xs font-medium ${pillTone[visit.status] ?? "bg-secondary"}`}>{tab === "historial" && visit.status === "authorized" ? "No llegó" : visitStatusLabel(visit.status)}</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{visit.kind === "maintenance" && visit.service_type ? `${visit.service_type} · ` : ""}{visit.people_count} persona{visit.people_count === 1 ? "" : "s"} autorizada{visit.people_count === 1 ? "" : "s"}</p>
             {entry && <div className="mt-2 grid gap-1 text-sm">
@@ -86,12 +95,16 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab }: { 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
               <time dateTime={visit.scheduled_start}>{tab !== "hoy" || visitDay === today ? `${time.format(new Date(visit.scheduled_start))} — ${time.format(new Date(visit.scheduled_end))}` : `${dateTime.format(new Date(visit.scheduled_start))} — ${time.format(new Date(visit.scheduled_end))}`}</time>
               <div className="flex flex-wrap items-center gap-3"><Link href={detailPath} className="font-medium text-primary hover:underline">Ver visita →</Link>
-                {visit.status === "authorized" && <VisitQuickAction propertyId={propertyId} visitorId={visit.id} kind="entry" />}
+                {visit.status === "authorized" && tab !== "historial" && <VisitQuickAction propertyId={propertyId} visitorId={visit.id} kind="entry" />}
                 {visit.status === "entered" && <VisitQuickAction propertyId={propertyId} visitorId={visit.id} kind="exit" />}
               </div>
             </div>
           </article></div>;
         })}
     </section>
+    {tab === "historial" && (page > 1 || hasOlder) && <nav aria-label="Páginas del historial" className="mt-6 flex items-center justify-between gap-3 text-sm">
+      {page > 1 ? <Link href={`${base}?vista=historial${page > 2 ? `&pagina=${page - 1}` : ""}`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">← Más recientes</Link> : <span />}
+      {hasOlder && <Link href={`${base}?vista=historial&pagina=${page + 1}`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">Más antiguas →</Link>}
+    </nav>}
   </>;
 }
