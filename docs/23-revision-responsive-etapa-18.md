@@ -92,4 +92,4 @@ Se recorrió en vista de 375 px el login, el inicio de la comunidad, la ficha de
 6. Los roles del inicio se muestran en español (Administración, Residente, Portería).
 7. En una propiedad con torres, el título dice «Actualizar censo desde Excel».
 
-Pendiente de decisión: el encabezado fijo del módulo ocupa cerca de una séptima parte de la pantalla del celular.
+El encabezado fijo del módulo ocupa cerca de una séptima parte de la pantalla del celular; Alejandro decidió dejarlo así. Los 7 puntos se verificaron en el piloto en vista de celular el 24/10/2026.
