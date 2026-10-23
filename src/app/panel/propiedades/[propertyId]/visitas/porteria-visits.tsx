@@ -39,7 +39,7 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page
   const today = dateInputValue(new Date(), timeZone);
   const todayStart = zonedDayStart(today, timeZone).toISOString();
   const yesterday = addDays(today, -1);
-  // Historial: fecha elegida en el calendario (desde ese día hacia atrás); nunca hoy ni futura.
+  // Historial: fecha elegida en el calendario (desde ese día hasta hoy, en orden cronológico).
   const historyDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= yesterday ? date : undefined;
   const base = `/panel/propiedades/${propertyId}/visitas`;
   let query = supabase.from("visitors")
@@ -59,8 +59,8 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page
     // Historial: días anteriores, de la más reciente a la más antigua. Las que siguen dentro
     // quedan en Hoy para poder marcar su salida. Se pide una de más para saber si hay otra página.
     query = query.in("status", ["authorized", "exited", "rejected", "cancelled"]).lte("scheduled_end", todayStart);
-    if (historyDate) query = query.lt("scheduled_start", zonedDayStart(addDays(historyDate, 1), timeZone).toISOString());
-    query = query.order("scheduled_start", { ascending: false }).range((page - 1) * historyPageSize, page * historyPageSize);
+    if (historyDate) query = query.gte("scheduled_start", zonedDayStart(historyDate, timeZone).toISOString());
+    query = query.order("scheduled_start", { ascending: Boolean(historyDate) }).range((page - 1) * historyPageSize, page * historyPageSize);
   }
   const { data, error } = await query;
   const hasOlder = tab === "historial" && (data?.length ?? 0) > historyPageSize;
@@ -71,7 +71,7 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page
   const dayLabel = (day: string) => day === today ? "Hoy" : day === addDays(today, 1) ? "Mañana" : day === addDays(today, -1) ? "Ayer"
     : new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`));
   const tabLink = (label: string, href: string, active: boolean) => <Link href={href} aria-current={active ? "page" : undefined} className={`inline-flex min-h-10 items-center rounded-full px-3 py-1.5 text-xs font-medium sm:min-h-0 ${active ? "bg-primary text-white" : "bg-secondary"}`}>{label}</Link>;
-  const empty = tab === "hoy" ? "No hay visitas para hoy." : tab === "visitas" ? "No hay visitas programadas desde hoy." : historyDate ? "No hay visitas en el historial hasta esa fecha." : "No hay visitas en el historial.";
+  const empty = tab === "hoy" ? "No hay visitas para hoy." : tab === "visitas" ? "No hay visitas programadas desde hoy." : historyDate ? "No hay visitas en el historial desde esa fecha." : "No hay visitas en el historial.";
 
   return <>
     <div className="mt-6 flex items-center justify-between gap-3">
@@ -82,7 +82,7 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page
       </div>
       {tab === "historial" && <HistoryDatePicker base={base} max={yesterday} value={historyDate} />}
     </div>
-    {tab === "historial" && historyDate && <p className="mt-4 flex flex-wrap items-center gap-3 text-sm"><span>Desde el <strong>{new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${historyDate}T12:00:00Z`))}</strong> hacia atrás.</span><Link href={`${base}?vista=historial`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">Ver las más recientes</Link></p>}
+    {tab === "historial" && historyDate && <p className="mt-4 flex flex-wrap items-center gap-3 text-sm"><span>Del <strong>{new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${historyDate}T12:00:00Z`))}</strong> hasta hoy.</span><Link href={`${base}?vista=historial`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">Ver las más recientes</Link></p>}
     <section aria-label="Lista de visitas" className="mt-6 grid gap-3">
       {error ? <p role="alert" className="rounded-xl border bg-card p-5 text-sm">No pudimos cargar las visitas. Inténtalo de nuevo.</p>
         : !visits.length ? <p className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">{empty}</p>
@@ -112,8 +112,8 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page
         })}
     </section>
     {tab === "historial" && (page > 1 || hasOlder) && <nav aria-label="Páginas del historial" className="mt-6 flex items-center justify-between gap-3 text-sm">
-      {page > 1 ? <Link href={`${base}?vista=historial${historyDate ? `&fecha=${historyDate}` : ""}${page > 2 ? `&pagina=${page - 1}` : ""}`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">← Más recientes</Link> : <span />}
-      {hasOlder && <Link href={`${base}?vista=historial${historyDate ? `&fecha=${historyDate}` : ""}&pagina=${page + 1}`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">Más antiguas →</Link>}
+      {page > 1 ? <Link href={`${base}?vista=historial${historyDate ? `&fecha=${historyDate}` : ""}${page > 2 ? `&pagina=${page - 1}` : ""}`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">{historyDate ? "← Días anteriores" : "← Más recientes"}</Link> : <span />}
+      {hasOlder && <Link href={`${base}?vista=historial${historyDate ? `&fecha=${historyDate}` : ""}&pagina=${page + 1}`} className="inline-flex min-h-10 items-center font-medium text-primary hover:underline">{historyDate ? "Días siguientes →" : "Más antiguas →"}</Link>}
     </nav>}
   </>;
 }

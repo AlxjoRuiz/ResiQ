@@ -4,7 +4,7 @@ import { CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Ícono de calendario para el historial de visitas: al tocarlo se abre el calendario del
-// dispositivo y, al elegir una fecha, la lista empieza ese día y sigue hacia atrás.
+// dispositivo y, al elegir una fecha, la lista muestra desde ese día hasta hoy.
 export function HistoryDatePicker({ base, max, value }: { base: string; max: string; value?: string }) {
   const router = useRouter();
   return <label className="relative inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-card text-primary hover:bg-muted" title="Buscar por fecha">
