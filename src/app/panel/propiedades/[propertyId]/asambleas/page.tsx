@@ -11,6 +11,18 @@ type Attendee = { member_id: string; rsvp: string };
 export default async function AssembliesPage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params; const { supabase, membership, property } = await requirePropertyMember(propertyId); const isAdmin = membership.roles.includes("administrator");
   const formatter = dateTimeFormatter(property.timezone);
+  // Portería: solo las convocatorias publicadas, de lectura; sin respuestas ni asistencia.
+  if (!isAdmin && !membership.roles.includes("member") && membership.roles.includes("concierge")) {
+    const { data: notices, error: noticesError } = await supabase.rpc("list_concierge_assemblies", { target_property_id: propertyId });
+    const tone = (status: string) => status === "in_progress" ? "success" as const : status === "cancelled" ? "danger" as const : "neutral" as const;
+    return <main className="mx-auto min-h-screen max-w-5xl px-5 py-8 sm:px-10"><header className="border-b pb-6"><Link href={`/panel/propiedades/${propertyId}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Volver al inicio</Link><p className="mt-5 text-xs font-semibold tracking-wider text-primary uppercase">Gobierno y participación</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Asambleas</h1><p className="mt-2 text-sm text-muted-foreground">Convocatorias publicadas de la comunidad, para que portería esté informada.</p></header>
+      <section aria-label="Convocatorias" className="mt-6 grid gap-3">{noticesError ? <p role="alert" className="rounded-xl border bg-card p-5 text-sm">No pudimos cargar las convocatorias. Inténtalo de nuevo.</p> : !notices?.length ? <p className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">No hay asambleas publicadas.</p> : (notices as { assembly_id: string; assembly_type: string; title: string; description: string | null; starts_at: string; location: string; status: string; cancellation_reason: string | null }[]).map((notice) => <article key={notice.assembly_id} className={`rounded-xl border p-5 ${statusCard[tone(notice.status)]}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold tracking-wider text-primary uppercase">Asamblea {assemblyTypeLabel(notice.assembly_type).toLowerCase()}</p><h2 className="mt-1 text-lg font-semibold">{notice.title}</h2></div><span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[tone(notice.status)]}`}>{assemblyStatusLabels[notice.status as keyof typeof assemblyStatusLabels] ?? notice.status}</span></div>
+        {notice.description && <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{notice.description}</p>}
+        {notice.status === "cancelled" && notice.cancellation_reason && <p className="mt-2 text-sm">Motivo de cancelación: {notice.cancellation_reason}</p>}
+        <p className="mt-4 text-xs text-muted-foreground"><time dateTime={notice.starts_at}>{formatter.format(new Date(notice.starts_at))}</time> · {notice.location}</p>
+      </article>)}</section></main>;
+  }
   if (!isAdmin && !membership.roles.includes("member")) notFound();
   const { data } = await supabase.from("assemblies").select("id,type,title,starts_at,location,status,published_at,assembly_attendees(member_id,rsvp)").eq("property_id", propertyId).order("starts_at", { ascending: false });
   const assemblies = data ?? [];

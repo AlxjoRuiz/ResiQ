@@ -184,3 +184,7 @@ El usuario aprobó explícitamente P09 con «si dale, me parece bien» el 2026-1
 - La prueba detectó y permitió corregir la validación SQL de notas `NULL` antes del cierre técnico.
 
 La etapa 14 queda técnicamente completa y pendiente de aprobación funcional del usuario antes de iniciar la etapa 15.
+
+## Convocatorias para portería (25/10/2026)
+
+A pedido de Alejandro, el menú de portería incluye Asambleas en modo de solo lectura. `20261025140000_concierge_assembly_notices.sql` agrega `list_concierge_assemblies`, que devuelve al portero solo los datos de la convocatoria de las asambleas publicadas (tipo, título, descripción, fecha, lugar, estado y motivo de cancelación). No se amplió `private.can_read_assembly`, así que portería no accede a orden del día, documentos, asistentes ni poderes, y no puede responder ni confirmar asistencia. Las tarjetas usan los colores de estado comunes: en curso verde, cancelada rojo, el resto neutro.
