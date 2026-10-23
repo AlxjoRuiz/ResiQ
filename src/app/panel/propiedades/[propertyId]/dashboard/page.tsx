@@ -43,7 +43,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   ]);
   const summaries = [
     { title: view === "administracion" ? "Solicitudes de visita" : "Visitas", path: "visitas", error: visitSummary.error, rows: (visitSummary.data ?? []).map((item) => ({ id: item.id, title: item.visitor_name, status: visitStatusLabel(item.status) })) },
-    { title: view === "residente" ? "Mis paquetes y recibos" : "Paquetes y recibos recientes", path: "paquetes", error: packageSummary.error, rows: (packageSummary.data ?? []).map((item) => ({ id: item.id, title: `${receivedItemLabel(item.kind, item.utility_service)} · ${item.recipient_name}`, status: packageStatusLabel(item.status) })) },
+    { title: view === "residente" ? "Mis paquetes" : "Paquetes recientes", path: "paquetes", error: packageSummary.error, rows: (packageSummary.data ?? []).map((item) => ({ id: item.id, title: `${receivedItemLabel(item.kind, item.utility_service)} · ${item.recipient_name}`, status: packageStatusLabel(item.status) })) },
     ...(view !== "porteria" ? [{ title: view === "residente" ? "Estado de mis solicitudes" : "PQRS recientes", path: "pqrs", error: requestSummary.error, rows: (requestSummary.data ?? []).map((item) => ({ id: item.id, title: item.subject, status: statusLabel(item.status) })) }] : []),
   ];
   const financeAccounts = (financeSummary.data ?? []) as FinanceSummary[];

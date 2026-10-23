@@ -52,3 +52,7 @@ La migración `20261009180000_utility_bills_at_concierge.sql` debe aplicarse **a
 - Entrega registrada a nombre de una persona y comprobada en el historial junto al evento de recepción.
 - Prueba RLS mediante dos identidades: el destinatario asociado obtuvo un paquete y una identidad no asociada obtuvo cero.
 - Correo real pendiente mientras Resend no tenga sus secretos y dominio configurados.
+
+## Sin recepción de recibos en portería (25/10/2026)
+
+Por decisión de Alejandro, portería ya no registra recibos de servicios públicos (luz, gas, agua). El formulario de llegada registra solo paquetes, el servidor dejó de aceptar recibos y `20261025120000_remove_utility_bill_reception.sql` retira el permiso de `register_utility_bill`. No se borró nada: los recibos ya registrados siguen visibles con su etiqueta y se pueden entregar. Los textos «Paquetes y recibos» pasaron a «Paquetes».

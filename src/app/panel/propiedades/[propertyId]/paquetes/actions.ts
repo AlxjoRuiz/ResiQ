@@ -27,15 +27,10 @@ export async function registerPackage(_: PackageState, data: FormData): Promise<
   const origin = field(data, "origin");
   const description = field(data, "description");
   const notes = field(data, "notes");
-  const itemKind = field(data, "itemKind") || "package";
-  const utilityService = field(data, "utilityService");
-  if (!uuidPattern.test(propertyId) || !uuidPattern.test(unitId) || (recipientMemberId && !uuidPattern.test(recipientMemberId)) || recipientName.length > 120 || (itemKind === "package" && (description.length < 3 || description.length > 500)) || carrier.length > 100 || trackingNumber.length > 100 || senderName.length > 120 || origin.length > 120 || notes.length > 1000) return { error: "Completa los campos obligatorios con información válida." };
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(unitId) || (recipientMemberId && !uuidPattern.test(recipientMemberId)) || recipientName.length > 120 || (description.length < 3 || description.length > 500) || carrier.length > 100 || trackingNumber.length > 100 || senderName.length > 120 || origin.length > 120 || notes.length > 1000) return { error: "Completa los campos obligatorios con información válida." };
   if (!recipientMemberId && recipientName.length < 2) return { error: "Escribe el nombre del destinatario." };
-  if (!["package", "utility_bill"].includes(itemKind) || (itemKind === "utility_bill" && !["electricity", "gas", "water"].includes(utilityService))) return { error: "Selecciona el tipo de entrega y servicio." };
   const supabase = await createClient();
-  const result = itemKind === "utility_bill"
-    ? await supabase.rpc("register_utility_bill", { target_property_id: propertyId, target_unit_id: unitId, target_recipient_member_id: recipientMemberId || null, target_recipient_name: recipientName, target_service: utilityService, target_notes: notes })
-    : await supabase.rpc("register_package", { target_property_id: propertyId, target_unit_id: unitId, target_recipient_member_id: recipientMemberId || null, target_recipient_name: recipientName, target_carrier: carrier, target_tracking_number: trackingNumber, target_sender_name: senderName, target_origin: origin, target_description: description, target_notes: notes });
+  const result = await supabase.rpc("register_package", { target_property_id: propertyId, target_unit_id: unitId, target_recipient_member_id: recipientMemberId || null, target_recipient_name: recipientName, target_carrier: carrier, target_tracking_number: trackingNumber, target_sender_name: senderName, target_origin: origin, target_description: description, target_notes: notes });
   if (result.error || !result.data) return { error: friendlyError(result.error?.message) };
   revalidatePath(`/panel/propiedades/${propertyId}/paquetes`);
   redirect(`/panel/propiedades/${propertyId}/paquetes/${result.data}?created=1`);
