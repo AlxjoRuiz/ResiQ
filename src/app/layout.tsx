@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
+import { connection } from "next/server";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -12,6 +13,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Cada página se genera por solicitud para llevar el nonce de la CSP (ver src/lib/security/csp.ts).
+  await connection();
   return <html lang="es" className={`${inter.variable} ${manrope.variable}`}><body className="min-h-screen font-sans">{children}</body></html>;
 }

@@ -10,16 +10,23 @@ function redirectWithCookies(url: URL, response: NextResponse) {
   return redirect;
 }
 
-export async function updateSession(request: NextRequest) {
+// extraRequestHeaders (por ejemplo, la CSP con nonce) viaja junto con las cookies de sesión
+// renovadas, que se copian de request.headers cada vez que Supabase las actualiza.
+export async function updateSession(request: NextRequest, extraRequestHeaders: Record<string, string> = {}) {
   const { url, publishableKey } = getSupabaseEnvironment();
-  let response = NextResponse.next({ request });
+  const next = () => {
+    const headers = new Headers(request.headers);
+    for (const [name, value] of Object.entries(extraRequestHeaders)) headers.set(name, value);
+    return NextResponse.next({ request: { headers } });
+  };
+  let response = next();
 
   const supabase = createServerClient(url, publishableKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet) {
         for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-        response = NextResponse.next({ request });
+        response = next();
         for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
       },
     },
