@@ -2,10 +2,10 @@ import { SEASONAL_DECOR_ENABLED } from "@/lib/ui/seasonal";
 import styles from "./seasonal.module.css";
 
 // Decoración de Navidad: Papá Noel, renos, copos de nieve y árboles cayendo por el fondo blanco a
-// los lados del dashboard. Solo visual (aria-hidden, sin clics); posiciones fijas para que el
+// los lados de todas las páginas del panel (se monta una vez en src/app/panel/layout.tsx). Solo visual (aria-hidden, sin clics); posiciones fijas para que el
 // servidor y el navegador muestren lo mismo.
 const figures = ["🎅", "🦌", "❄️", "🎄", "❄️", "🦌", "❄️", "🎄"];
-const items = Array.from({ length: 32 }, (_, index) => ({
+const items = Array.from({ length: 48 }, (_, index) => ({
   figure: figures[index % figures.length],
   left: (index * 37) % 100,
   duration: 14 + (index * 7) % 12,

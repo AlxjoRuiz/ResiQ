@@ -78,7 +78,7 @@
 .moduleContent th, .moduleContent td { border-color: #e1e5ec; }
 .moduleContent h1 { font-size: clamp(25px, 3vw, 34px); }
 .panelSurface { background: #ffffff; min-height: 100vh; color: #000000; }
-.panelSurface > main:not(.canvas) { background: #ffffff; border: 1px solid #e1e5ec; border-radius: 28px; }
+.panelSurface > main:not(.canvas) { position: relative; z-index: 1; background: #ffffff; border: 1px solid #e1e5ec; border-radius: 28px; }
 .panelSurface > main [data-slot="card"] { border-radius: 22px; border-color: #e1e5ec; box-shadow: 0 4px 20px #344a3406; }
 @media (max-width: 560px) { .moduleContent header { gap: 14px; } .moduleContent input, .moduleContent select, .moduleContent textarea { max-width: 100%; } .panelSurface > main:not(.canvas) { border-radius: 22px; } }
 .communityLink { padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease, color 150ms ease; }
