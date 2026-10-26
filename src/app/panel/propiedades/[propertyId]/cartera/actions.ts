@@ -77,6 +77,13 @@ export async function updateFinancePolicy(_: FinanceState, data: FormData): Prom
   refreshFinance(propertyId);return{success:"Política de mora actualizada."};
 }
 
+// Marca un comprobante del residente como recibido; el pago se registra después en el formulario.
+export async function markEvidenceReceived(propertyId: string, unitId: string, evidenceId: string): Promise<FinanceState> {
+  if(![propertyId,unitId,evidenceId].every((value)=>uuidPattern.test(value)))return{error:"Comprobante inválido."};
+  const supabase=await createClient();const result=await supabase.rpc("mark_payment_evidence_received",{target_evidence_id:evidenceId});if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Comprobante recibido."};
+}
+
 // Acuerdo de pago: cuotas con valor y fecha; el total es la suma de las cuotas.
 export async function createPaymentAgreement(_: FinanceState, data: FormData): Promise<FinanceState> {
   const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),notes=field(data,"notes");
