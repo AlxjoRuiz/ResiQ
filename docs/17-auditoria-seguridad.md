@@ -288,3 +288,5 @@ Se publica primero como `Content-Security-Policy-Report-Only`: el navegador no b
 ### CSP en modo bloqueo (25/10/2026)
 
 Tras la observación sin infracciones en Portería, Administración y Residente (inicio con Google y subida de imagen en PQRS), Alejandro aprobó activar el bloqueo: `CSP_ENFORCED = true` en `src/lib/security/csp.ts`. Se envía `Content-Security-Policy` (ya no `-Report-Only`), se añade `upgrade-insecure-requests` y las infracciones siguen llegando a `/api/csp-report` (registro `csp_violation` en Vercel). Verificado en local: cabecera de bloqueo presente, login renderizado e hidratado, sin errores en consola. Si alguna función deja de cargar, revisar los reportes y ajustar la directiva; para volver a solo observar, poner `CSP_ENFORCED = false`.
+
+El 26/10/2026 Alejandro probó en el piloto con el bloqueo activo: inicio de sesión con usuario y con Google, censo por Excel y aceptación de invitación, PQRS con imagen y descarga, Asambleas, Comunicados con adjunto, Paquetes, Visitas y portería. Todo funcionó (verificación informada por el usuario).
