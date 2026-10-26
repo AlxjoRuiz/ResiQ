@@ -42,17 +42,15 @@ export async function saveAnnouncementDraft(_: AnnouncementState, data: FormData
 export async function createAnnouncement(data: FormData): Promise<{ announcementId?: string; error?: string }> {
   const propertyId = field(data, "propertyId"), requestId = field(data, "requestId");
   const subject = field(data, "subject"), body = field(data, "body");
-  const recipients = data.getAll("recipientIds").map((value) => String(value));
   let uploadIds: string[];
   try { const parsed: unknown = JSON.parse(field(data, "uploadIds") || "[]"); uploadIds = Array.isArray(parsed) && parsed.every((id) => typeof id === "string" && uuidPattern.test(id)) ? parsed : []; }
   catch { uploadIds = []; }
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(requestId) ||
-      subject.length < 5 || subject.length > 160 || body.length < 10 || body.length > 4000 ||
-      recipients.length < 1 || recipients.length > 100 || new Set(recipients).size !== recipients.length ||
-      recipients.some((id) => !uuidPattern.test(id)) || uploadIds.length > 5) return { error: "Completa el asunto, el mensaje y entre 1 y 100 destinatarios válidos." };
+      subject.length < 5 || subject.length > 160 || body.length < 10 || body.length > 4000 || uploadIds.length > 5) return { error: "Completa el asunto (mínimo 5 caracteres) y el mensaje (mínimo 10)." };
   const { supabase } = await requirePropertyAdmin(propertyId);
+  // Llega a todas las cuentas activas de la comunidad: residentes, portería y administración.
   const { data: createdId, error } = await supabase.rpc("create_published_announcement", {
-    target_property_id: propertyId, target_subject: subject, target_body: body, target_recipient_ids: recipients,
+    target_property_id: propertyId, target_subject: subject, target_body: body,
     target_upload_ids: uploadIds, target_request_id: requestId,
   });
   if (error || !createdId) return { error: error?.message?.includes("invalid_uploads") ? "Un adjunto no está disponible. Vuelve a agregarlo." : friendlyError(error?.message) };
