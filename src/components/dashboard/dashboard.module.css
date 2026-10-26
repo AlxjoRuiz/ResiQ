@@ -4,9 +4,9 @@
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #22324d; font-size: 24px; font-weight: 700; letter-spacing: -1px; }
 .sidebarLabel { margin: 30px 12px 12px; color: #3e495d; font-size: 13px; line-height: 20px; letter-spacing: 0; font-weight: 700; }
 .navigation { display: grid; gap: 5px; }
-.navigation a { display: flex; align-items: center; gap: 12px; border-radius: 12px; padding: 11px 12px; color: #3e495d; font-size: 14px; transition: transform 150ms ease; }
-/* Al pasar el cursor el botón solo se agranda un poco, sin cambiar de color. */
-.navigation a:hover { transform: scale(1.04); }
+.navigation a { display: flex; align-items: center; gap: 12px; border-radius: 12px; padding: 11px 12px; color: #3e495d; font-size: 14px; transition: transform 150ms ease, background-color 150ms ease, color 150ms ease; }
+/* Al pasar el cursor el botón se agranda un poco y se rellena de azul. */
+.navigation a:hover, .navigation .activeLink:hover { transform: scale(1.04); background: #1d4ed8; color: #ffffff; }
 @media (prefers-reduced-motion: reduce) { .navigation a { transition: none; } }
 .navigation .activeLink { background: white; color: #21304b; font-weight: 600; box-shadow: 0 3px 12px #38513c08; }
 .communityLink { margin-top: auto; padding: 28px 12px 0; font-size: 13px; color: #515b6d; }
