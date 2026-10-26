@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  /* Paleta azul (25/10/2026, prueba de diseño). La verde anterior: primary #176b4c,
+  /* Paleta azul (25/10/2026, prueba de diseño). Texto principal en negro puro (antes #172036). La verde anterior: primary #176b4c,
      background #f8faf9, foreground #192b25, secondary/accent #eaf3ee, secondary-foreground
      #24553e, muted #edf1ee, muted-foreground #5d6b64, border #dde5df, input #c9d5cc. */
   --background: #f8fafc;
-  --foreground: #172036;
+  --foreground: #000000;
   --card: #ffffff;
-  --card-foreground: #172036;
+  --card-foreground: #000000;
   --primary: #1d4ed8;
   --primary-foreground: #ffffff;
   --secondary: #eaf1fb;
@@ -21,7 +21,7 @@
   --input: #c8d2e0;
   --ring: #1d4ed8;
   --popover: #ffffff;
-  --popover-foreground: #172036;
+  --popover-foreground: #000000;
   --radius: 0.75rem;
 }
 

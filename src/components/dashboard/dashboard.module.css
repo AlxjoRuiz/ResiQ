@@ -1,14 +1,14 @@
-.canvas { min-height: 100vh; background: #ffffff; padding: 12px; color: #1f242d; }
+.canvas { min-height: 100vh; background: #ffffff; padding: 12px; color: #000000; }
 .shell { display: grid; grid-template-columns: 198px minmax(0, 1fr); width: 100%; min-height: calc(100vh - 24px); border: 1px solid #e1e5ec; border-radius: 22px; background: #ffffff; box-shadow: 0 18px 60px #314f3810; overflow: clip; }
 .sidebar { position: sticky; top: 12px; align-self: start; height: calc(100vh - 24px); overflow-y: auto; background: #f8f9fb; padding: 22px 14px; display: flex; flex-direction: column; }
-.brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #22324d; font-size: 24px; font-weight: 700; letter-spacing: -1px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #000000; font-size: 24px; font-weight: 700; letter-spacing: -1px; }
 .sidebarLabel { margin: 30px 12px 12px; color: #3e495d; font-size: 13px; line-height: 20px; letter-spacing: 0; font-weight: 700; }
 .navigation { display: grid; gap: 5px; }
 .navigation a { display: flex; align-items: center; gap: 12px; border-radius: 12px; padding: 11px 12px; color: #3e495d; font-size: 14px; transition: transform 150ms ease, background-color 150ms ease, color 150ms ease; }
 /* Al pasar el cursor el botón se agranda un poco y se rellena de azul. */
 .navigation a:hover, .navigation .activeLink:hover { transform: scale(1.04); background: #1d4ed8; color: #ffffff; }
 @media (prefers-reduced-motion: reduce) { .navigation a { transition: none; } }
-.navigation .activeLink { background: white; color: #21304b; font-weight: 600; box-shadow: 0 3px 12px #38513c08; }
+.navigation .activeLink { background: white; color: #000000; font-weight: 600; box-shadow: 0 3px 12px #38513c08; }
 .communityLink { margin-top: auto; padding: 28px 12px 0; font-size: 13px; color: #515b6d; }
 .content { min-width: 0; padding: 20px 24px 28px; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid #e1e5ec; }
@@ -73,13 +73,13 @@
 .moduleContent thead { background-color: #dee5f0; }
 .moduleContent th, .moduleContent td { border-color: #e1e5ec; }
 .moduleContent h1 { font-size: clamp(25px, 3vw, 34px); }
-.panelSurface { background: #ffffff; min-height: 100vh; color: #1f242d; }
+.panelSurface { background: #ffffff; min-height: 100vh; color: #000000; }
 .panelSurface > main:not(.canvas) { background: #ffffff; border: 1px solid #e1e5ec; border-radius: 28px; }
 .panelSurface > main [data-slot="card"] { border-radius: 22px; border-color: #e1e5ec; box-shadow: 0 4px 20px #344a3406; }
 @media (max-width: 560px) { .moduleContent header { gap: 14px; } .moduleContent input, .moduleContent select, .moduleContent textarea { max-width: 100%; } .panelSurface > main:not(.canvas) { border-radius: 22px; } }
 .communityLink { padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease, color 150ms ease; }
 .moduleContent > main > a:not([data-slot="button"]), .moduleContent a[class~="hover:text-foreground"] { display: inline-flex; align-items: center; padding: 8px 12px; border-radius: 10px; transition: background-color 150ms ease, color 150ms ease; }
-.communityLink:hover, .communityLink:focus-visible, .moduleContent > main > a:hover, .moduleContent a[class~="hover:text-foreground"]:hover, .moduleContent > main > a:focus-visible, .moduleContent a[class~="hover:text-foreground"]:focus-visible { background-color: #d4dbe7; color: #21304b; }
+.communityLink:hover, .communityLink:focus-visible, .moduleContent > main > a:hover, .moduleContent a[class~="hover:text-foreground"]:hover, .moduleContent > main > a:focus-visible, .moduleContent a[class~="hover:text-foreground"]:focus-visible { background-color: #d4dbe7; color: #000000; }
 /* Área táctil de 40 px en celular. */
 @media (max-width: 900px) { .communityLink { display: inline-flex; align-items: center; min-height: 40px; padding: 0; } }
 @media (prefers-reduced-motion: reduce) { .communityLink, .moduleContent > main > a, .moduleContent a[class~="hover:text-foreground"] { transition: none; } }
