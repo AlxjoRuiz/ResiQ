@@ -11,19 +11,22 @@ export function PaymentEvidenceUpload({ receivableId }: { receivableId: string }
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<File | null>(null);
   const [message, setMessage] = useState("");
+  const [paidMonth, setPaidMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [comment, setComment] = useState("");
 
   async function submit() {
     const file = selected;
     if (!file) { setMessage("Selecciona un comprobante."); return; }
+    if (!/^\d{4}-\d{2}$/.test(paidMonth)) { setMessage("Indica el mes que estás pagando."); return; }
     if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) { setMessage("Selecciona un PDF, JPG o PNG de máximo 5 MB."); return; }
     setBusy(true); setMessage("");
     try {
-      const form = new FormData(); form.set("receivableId", receivableId); form.set("file", file);
+      const form = new FormData(); form.set("receivableId", receivableId); form.set("file", file); form.set("paidMonth", paidMonth); form.set("comment", comment.trim());
       const response = await fetch("/api/finance/evidence", { method: "POST", body: form });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "No se pudo enviar el comprobante.");
       if (input.current) input.current.value = "";
-      setSelected(null);
+      setSelected(null); setComment("");
       setMessage("Comprobante enviado. La administración debe revisarlo y registrar el pago.");
       router.refresh();
     } catch (error) { setMessage(error instanceof Error ? error.message : "No se pudo enviar el comprobante."); }
@@ -33,6 +36,10 @@ export function PaymentEvidenceUpload({ receivableId }: { receivableId: string }
   return <div className="mt-4 grid gap-3 rounded-xl border bg-secondary/30 p-4">
     <div><p className="text-sm font-semibold">Comprobante de pago</p><p className="mt-1 text-xs text-muted-foreground">Adjunta una imagen o PDF para que Administración lo revise.</p></div>
     <FilePicker inputRef={input} files={selected ? [selected] : []} onFilesChange={(files) => { setSelected(files[0] ?? null); setMessage(""); }} title="Elige tu comprobante" hint="PDF, JPG o PNG · máximo 5 MB" disabled={busy} />
+    <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
+      <label className="block text-sm font-medium">Mes que pagas<input type="month" className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" value={paidMonth} onChange={(event) => setPaidMonth(event.target.value)} required disabled={busy} /></label>
+      <label className="block text-sm font-medium">Comentario para la administración (opcional)<textarea className="mt-2 block min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={500} rows={2} disabled={busy} placeholder="Ej.: pago de administración de octubre por transferencia" /></label>
+    </div>
     <p className="text-xs text-muted-foreground">El comprobante no registra el pago ni cambia el saldo automáticamente.</p>
     <div className="flex flex-wrap items-center gap-3"><Button type="button" size="sm" onClick={submit} disabled={busy || !selected}>{busy ? "Enviando…" : "Enviar comprobante"}</Button>{message && <p role="status" className="text-sm">{message}</p>}</div>
   </div>;

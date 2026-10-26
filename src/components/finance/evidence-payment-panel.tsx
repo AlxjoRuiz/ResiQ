@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { statusPill } from "@/lib/ui/status-tones";
 
-export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null };
+export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Recibido» marca el
 // comprobante y llena el formulario con la obligación de ese comprobante para revisarlo y guardar.
@@ -35,9 +35,10 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
       <div className="mt-5 grid gap-3">
         {evidences.map((evidence) => <article key={evidence.id} className="rounded-xl border p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0"><a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="break-words font-medium text-primary underline underline-offset-2">{evidence.originalName}</a><p className="mt-1 text-xs text-muted-foreground">{evidence.concept} · cargado {evidence.uploadedAt}</p></div>
+            <div className="min-w-0">{evidence.periodLabel && <p className="text-xs font-semibold tracking-wider text-primary uppercase">Pago de {evidence.periodLabel}</p>}<a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="break-words font-medium text-primary underline underline-offset-2">{evidence.originalName}</a><p className="mt-1 text-xs text-muted-foreground">{evidence.concept} · cargado {evidence.uploadedAt}</p></div>
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[evidence.receivedAt ? "success" : "warning"]}`}>{evidence.receivedAt ? "Recibido" : "Por revisar"}</span>
           </div>
+          {evidence.comment && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-secondary px-3 py-2 text-sm">{evidence.comment}</p>}
           {evidence.receivedAt && <p className="mt-2 text-xs text-muted-foreground">Recibido {evidence.receivedAt}</p>}
           <div className="mt-3"><Button type="button" size="sm" variant={evidence.receivedAt ? "outline" : "default"} disabled={pendingId === evidence.id} onClick={() => receive(evidence)}>{pendingId === evidence.id ? "Marcando…" : evidence.receivedAt ? "Usar en el pago" : "Recibido"}</Button></div>
         </article>)}
