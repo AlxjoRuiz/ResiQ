@@ -27,11 +27,11 @@ export default function HomePage() {
             <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">Un espacio compartido para residentes, portería y administración. Más claridad en cada solicitud y más tranquilidad en el día a día.</p>
             <Button asChild className="mt-8"><a href="#comunidad">Conoce el espacio <ArrowDown size={16} aria-hidden="true" /></a></Button>
           </div>
-          <Card className="overflow-hidden bg-[#edf4ef]">
+          <Card className="overflow-hidden bg-[#edf2fa]">
             <CardContent className="p-8 sm:p-10">
               <div className="mb-10 flex items-center gap-2 text-xs font-medium text-primary"><span className="size-2 rounded-full bg-primary" />Estamos construyendo tu próximo espacio</div>
-              <div aria-hidden="true" className="flex h-44 items-end justify-center gap-3 border-b border-[#b9ccbe] pb-0">
-                {[3, 5, 4].map((floors, index) => <div key={index} className="grid min-w-0 flex-1 grid-cols-2 gap-2 rounded-t-lg border border-[#b9ccbe] bg-white/80 p-2 sm:gap-3 sm:p-4">{Array.from({ length: floors * 2 }, (_, i) => <span key={i} className="h-4 w-full rounded-sm bg-[#c4d9cc]" />)}</div>)}
+              <div aria-hidden="true" className="flex h-44 items-end justify-center gap-3 border-b border-[#bccbe0] pb-0">
+                {[3, 5, 4].map((floors, index) => <div key={index} className="grid min-w-0 flex-1 grid-cols-2 gap-2 rounded-t-lg border border-[#bccbe0] bg-white/80 p-2 sm:gap-3 sm:p-4">{Array.from({ length: floors * 2 }, (_, i) => <span key={i} className="h-4 w-full rounded-sm bg-[#c4d2e6]" />)}</div>)}
               </div>
               <h2 className="mt-8 text-xl font-semibold">Todo empieza en comunidad.</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">Estamos preparando la plataforma. El acceso por invitación estará disponible próximamente.</p>

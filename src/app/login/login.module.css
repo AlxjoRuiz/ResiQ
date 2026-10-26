@@ -1,11 +1,11 @@
 /* Scoped to login: shared forms and dashboard retain their own theme. */
 .page {
-  --foreground: #f0f7f3;
-  --muted-foreground: #bfd0c6;
-  --primary: #8be6b5;
-  --primary-foreground: #092c20;
+  --foreground: #f0f2f7;
+  --muted-foreground: #bec5d1;
+  --primary: #86abeb;
+  --primary-foreground: #07152e;
   --border: rgb(255 255 255 / 18%);
-  --ring: #a5f1c7;
+  --ring: #a1c0f5;
   --destructive: #ffb5ad;
   position: relative;
   isolation: isolate;
@@ -14,7 +14,7 @@
   min-height: 100svh;
   padding: 48px 28px;
   color: var(--foreground);
-  background: #091b16;
+  background: #080f1c;
   overflow-x: clip;
 }
 .ambient {
@@ -23,9 +23,9 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 81% 29%, rgb(70 170 126 / 34%), transparent 45%),
-    radial-gradient(ellipse at 18% 86%, rgb(19 98 78 / 45%), transparent 49%),
-    linear-gradient(125deg, #091914, #102e25 58%, #0b211b);
+    radial-gradient(ellipse at 81% 29%, rgb(65 105 175 / 34%), transparent 45%),
+    radial-gradient(ellipse at 18% 86%, rgb(15 47 102 / 45%), transparent 49%),
+    linear-gradient(125deg, #080f1a, #0e1b30 58%, #0a1322);
 }
 .ambient::before {
   content: "";
@@ -35,18 +35,18 @@
   top: -24%;
   right: -10%;
   border-radius: 50%;
-  border: 1px solid rgb(160 224 191 / 14%);
-  box-shadow: 0 0 0 80px rgb(160 224 191 / 3%), 0 0 0 160px rgb(160 224 191 / 2%);
+  border: 1px solid rgb(157 183 227 / 14%);
+  box-shadow: 0 0 0 80px rgb(157 183 227 / 3%), 0 0 0 160px rgb(157 183 227 / 2%);
 }
 .layout { width: min(100%, 1080px); margin: auto; display: grid; grid-template-columns: 1fr 440px; gap: 88px; align-items: center; }
 .brand { display: flex; align-items: center; gap: 13px; font-size: 25px; font-weight: 650; letter-spacing: -1px; margin-bottom: 78px; }
-.brandIcon { display: inline-flex; flex: none; width: 46px; height: 46px; align-items: center; justify-content: center; border-radius: 15px; color: #a3edc5; background: rgb(139 230 181 / 10%); border: 1px solid rgb(139 230 181 / 24%); }
-.eyebrow { font-size: 11px; letter-spacing: 2.4px; font-weight: 600; color: #a3c8b5; margin-bottom: 20px; }
+.brandIcon { display: inline-flex; flex: none; width: 46px; height: 46px; align-items: center; justify-content: center; border-radius: 15px; color: #9fbdf1; background: rgb(134 171 235 / 10%); border: 1px solid rgb(134 171 235 / 24%); }
+.eyebrow { font-size: 11px; letter-spacing: 2.4px; font-weight: 600; color: #a1b0ca; margin-bottom: 20px; }
 .headline { font-size: clamp(42px, 4.5vw, 60px); font-weight: 600; line-height: 1.1; letter-spacing: -2.4px; }
-.headline span { color: #91deb4; }
-.description { margin-top: 26px; max-width: 390px; color: #b6cbbf; line-height: 1.8; font-size: 15px; }
-.community { display: flex; gap: 9px; align-items: center; margin-top: 50px; font-size: 12px; color: #a8bfaf; }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: #8be6b5; box-shadow: 0 0 12px rgb(139 230 181 / 30%); }
+.headline span { color: #8dace2; }
+.description { margin-top: 26px; max-width: 390px; color: #b5bdcc; line-height: 1.8; font-size: 15px; }
+.community { display: flex; gap: 9px; align-items: center; margin-top: 50px; font-size: 12px; color: #a7b0c0; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #86abeb; box-shadow: 0 0 12px rgb(134 171 235 / 30%); }
 .card {
   padding: 38px;
   border-radius: 28px;
@@ -57,30 +57,30 @@
   box-shadow: 0 28px 80px rgb(0 0 0 / 28%), inset 0 1px 0 rgb(255 255 255 / 12%);
 }
 .cardBrand { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
-.subtitle { color: #bfd0c6; font-size: 11px; margin-top: 3px; }
+.subtitle { color: #bec5d1; font-size: 11px; margin-top: 3px; }
 .title { font-size: 27px; font-weight: 600; letter-spacing: -0.8px; line-height: 1.25; }
-.welcome { margin: 12px 0 28px; color: #bfd0c6; font-size: 13px; line-height: 1.7; }
+.welcome { margin: 12px 0 28px; color: #bec5d1; font-size: 13px; line-height: 1.7; }
 .card input:not([type="hidden"]) {
-  background: rgb(5 28 19 / 30%);
-  color: #f0f7f3;
+  background: rgb(4 13 29 / 30%);
+  color: #f0f2f7;
   border-color: rgb(255 255 255 / 20%);
   border-radius: 12px;
   height: 46px;
   transition: background 150ms, border-color 150ms;
 }
-.card input:not([type="hidden"]):focus-visible { border-color: #a5f1c7; background: rgb(5 28 19 / 45%); }
+.card input:not([type="hidden"]):focus-visible { border-color: #a1c0f5; background: rgb(4 13 29 / 45%); }
 .card button { min-height: 46px; border-radius: 12px; }
 .card button[type="submit"]:hover { filter: brightness(1.06); }
-.card :global(.login-alternative) { background: rgb(255 255 255 / 7%); color: #f0f7f3; border-color: rgb(255 255 255 / 24%); }
+.card :global(.login-alternative) { background: rgb(255 255 255 / 7%); color: #f0f2f7; border-color: rgb(255 255 255 / 24%); }
 .card :global(.login-alternative):hover { background: rgb(255 255 255 / 12%); }
-.security { display: flex; align-items: center; gap: 8px; color: #c1d2c7; font-size: 10px; line-height: 1.6; margin-top: 28px; }
-.security svg { flex: none; color: #9cd8b6; }
+.security { display: flex; align-items: center; gap: 8px; color: #c0c7d3; font-size: 10px; line-height: 1.6; margin-top: 28px; }
+.security svg { flex: none; color: #99b1db; }
 .error { padding: 12px; margin-bottom: 20px; font-size: 13px; color: #ffccc6; background: rgb(149 42 35 / 30%); border: 1px solid rgb(255 181 173 / 25%); border-radius: 12px; }
-.success { padding: 12px; margin-bottom: 20px; font-size: 13px; color: #c9f6d8; background: rgb(39 105 71 / 30%); border: 1px solid rgb(139 230 181 / 25%); border-radius: 12px; }
-.recovery { margin-top: 18px; text-align: center; color: #d7e9dd; font-size: 13px; }
+.success { padding: 12px; margin-bottom: 20px; font-size: 13px; color: #c7d9f8; background: rgb(36 62 108 / 30%); border: 1px solid rgb(134 171 235 / 25%); border-radius: 12px; }
+.recovery { margin-top: 18px; text-align: center; color: #d6ddea; font-size: 13px; }
 .recovery a { text-decoration: underline; text-underline-offset: 3px; }
-.recovery a:focus-visible { outline: 2px solid #a5f1c7; outline-offset: 4px; }
-@supports not (backdrop-filter: blur(1px)) { .card { background: #254237; } }
+.recovery a:focus-visible { outline: 2px solid #a1c0f5; outline-offset: 4px; }
+@supports not (backdrop-filter: blur(1px)) { .card { background: #242f43; } }
 @media (max-width: 850px) {
   .layout { grid-template-columns: minmax(0, 440px); justify-content: center; gap: 26px; }
   .introduction { display: none; }
