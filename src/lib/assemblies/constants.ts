@@ -7,6 +7,8 @@ export function assemblyTypeLabel(value: string) {
 export const assemblyStatusLabels: Record<string, string> = {
   draft: "Borrador",
   scheduled: "Programada",
+  convocation: "Convocatoria",
+  approved: "Aprobada",
   in_progress: "En curso",
   finished: "Finalizada",
   cancelled: "Cancelada",

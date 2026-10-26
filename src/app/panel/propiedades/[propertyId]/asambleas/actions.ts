@@ -23,6 +23,8 @@ function friendlyError(message?: string) {
   if (message?.includes("attendance_already_recorded")) return "La asistencia ya fue registrada. Solicita una corrección a Administración.";
   if (message?.includes("active_representation_exists")) return "Ya existe una representación activa para esa persona y apartamento.";
   if (message?.includes("evidence_required")) return "Adjunta al menos una evidencia válida antes de aprobar la representación.";
+  if (message?.includes("quorum_not_reached")) return "Aún no supera el 50% de apartamentos que asistirán.";
+  if (message?.includes("convocation_not_approved")) return "Aprueba la asamblea antes de iniciarla. Necesita más del 50% de apartamentos que asistirán.";
   if (message?.includes("invalid_transition") || message?.includes("invalid_review")) return "Ese cambio no está permitido en el estado actual.";
   return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
 }
@@ -87,7 +89,15 @@ export async function setAssemblyRsvp(_: AssemblyActionState, data: FormData): P
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(assemblyId) || !["yes", "no"].includes(rsvp)) return { error: "Respuesta inválida." };
   const supabase = await createClient(); const result = await supabase.rpc("set_assembly_rsvp", { target_assembly_id: assemblyId, target_rsvp: rsvp });
   if (result.error) return { error: friendlyError(result.error.message) };
-  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`); revalidatePath(`/panel/propiedades/${propertyId}/asambleas`); return { success: "Respuesta guardada." };
+  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`); revalidatePath(`/panel/propiedades/${propertyId}/asambleas`); revalidatePath("/panel/asambleas"); return { success: "Respuesta guardada." };
+}
+
+export async function approveAssemblyConvocation(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
+  const propertyId = field(data, "propertyId"), assemblyId = field(data, "assemblyId");
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(assemblyId)) return { error: "Asamblea inválida." };
+  const supabase = await createClient(); const result = await supabase.rpc("approve_assembly_convocation", { target_assembly_id: assemblyId });
+  if (result.error) return { error: friendlyError(result.error.message) };
+  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`); revalidatePath(`/panel/propiedades/${propertyId}/asambleas`); return { success: "Asamblea aprobada." };
 }
 
 export async function recordAssemblyAttendance(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {

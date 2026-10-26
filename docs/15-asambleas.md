@@ -188,3 +188,15 @@ La etapa 14 queda técnicamente completa y pendiente de aprobación funcional de
 ## Convocatorias para portería (25/10/2026)
 
 A pedido de Alejandro, el menú de portería incluye Asambleas en modo de solo lectura. `20261025140000_concierge_assembly_notices.sql` agrega `list_concierge_assemblies`, que devuelve al portero solo los datos de la convocatoria de las asambleas publicadas (tipo, título, descripción, fecha, lugar, estado y motivo de cancelación). No se amplió `private.can_read_assembly`, así que portería no accede a orden del día, documentos, asistentes ni poderes, y no puede responder ni confirmar asistencia. Las tarjetas usan los colores de estado comunes: en curso verde, cancelada rojo, el resto neutro.
+
+## Convocatoria con confirmación de más del 50% (25/10/2026)
+
+A pedido de Alejandro, las asambleas nuevas empiezan como **Convocatoria**. `20261025180000_assembly_attendance_quorum.sql` agrega `requires_attendance_quorum` (las asambleas existentes quedan en `false`, las nuevas en `true`), `attendance_approved_at` y `attendance_approved_by`.
+
+- Cada convocado responde «Asistiré» o «No asistiré» desde la tarjeta (lista de la comunidad y «Mis asambleas») o desde el detalle, y puede cambiar su respuesta hasta la hora de inicio.
+- Se cuentan apartamentos, no personas: un apartamento asistirá si al menos uno de sus convocados dijo que sí.
+- Solo administración ve la barra en la tarjeta y en el detalle: asistirán (verde), no asistirán (rojo), sin responder (gris) y la marca del 50%. La barra se calcula con las respuestas actuales, así que baja si alguien cambia de opinión.
+- `approve_assembly_convocation` aprueba solo con más del 50% de apartamentos que asistirán; queda en actividad y auditoría. La aprobación se mantiene aunque después cambien respuestas.
+- `change_assembly_status` no permite iniciar una convocatoria sin aprobar (`convocation_not_approved`). Si no se aprueba, administración puede cancelarla y crear otra convocatoria.
+
+Es una regla operativa de ResiQ basada en confirmaciones previas; no calcula quórum legal por coeficientes ni asistencia real (Ley 675 de 2001). **Validar con asesor legal.**
