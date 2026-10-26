@@ -24,6 +24,9 @@ function friendlyError(message?: string) {
   if (message?.includes("invalid_receivable")) return "Una obligación seleccionada ya no está disponible.";
   if (message?.includes("inactive_membership")) return "El vínculo ya no está vigente.";
   if (message?.includes("invalid_import")) return "El archivo debe contener al menos un registro.";
+  if (message?.includes("no_active_agreement")) return "El apartamento no tiene un acuerdo de pago activo.";
+  if (message?.includes("already_added")) return "Esa deuda ya está sumada al acuerdo.";
+  if (message?.includes("no_pending_installments")) return "El acuerdo no tiene cuotas pendientes.";
   if (message?.includes("agreement_exists")) return "Este apartamento ya tiene un acuerdo de pago activo. Cancélalo antes de crear otro.";
   if (message?.includes("invalid_import_row")) return "Una fila del archivo no cumple las reglas de cartera.";
   return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
@@ -42,6 +45,8 @@ export async function createReceivable(_: FinanceState, data: FormData): Promise
   if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||concept.length<2||concept.length>180||!Number.isFinite(amount)||amount<=0||!isoDatePattern.test(issuedOn)||!isoDatePattern.test(dueOn)||dueOn<issuedOn||externalReference.length>120)return{error:"Completa una obligación válida."};
   const supabase=await createClient();const result=await supabase.rpc("create_receivable",{target_property_id:propertyId,target_unit_id:unitId,target_concept:concept,target_amount:amount,target_issued_on:issuedOn,target_due_on:dueOn,target_external_reference:externalReference});
   if(result.error)return{error:friendlyError(result.error.message)};
+  // Opcional: sumar la obligación nueva al acuerdo de pago activo del apartamento.
+  if(field(data,"addToAgreement")==="on"&&result.data){const added=await supabase.rpc("add_receivable_to_payment_agreement",{target_receivable_id:String(result.data)});if(added.error){refreshFinance(propertyId,unitId);return{error:`La obligación se registró, pero no se pudo sumar al acuerdo: ${friendlyError(added.error.message)}`};}refreshFinance(propertyId,unitId);return{success:"Obligación registrada y sumada al acuerdo de pago."};}
   refreshFinance(propertyId,unitId);return{success:"Obligación registrada."};
 }
 
@@ -82,6 +87,14 @@ export async function markEvidenceReceived(propertyId: string, unitId: string, e
   if(![propertyId,unitId,evidenceId].every((value)=>uuidPattern.test(value)))return{error:"Comprobante inválido."};
   const supabase=await createClient();const result=await supabase.rpc("mark_payment_evidence_received",{target_evidence_id:evidenceId});if(result.error)return{error:friendlyError(result.error.message)};
   refreshFinance(propertyId,unitId);return{success:"Comprobante recibido."};
+}
+
+// Suma una obligación creada después del acuerdo a sus cuotas pendientes.
+export async function addReceivableToAgreement(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),receivableId=field(data,"receivableId");
+  if(![propertyId,unitId,receivableId].every((value)=>uuidPattern.test(value)))return{error:"Elige una deuda."};
+  const supabase=await createClient();const result=await supabase.rpc("add_receivable_to_payment_agreement",{target_receivable_id:receivableId});if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Deuda sumada al acuerdo."};
 }
 
 // Acepta el comprobante y registra el pago con el valor y la deuda que eligió el residente.

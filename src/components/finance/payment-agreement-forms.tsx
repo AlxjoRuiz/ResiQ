@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
-import { cancelPaymentAgreement, createPaymentAgreement, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
+import { addReceivableToAgreement, cancelPaymentAgreement, createPaymentAgreement, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
 import { Button } from "@/components/ui/button";
 import { formatCop } from "@/lib/finance/constants";
 
@@ -65,6 +65,17 @@ export function PaymentAgreementForm({ propertyId, unitId, suggestedTotal }: { p
     </div>}
     <label className={labelClass}>Nota para el residente (opcional)<textarea className="mt-2 block min-h-20 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" name="notes" maxLength={1000} placeholder="Condiciones del acuerdo" /></label>
     <div className="flex flex-wrap items-center gap-3"><Button disabled={pending || !installments.length}>{pending ? "Guardando…" : "Registrar acuerdo"}</Button><Result state={state} /></div>
+  </form>;
+}
+
+// Suma al acuerdo una deuda creada después de él; su saldo se reparte entre las cuotas pendientes.
+export function AddDebtToAgreementForm({ propertyId, unitId, debts }: { propertyId: string; unitId: string; debts: { id: string; label: string }[] }) {
+  const [state, action, pending] = useFormActionState(addReceivableToAgreement, undefined as FinanceState);
+  if (!debts.length) return null;
+  return <form onSubmit={action} className="mt-4 flex flex-wrap items-end gap-3 border-t pt-4">
+    <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
+    <label className={`${labelClass} min-w-64 flex-1`}>Sumar una deuda al acuerdo<select className={inputClass} name="receivableId" required defaultValue=""><option value="" disabled>Selecciona</option>{debts.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+    <Button size="sm" disabled={pending}>{pending ? "Sumando…" : "Sumar al acuerdo"}</Button><Result state={state} />
   </form>;
 }
 
