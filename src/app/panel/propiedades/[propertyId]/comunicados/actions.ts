@@ -38,6 +38,29 @@ export async function saveAnnouncementDraft(_: AnnouncementState, data: FormData
   redirect(`/panel/propiedades/${propertyId}/comunicados/${savedId}`);
 }
 
+// Crea y publica en un paso, con adjuntos ya cargados y validados (hasta cinco, opcionales).
+export async function createAnnouncement(data: FormData): Promise<{ announcementId?: string; error?: string }> {
+  const propertyId = field(data, "propertyId"), requestId = field(data, "requestId");
+  const subject = field(data, "subject"), body = field(data, "body");
+  const recipients = data.getAll("recipientIds").map((value) => String(value));
+  let uploadIds: string[];
+  try { const parsed: unknown = JSON.parse(field(data, "uploadIds") || "[]"); uploadIds = Array.isArray(parsed) && parsed.every((id) => typeof id === "string" && uuidPattern.test(id)) ? parsed : []; }
+  catch { uploadIds = []; }
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(requestId) ||
+      subject.length < 5 || subject.length > 160 || body.length < 10 || body.length > 4000 ||
+      recipients.length < 1 || recipients.length > 100 || new Set(recipients).size !== recipients.length ||
+      recipients.some((id) => !uuidPattern.test(id)) || uploadIds.length > 5) return { error: "Completa el asunto, el mensaje y entre 1 y 100 destinatarios válidos." };
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  const { data: createdId, error } = await supabase.rpc("create_published_announcement", {
+    target_property_id: propertyId, target_subject: subject, target_body: body, target_recipient_ids: recipients,
+    target_upload_ids: uploadIds, target_request_id: requestId,
+  });
+  if (error || !createdId) return { error: error?.message?.includes("invalid_uploads") ? "Un adjunto no está disponible. Vuelve a agregarlo." : friendlyError(error?.message) };
+  revalidatePath(`/panel/propiedades/${propertyId}/comunicados`);
+  revalidatePath(`/panel/propiedades/${propertyId}/notificaciones`);
+  return { announcementId: String(createdId) };
+}
+
 export async function publishAnnouncement(_: AnnouncementState, data: FormData): Promise<AnnouncementState> {
   const propertyId = field(data, "propertyId");
   const announcementId = field(data, "announcementId");

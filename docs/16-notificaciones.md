@@ -41,3 +41,9 @@ Para enviar a pruebaresidente@resiq.invalid u otros destinatarios falta un domin
 Aprobar bandeja personal y lectura propia, comunicados administrativos con audiencia explícita y publicación inmutable, sin adjuntos en esta primera entrega. No incluye WhatsApp, SMS, push, facturación ni cambios visuales del dashboard.
 
 El cierre funcional de asambleas conserva la salvedad de correo a residentes pendiente de dominio; no se considera entregado ese correo.
+
+## Comunicados sin borrador y con adjuntos (25/10/2026)
+
+A pedido de Alejandro, «Nuevo comunicado» publica enseguida: ya no se guarda borrador. Acepta hasta cinco adjuntos opcionales (PDF, JPG o PNG de 10 MB), con el mismo diseño y flujo de Asambleas: cada archivo se prepara en `announcement_upload_staging`, se sube con URL firmada, se valida su contenido real (`/api/announcements/staged-documents`) y `create_published_announcement` confirma comunicado, destinatarios, adjuntos y avisos en una transacción, con identificador de solicitud contra duplicados. Migración: `20261025200000_announcement_attachments.sql`.
+
+Los adjuntos quedan en `documents.announcement_id`; solo administración y los destinatarios del comunicado publicado pueden verlos y descargarlos (`private.can_read_announcement` en las políticas de `documents` y Storage, enlace firmado de cinco minutos en `/api/announcements/documents/[id]`). Los borradores que ya existían se conservan y se pueden editar y publicar como antes.
