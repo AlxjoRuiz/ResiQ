@@ -127,3 +127,7 @@ Los nombres exactos se fijarán durante la implementación; este diseño no crea
 ## 9. Siguiente paso
 
 La etapa 12 quedó implementada y validada en local y Supabase. Las pruebas transaccionales confirmaron saldos, aplicación y anulación de pagos, rechazo de sobreasignaciones, bloqueo por mora, resumen y rollback limpio. Falta la aprobación explícita del usuario para cerrar la etapa e iniciar la etapa 13.
+
+## Importación sin tope de filas (25/10/2026)
+
+A pedido de Alejandro, `import_receivables` ya no limita las filas (`20261025240000_receivables_import_no_cap.sql`) y avisa a todos los apartamentos del archivo. El lector del Excel conserva un máximo de seguridad de 5000 filas y 4 MB (`src/lib/finance/import-limits.ts`), por encima de los 2000 apartamentos del censo.

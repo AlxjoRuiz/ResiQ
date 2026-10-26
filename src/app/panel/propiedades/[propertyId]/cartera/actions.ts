@@ -6,6 +6,7 @@ import { readSheet, type CellValue } from "read-excel-file/node";
 import { createClient } from "@/lib/supabase/server";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
+import { FINANCE_MAX_FILE_BYTES, FINANCE_MAX_FILE_LABEL, FINANCE_MAX_ROWS, financeXlsxLimits } from "@/lib/finance/import-limits";
 
 export type FinanceState = { error?: string; success?: string } | undefined;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -22,7 +23,7 @@ function friendlyError(message?: string) {
   if (message?.includes("receivable_overallocated")) return "La distribución supera el saldo de una obligación.";
   if (message?.includes("invalid_receivable")) return "Una obligación seleccionada ya no está disponible.";
   if (message?.includes("inactive_membership")) return "El vínculo ya no está vigente.";
-  if (message?.includes("invalid_import")) return "El archivo debe contener entre 1 y 500 registros.";
+  if (message?.includes("invalid_import")) return "El archivo debe contener al menos un registro.";
   if (message?.includes("invalid_import_row")) return "Una fila del archivo no cumple las reglas de cartera.";
   return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
 }
@@ -88,12 +89,12 @@ function textValue(value: CellValue | null) { return String(value??"").trim(); }
 
 export async function importReceivables(_: FinanceState, data: FormData): Promise<FinanceState> {
   const propertyId=field(data,"propertyId"),file=data.get("file");
-  if(!uuidPattern.test(propertyId)||!(file instanceof File)||file.size===0||file.size>2*1024*1024||!file.name.toLowerCase().endsWith(".xlsx"))return{error:"Selecciona un archivo .xlsx de máximo 2 MB."};
+  if(!uuidPattern.test(propertyId)||!(file instanceof File)||file.size===0||file.size>FINANCE_MAX_FILE_BYTES||!file.name.toLowerCase().endsWith(".xlsx"))return{error:`Selecciona un archivo .xlsx de máximo ${FINANCE_MAX_FILE_LABEL}.`};
   const { supabase } = await requirePropertyAdmin(propertyId);
   try {
-    const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()));
+    const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), 32, financeXlsxLimits);
     const rows=await readSheet(Buffer.from(archive));
-    if(rows.length<2||rows.length>501)return{error:"El archivo debe contener encabezados y entre 1 y 500 filas."};
+    if(rows.length<2||rows.length>FINANCE_MAX_ROWS+1)return{error:`El archivo debe contener encabezados y entre 1 y ${FINANCE_MAX_ROWS} filas.`};
     const headers=rows[0].map(normalizeHeader);const required=["torre","apartamento","concepto","valor","fecha_emision","fecha_vencimiento","referencia","tipo"];
     if(required.some((name)=>!headers.includes(name)))return{error:`Faltan columnas. Usa la plantilla: ${required.join(", ")}.`};
     const index=Object.fromEntries(headers.map((name,position)=>[name,position]));
