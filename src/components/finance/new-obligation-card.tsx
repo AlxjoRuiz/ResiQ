@@ -6,12 +6,12 @@ import { PaymentAgreementForm } from "@/components/finance/payment-agreement-for
 import { formatCop } from "@/lib/finance/constants";
 
 type UnitOption = { id: string; label: string };
-type ArrearsOption = UnitOption & { balance: number; overdueDays: number };
+type ArrearsOption = UnitOption & { balance: number; overdueDays: number; hasAgreement: boolean };
 type Tab = "obligation" | "agreement";
 
 // Tarjeta única «Nueva obligación» de la página de Cartera: registrar una obligación (con la
-// política de mora y reservas al lado) y crear un acuerdo de pago para cualquier apartamento sin
-// acuerdo activo, esté o no en mora.
+// política de mora y reservas al lado) y crear un acuerdo de pago para cualquier apartamento, esté
+// o no en mora. Los que ya tienen un acuerdo activo se listan, pero no se pueden elegir.
 export function NewObligationCard({ propertyId, units, arrears, policy }: { propertyId: string; units: UnitOption[]; arrears: ArrearsOption[]; policy: { restrict: boolean; days: number } }) {
   const [tab, setTab] = useState<Tab>("obligation");
   const [agreementUnit, setAgreementUnit] = useState("");
@@ -26,9 +26,9 @@ export function NewObligationCard({ propertyId, units, arrears, policy }: { prop
     {/* Las pestañas quedan montadas y solo se ocultan, para no perder lo escrito al cambiar. */}
     <div role="tabpanel" hidden={tab !== "obligation"} className="mt-5"><div className="grid gap-6 lg:grid-cols-[3fr_2fr]"><div><p className="mb-5 text-sm text-muted-foreground">El saldo se calcula a partir de obligaciones y pagos; nunca se escribe directamente.</p><ReceivableForm propertyId={propertyId} units={units} /></div><div className="border-t pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"><h3 className="font-semibold">Política de mora y reservas</h3><p className="mt-1 mb-5 text-sm text-muted-foreground">La deuda se revisa únicamente para el apartamento seleccionado al reservar.</p><FinancePolicyForm propertyId={propertyId} restrict={policy.restrict} days={policy.days} /></div></div></div>
     <div role="tabpanel" hidden={tab !== "agreement"} className="mt-5">{arrears.length ? <div className="grid gap-5">
-        <p className="text-sm text-muted-foreground">Elige un apartamento sin acuerdo activo, esté o no en mora. El residente verá el acuerdo y su próxima cuota.</p>
-        <label className="block text-sm font-medium">Apartamento<select className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" value={agreementUnit} onChange={(event) => setAgreementUnit(event.target.value)}><option value="">Selecciona</option>{arrears.map((item) => <option key={item.id} value={item.id}>{item.label} · {formatCop(item.balance)}{item.overdueDays > 0 ? ` · ${item.overdueDays} ${item.overdueDays === 1 ? "día" : "días"} en mora` : ""}</option>)}</select></label>
+        <p className="text-sm text-muted-foreground">Elige el apartamento, esté o no en mora. Cada apartamento puede tener un acuerdo activo; para hacer otro, cancela el actual desde su estado de cuenta. El residente verá el acuerdo y su próxima cuota.</p>
+        <label className="block text-sm font-medium">Apartamento<select className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" value={agreementUnit} onChange={(event) => setAgreementUnit(event.target.value)}><option value="">Selecciona</option>{arrears.map((item) => <option key={item.id} value={item.id} disabled={item.hasAgreement}>{item.label} · {formatCop(item.balance)}{item.overdueDays > 0 ? ` · ${item.overdueDays} ${item.overdueDays === 1 ? "día" : "días"} en mora` : ""}{item.hasAgreement ? " · ya tiene acuerdo activo" : ""}</option>)}</select></label>
         {selected && <PaymentAgreementForm key={selected.id} propertyId={propertyId} unitId={selected.id} suggestedTotal={selected.balance} />}
-      </div> : <p className="text-sm text-muted-foreground">Todos los apartamentos tienen un acuerdo activo.</p>}</div>
+      </div> : <p className="text-sm text-muted-foreground">No hay apartamentos activos.</p>}</div>
   </div>;
 }
