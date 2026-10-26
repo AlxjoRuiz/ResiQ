@@ -22,16 +22,15 @@ function VoidPaymentPicker({ propertyId, unitId, payments }: { propertyId: strin
   </details>;
 }
 
-// Anular una obligación registrada por error, tenga o no pagos aplicados.
+// Anular una obligación registrada por error; las que ya tienen pagos aplicados no se listan.
 function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId: string; unitId: string; receivables: PostedPayment[] }) {
   const [state, action, pending] = useFormActionState(voidReceivable, undefined as FinanceState);
   return <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Anular una obligación</summary>
     {receivables.length ? <form onSubmit={action} className="mt-4 grid gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
       <label className="block text-sm font-medium">Obligación<select name="receivableId" required defaultValue="" className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring"><option value="" disabled>Selecciona</option>{receivables.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
       <label className="block text-sm font-medium">Motivo de anulación<input name="reason" minLength={3} maxLength={500} required className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
-      <p className="text-xs text-muted-foreground">Si la obligación tiene pagos aplicados, ese dinero queda como «pago sin aplicar» del apartamento.</p>
       <div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending}>{pending ? "Anulando…" : "Anular obligación"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}</div>
-    </form> : <p className="mt-3 text-sm text-muted-foreground">No hay obligaciones activas para anular.</p>}
+    </form> : <p className="mt-3 text-sm text-muted-foreground">No hay obligaciones sin pagos para anular.</p>}
   </details>;
 }
 
