@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { markEvidenceReceived, voidPayment, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
+import { markEvidenceReceived, voidPayment, voidReceivable, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
 import { PaymentForm, type OpenReceivable, type PaymentPrefill } from "@/components/finance/finance-forms";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,11 +22,24 @@ function VoidPaymentPicker({ propertyId, unitId, payments }: { propertyId: strin
   </details>;
 }
 
+// Anular una obligación registrada por error, tenga o no pagos aplicados.
+function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId: string; unitId: string; receivables: PostedPayment[] }) {
+  const [state, action, pending] = useFormActionState(voidReceivable, undefined as FinanceState);
+  return <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Anular una obligación</summary>
+    {receivables.length ? <form onSubmit={action} className="mt-4 grid gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
+      <label className="block text-sm font-medium">Obligación<select name="receivableId" required defaultValue="" className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring"><option value="" disabled>Selecciona</option>{receivables.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+      <label className="block text-sm font-medium">Motivo de anulación<input name="reason" minLength={3} maxLength={500} required className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
+      <p className="text-xs text-muted-foreground">Si la obligación tiene pagos aplicados, ese dinero queda como «pago sin aplicar» del apartamento.</p>
+      <div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending}>{pending ? "Anulando…" : "Anular obligación"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}</div>
+    </form> : <p className="mt-3 text-sm text-muted-foreground">No hay obligaciones activas para anular.</p>}
+  </details>;
+}
+
 export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Recibido» marca el
 // comprobante y llena el formulario con la obligación de ese comprobante para revisarlo y guardar.
-export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[] }) {
+export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments, voidableReceivables }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[]; voidableReceivables: PostedPayment[] }) {
   const [prefill, setPrefill] = useState<PaymentPrefill & { key: string }>();
   const [error, setError] = useState<string>();
   const [pendingId, setPendingId] = useState<string>();
@@ -66,6 +79,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
       <p className="mt-2 text-sm text-muted-foreground">{prefill ? "Datos tomados del comprobante. Revisa el valor antes de guardar." : "Puedes proponer la distribución por antigüedad y revisarla antes de guardar."}</p>
       <div className="mt-5"><PaymentForm key={prefill?.key ?? "manual"} propertyId={propertyId} unitId={unitId} receivables={receivables} prefill={prefill} /></div>
       <VoidPaymentPicker propertyId={propertyId} unitId={unitId} payments={payments} />
+      <VoidReceivablePicker propertyId={propertyId} unitId={unitId} receivables={voidableReceivables} />
     </CardContent></Card>
   </section>;
 }
