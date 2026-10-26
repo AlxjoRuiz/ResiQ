@@ -1,11 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { attentionCallCategories } from "@/lib/attention-calls/constants";
 import { createClient } from "@/lib/supabase/server";
 
-export type AttentionCallState = { error?: string; success?: string } | undefined;
+export type AttentionCallState = { error?: string; success?: string; createdId?: string } | undefined;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
@@ -29,7 +28,8 @@ export async function createAttentionCall(_: AttentionCallState, data: FormData)
   const result = await supabase.rpc("create_attention_call", { target_property_id: propertyId, target_unit_id: unitId, target_category: category, target_reason: reason, target_description: description, target_issued_on: issuedOn, target_recipient_member_ids: recipientIds });
   if (result.error || !result.data) return { error: friendlyError(result.error?.message) };
   revalidatePath(`/panel/propiedades/${propertyId}/llamados`);
-  redirect(`/panel/propiedades/${propertyId}/llamados/${result.data}?created=1`);
+  // El formulario sube las evidencias elegidas y luego abre el detalle del llamado.
+  return { createdId: String(result.data) };
 }
 
 export async function changeAttentionCallStatus(_: AttentionCallState, data: FormData): Promise<AttentionCallState> {

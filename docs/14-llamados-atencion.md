@@ -135,3 +135,7 @@ Las tablas no concederán escrituras directas a `authenticated`; las mutaciones 
 ## 11. Siguiente paso
 
 La etapa 13 quedó técnicamente completa y pendiente de aprobación explícita. Antes de producción se debe verificar un dominio propio en Resend y sustituir el remitente de prueba. No iniciar la etapa 14 de asambleas sin una nueva aprobación.
+
+## Evidencias al crear el llamado (26/10/2026)
+
+A pedido de Alejandro, el formulario de nuevo llamado permite elegir hasta cinco evidencias (PDF, JPG o PNG de 10 MB). Al crear el llamado se suben y validan con el mismo flujo del detalle (`/api/attention-calls/attachments`) y luego se abre el detalle. Si una evidencia falla, el llamado queda creado y se puede reintentar desde su detalle.

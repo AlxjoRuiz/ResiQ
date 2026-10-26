@@ -19,6 +19,18 @@ function Result({ state }: { state: AttentionCallState }) { if (state?.error) re
 export function CreateAttentionCallForm({ propertyId, directory }: { propertyId: string; directory: AttentionDirectoryRow[] }) {
   const [state, action, pending] = useFormActionState(createAttentionCall, undefined as AttentionCallState);
   const [unitId, setUnitId] = useState("");
+  const router = useRouter(); const inputRef = useRef<HTMLInputElement>(null); const handledCreation = useRef(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); const [fileError, setFileError] = useState<string>();
+  // Tras crear el llamado se suben las evidencias elegidas y se abre su detalle.
+  useEffect(() => {
+    if (!state?.createdId || handledCreation.current) return;
+    handledCreation.current = true;
+    const detailUrl = `/panel/propiedades/${propertyId}/llamados/${state.createdId}`;
+    if (!selectedFiles.length) { router.replace(`${detailUrl}?created=1`); return; }
+    void uploadAttentionFiles(state.createdId, selectedFiles)
+      .then(() => router.replace(`${detailUrl}?created=1`))
+      .catch((error: unknown) => setFileError(`El llamado se creó, pero no se pudo adjuntar la evidencia: ${error instanceof Error ? error.message : "Error desconocido."} Ábrelo para intentarlo de nuevo.`));
+  }, [propertyId, router, selectedFiles, state?.createdId]);
   const units = useMemo(() => Array.from(new Map(directory.map((row) => [row.unit_id, { id: row.unit_id, label: `${row.building_name} · ${row.unit_code}` }])).values()), [directory]);
   const members = directory.filter((row) => row.unit_id === unitId && row.member_id && row.display_name);
   return <form onSubmit={action} className="grid gap-5">
@@ -28,8 +40,8 @@ export function CreateAttentionCallForm({ propertyId, directory }: { propertyId:
     <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Categoría<select className={inputClass} name="category" defaultValue="coexistence">{attentionCallCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className={labelClass}>Fecha<input className={inputClass} type="date" name="issuedOn" defaultValue={dateInputValue(new Date(), COLOMBIA_TIME_ZONE)} required /></label></div>
     <label className={labelClass}>Motivo<input className={inputClass} name="reason" minLength={4} maxLength={180} required placeholder="Resumen concreto del llamado" /></label>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" minLength={10} maxLength={5000} required placeholder="Describe los hechos con información verificable." /></label>
-    <p className="text-xs text-muted-foreground">Después de crear el llamado podrás adjuntar hasta cinco evidencias PDF, JPG o PNG.</p>
-    <div className="flex items-center gap-4"><Button disabled={pending || !unitId || members.length === 0}>{pending ? "Creando…" : "Crear llamado"}</Button><Result state={state} /></div>
+    <div className="grid gap-2"><p className="text-sm font-medium">Evidencias opcionales</p><FilePicker inputRef={inputRef} files={selectedFiles} onFilesChange={(files) => { setSelectedFiles(files); setFileError(undefined); }} title="Evidencias" hint="Hasta 5 archivos PDF, JPG o PNG · 10 MB cada uno" multiple maxFiles={5} disabled={pending || Boolean(state?.createdId)} /><p className="text-xs text-muted-foreground">Se adjuntan al crear el llamado. También puedes agregarlas después desde su detalle.</p></div>
+    <div className="flex flex-wrap items-center gap-4"><Button disabled={pending || Boolean(state?.createdId) || !unitId || members.length === 0}>{pending ? "Creando…" : state?.createdId ? selectedFiles.length ? "Subiendo evidencias…" : "Abriendo llamado…" : "Crear llamado"}</Button><Result state={state} />{fileError && <p role="alert" className="text-sm text-destructive">{fileError}</p>}{state?.createdId && fileError && <a href={`/panel/propiedades/${propertyId}/llamados/${state.createdId}`} className="text-sm font-medium text-primary underline">Abrir llamado creado</a>}</div>
   </form>;
 }
 
@@ -46,12 +58,17 @@ export function MarkAttentionCallRead({ propertyId, attentionCallId, alreadyRead
 }
 
 type PreparedUpload = { documentId: string; path: string; token: string };
+// Prepara, sube y valida cada evidencia del llamado (mismo flujo para el detalle y la creación).
+async function uploadAttentionFiles(attentionCallId: string, files: File[]) {
+  for (const file of files) { const preparedResponse = await fetch("/api/attention-calls/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", attentionCallId, name: file.name, mimeType: file.type, size: file.size }) }); const prepared = await preparedResponse.json() as PreparedUpload & { error?: string }; if (!preparedResponse.ok) throw new Error(prepared.error ?? "No se pudo preparar el archivo."); const supabase = createClient(); const { error: uploadError } = await supabase.storage.from("private-documents").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type }); if (uploadError) throw new Error("No se pudo subir el archivo."); const completedResponse = await fetch("/api/attention-calls/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "finalize", documentId: prepared.documentId }) }); const completed = await completedResponse.json() as { error?: string }; if (!completedResponse.ok) throw new Error(completed.error ?? "El archivo no superó la validación."); }
+}
+
 export function AttentionCallAttachmentUpload({ attentionCallId, availableSlots }: { attentionCallId: string; availableSlots: number }) {
   const router = useRouter(); const inputRef = useRef<HTMLInputElement>(null); const [busy, setBusy] = useState(false); const [message, setMessage] = useState<string>(); const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   async function upload() {
     const files = selectedFiles; if (!files.length || files.length > availableSlots) return setMessage(`Selecciona entre 1 y ${availableSlots} archivo(s).`);
     setBusy(true); setMessage(undefined);
-    try { for (const file of files) { const preparedResponse = await fetch("/api/attention-calls/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", attentionCallId, name: file.name, mimeType: file.type, size: file.size }) }); const prepared = await preparedResponse.json() as PreparedUpload & { error?: string }; if (!preparedResponse.ok) throw new Error(prepared.error ?? "No se pudo preparar el archivo."); const supabase = createClient(); const { error: uploadError } = await supabase.storage.from("private-documents").uploadToSignedUrl(prepared.path, prepared.token, file, { contentType: file.type }); if (uploadError) throw new Error("No se pudo subir el archivo."); const completedResponse = await fetch("/api/attention-calls/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "finalize", documentId: prepared.documentId }) }); const completed = await completedResponse.json() as { error?: string }; if (!completedResponse.ok) throw new Error(completed.error ?? "El archivo no superó la validación."); } if (inputRef.current) inputRef.current.value = ""; setSelectedFiles([]); setMessage("Evidencia cargada y validada."); router.refresh(); }
+    try { await uploadAttentionFiles(attentionCallId, files); if (inputRef.current) inputRef.current.value = ""; setSelectedFiles([]); setMessage("Evidencia cargada y validada."); router.refresh(); }
     catch (error) { setMessage(error instanceof Error ? error.message : "No se pudo cargar el archivo."); } finally { setBusy(false); }
   }
   if (availableSlots < 1) return <p className="text-sm text-muted-foreground">Ya se alcanzó el máximo de cinco evidencias.</p>;
