@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import {
   cancelReservation,
   createAmenityBlackout,
@@ -47,11 +48,11 @@ export type AmenityHour = { weekday: number; opens_at: string; closes_at: string
 export type AmenityFormValue = { id: string; name: string; description: string | null; capacity: number; requires_approval: boolean; rules: string | null; slot_minutes: number; status: string; amenity_hours?: AmenityHour[] };
 
 export function AmenityForm({ propertyId, amenity }: { propertyId: string; amenity?: AmenityFormValue }) {
-  const [state, action, pending] = useActionState(saveAmenity, undefined as ReservationState);
+  const [state, action, pending] = useFormActionState(saveAmenity, undefined as ReservationState);
   const configured = new Map((amenity?.amenity_hours ?? []).map((hour) => [hour.weekday, hour]));
   const [days, setDays] = useState(() => Object.fromEntries(weekdayLabels.map(([day]) => [day, configured.has(day) || !amenity])) as Record<number, boolean>);
   const legacySlot = amenity && amenity.slot_minutes % 60 !== 0;
-  return <form action={action} className="grid gap-5">
+  return <form onSubmit={action} className="grid gap-5">
     <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenity?.id ?? ""}/>
     <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Nombre<input className={inputClass} name="name" defaultValue={amenity?.name} minLength={2} maxLength={100} required/></label><label className={labelClass}>Capacidad<input className={inputClass} name="capacity" type="number" min={1} max={10000} defaultValue={amenity?.capacity ?? 20} required/></label></div>
     <label className={labelClass}>Descripción<textarea className={areaClass} name="description" defaultValue={amenity?.description ?? ""} maxLength={1000}/></label>
@@ -64,13 +65,13 @@ export function AmenityForm({ propertyId, amenity }: { propertyId: string; ameni
 }
 
 export function ReservationPolicyForm({ propertyId, pendingHoldMinutes }: { propertyId: string; pendingHoldMinutes: number }) {
-  const [state, action, pending] = useActionState(updateReservationPolicy, undefined as ReservationState);
-  return <form action={action} className="flex flex-wrap items-end gap-4"><input type="hidden" name="propertyId" value={propertyId}/><label className={labelClass}>Vigencia de solicitudes pendientes (horas)<input className={`${inputClass} w-56`} name="pendingHoldHours" type="number" min={1} max={48} step={0.5} defaultValue={pendingHoldMinutes / 60} required/></label><Button disabled={pending}>{pending?"Guardando…":"Guardar política"}</Button><Result state={state}/></form>;
+  const [state, action, pending] = useFormActionState(updateReservationPolicy, undefined as ReservationState);
+  return <form onSubmit={action} className="flex flex-wrap items-end gap-4"><input type="hidden" name="propertyId" value={propertyId}/><label className={labelClass}>Vigencia de solicitudes pendientes (horas)<input className={`${inputClass} w-56`} name="pendingHoldHours" type="number" min={1} max={48} step={0.5} defaultValue={pendingHoldMinutes / 60} required/></label><Button disabled={pending}>{pending?"Guardando…":"Guardar política"}</Button><Result state={state}/></form>;
 }
 
 export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; amenityId: string }) {
-  const [state, action, pending] = useActionState(createAmenityBlackout, undefined as ReservationState);
-  return <form action={action} className="-mx-4 grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-2 sm:mx-0 sm:p-4">
+  const [state, action, pending] = useFormActionState(createAmenityBlackout, undefined as ReservationState);
+  return <form onSubmit={action} className="-mx-4 grid min-w-0 gap-3 rounded-xl border bg-muted/30 p-2 sm:mx-0 sm:p-4">
     <input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="amenityId" value={amenityId}/>
     <p className="text-sm font-semibold">Programar cierre</p>
     <div className="grid min-w-0 gap-3 lg:grid-cols-2">
@@ -83,14 +84,14 @@ export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; am
 }
 
 export function DeleteBlackoutForm({ propertyId, blackoutId }: { propertyId: string; blackoutId: string }) {
-  const [state, action, pending] = useActionState(deleteAmenityBlackout, undefined as ReservationState);
-  return <form action={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="blackoutId" value={blackoutId}/><Button size="sm" variant="ghost" disabled={pending}>{pending?"Eliminando…":"Eliminar cierre"}</Button><Result state={state}/></form>;
+  const [state, action, pending] = useFormActionState(deleteAmenityBlackout, undefined as ReservationState);
+  return <form onSubmit={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="blackoutId" value={blackoutId}/><Button size="sm" variant="ghost" disabled={pending}>{pending?"Eliminando…":"Eliminar cierre"}</Button><Result state={state}/></form>;
 }
 
 export type ReservationAmenity = { id: string; name: string; capacity: number; requires_approval: boolean; slot_minutes: number };
 export type ReservationUnit = { id: string; label: string };
 export function CreateReservationForm({ propertyId, amenities, units, amenityId, onAmenityChange }: { propertyId: string; amenities: ReservationAmenity[]; units: ReservationUnit[]; amenityId: string; onAmenityChange: (amenityId: string) => void }) {
-  const [state, action, pending] = useActionState(createReservation, undefined as ReservationState);
+  const [state, action, pending] = useFormActionState(createReservation, undefined as ReservationState);
   const [draft, setDraft] = useState({ unitId: "", startsAt: "", endsAt: "", attendeeCount: "1", purpose: "" });
   const [purposeError, setPurposeError] = useState("");
   const purposeRef = useRef<HTMLTextAreaElement>(null);
@@ -98,8 +99,8 @@ export function CreateReservationForm({ propertyId, amenities, units, amenityId,
     setDraft((current) => ({ ...current, [field]: value }));
     if (field === "purpose" && value.trim().length >= 3) setPurposeError("");
   }
-  return <form action={action} className="grid gap-5" onSubmit={(event) => {
-    if (draft.purpose.trim().length >= 3) return;
+  return <form className="grid gap-5" onSubmit={(event) => {
+    if (draft.purpose.trim().length >= 3) { action(event); return; }
     event.preventDefault();
     setPurposeError("El motivo debe tener al menos 3 caracteres.");
     purposeRef.current?.focus();
@@ -121,11 +122,11 @@ export function CreateReservationForm({ propertyId, amenities, units, amenityId,
 }
 
 export function DecisionForm({ propertyId, reservationId }: { propertyId: string; reservationId: string }) {
-  const [state, action, pending] = useActionState(decideReservation, undefined as ReservationState);
-  return <form action={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Mensaje para el residente al aprobar o rechazar<textarea className={areaClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-2"><Button name="decision" value="approve" size="sm" disabled={pending}>Aprobar</Button><Button name="decision" value="reject" size="sm" variant="outline" disabled={pending}>Rechazar</Button><Result state={state}/></div></form>;
+  const [state, action, pending] = useFormActionState(decideReservation, undefined as ReservationState);
+  return <form onSubmit={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Mensaje para el residente al aprobar o rechazar<textarea className={areaClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-2"><Button name="decision" value="approve" size="sm" disabled={pending}>Aprobar</Button><Button name="decision" value="reject" size="sm" variant="outline" disabled={pending}>Rechazar</Button><Result state={state}/></div></form>;
 }
 
 export function CancelReservationForm({ propertyId, reservationId }: { propertyId: string; reservationId: string }) {
-  const [state, action, pending] = useActionState(cancelReservation, undefined as ReservationState);
-  return <form action={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Motivo de cancelación<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending}>{pending?"Cancelando…":"Cancelar reserva"}</Button><Result state={state}/></div></form>;
+  const [state, action, pending] = useFormActionState(cancelReservation, undefined as ReservationState);
+  return <form onSubmit={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Motivo de cancelación<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending}>{pending?"Cancelando…":"Cancelar reserva"}</Button><Result state={state}/></div></form>;
 }

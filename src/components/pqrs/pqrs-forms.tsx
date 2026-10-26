@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FilePicker } from "@/components/ui/file-picker";
@@ -19,7 +20,7 @@ function Result({ state }: { state: PqrsState }) {
 }
 
 export function CreatePqrsForm({ propertyId, units }: { propertyId: string; units: { id: string; label: string }[] }) {
-  const [state, action, pending] = useActionState(createPqrs, undefined as PqrsState);
+  const [state, action, pending] = useFormActionState(createPqrs, undefined as PqrsState);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const handledCreation = useRef(false);
@@ -36,11 +37,13 @@ export function CreatePqrsForm({ propertyId, units }: { propertyId: string; unit
       .catch((error: unknown) => setFileError(`La PQRS se creó, pero no se pudo adjuntar el archivo: ${error instanceof Error ? error.message : "Error desconocido."} Abre la solicitud para intentarlo de nuevo.`));
   }, [propertyId, router, selectedFiles, state?.createdId]);
 
-  return <form action={action} className="grid gap-5" onSubmit={(event) => {
+  return <form className="grid gap-5" onSubmit={(event) => {
     if (selectedFiles.length > 5 || selectedFiles.some((file) => !["application/pdf", "image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > 10 * 1024 * 1024 || file.name.length > 180)) {
       event.preventDefault();
       setFileError("Selecciona hasta 5 archivos PDF, JPG o PNG de máximo 10 MB cada uno.");
+      return;
     }
+    action(event);
   }}>
     <input type="hidden" name="propertyId" value={propertyId} />
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" defaultValue="" required><option value="" disabled>Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></label>
@@ -90,8 +93,8 @@ export function PqrsMessageForm({ propertyId, pqrsId }: { propertyId: string; pq
 }
 
 export function PqrsStatusForm({ propertyId, pqrsId, currentStatus }: { propertyId: string; pqrsId: string; currentStatus: string }) {
-  const [state, action, pending] = useActionState(changePqrsStatus, undefined as PqrsState);
-  return <form action={action} className="flex flex-wrap items-end gap-3">
+  const [state, action, pending] = useFormActionState(changePqrsStatus, undefined as PqrsState);
+  return <form onSubmit={action} className="flex flex-wrap items-end gap-3">
     <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="pqrsId" value={pqrsId} />
     <label className={labelClass}>Estado<select className={`${inputClass} min-w-44`} name="status" defaultValue={currentStatus}>{pqrsStatuses.slice(1).map(([value, label]) => <option key={value} value={value} disabled={value === currentStatus}>{label}</option>)}</select></label>
     <Button variant="outline" disabled={pending}>{pending ? "Actualizando…" : "Actualizar estado"}</Button><Result state={state} />

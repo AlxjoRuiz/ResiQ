@@ -22,14 +22,13 @@ export function NewObligationCard({ propertyId, units, arrears, policy }: { prop
     <div role="tablist" aria-label="Opciones de nueva obligación" className="mt-4 flex flex-wrap gap-2">
       {tabs.map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => setTab(value)} className={`inline-flex min-h-10 items-center rounded-full px-3 py-1.5 text-xs font-medium sm:min-h-0 ${tab === value ? "bg-primary text-white" : "bg-secondary"}`}>{label}</button>)}
     </div>
-    <div role="tabpanel" className="mt-5">
-      {tab === "obligation" && <><p className="mb-5 text-sm text-muted-foreground">El saldo se calcula a partir de obligaciones y pagos; nunca se escribe directamente.</p><ReceivableForm propertyId={propertyId} units={units} /></>}
-      {tab === "agreement" && (arrears.length ? <div className="grid gap-5">
+    {/* Las tres pestañas quedan montadas y solo se ocultan, para no perder lo escrito al cambiar. */}
+    <div role="tabpanel" hidden={tab !== "obligation"} className="mt-5"><p className="mb-5 text-sm text-muted-foreground">El saldo se calcula a partir de obligaciones y pagos; nunca se escribe directamente.</p><ReceivableForm propertyId={propertyId} units={units} /></div>
+    <div role="tabpanel" hidden={tab !== "agreement"} className="mt-5">{arrears.length ? <div className="grid gap-5">
         <p className="text-sm text-muted-foreground">Elige un apartamento en mora sin acuerdo activo. El residente verá el acuerdo y su próxima cuota.</p>
         <label className="block text-sm font-medium">Apartamento<select className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" value={agreementUnit} onChange={(event) => setAgreementUnit(event.target.value)}><option value="">Selecciona</option>{arrears.map((item) => <option key={item.id} value={item.id}>{item.label} · {formatCop(item.balance)} · {item.overdueDays} {item.overdueDays === 1 ? "día" : "días"} en mora</option>)}</select></label>
         {selected && <PaymentAgreementForm key={selected.id} propertyId={propertyId} unitId={selected.id} suggestedTotal={selected.balance} />}
-      </div> : <p className="text-sm text-muted-foreground">No hay apartamentos en mora sin acuerdo activo.</p>)}
-      {tab === "policy" && <><p className="mb-5 text-sm text-muted-foreground">La deuda se revisa únicamente para el apartamento seleccionado al reservar.</p><FinancePolicyForm propertyId={propertyId} restrict={policy.restrict} days={policy.days} /></>}
-    </div>
+      </div> : <p className="text-sm text-muted-foreground">No hay apartamentos en mora sin acuerdo activo.</p>}</div>
+    <div role="tabpanel" hidden={tab !== "policy"} className="mt-5"><p className="mb-5 text-sm text-muted-foreground">La deuda se revisa únicamente para el apartamento seleccionado al reservar.</p><FinancePolicyForm propertyId={propertyId} restrict={policy.restrict} days={policy.days} /></div>
   </div>;
 }

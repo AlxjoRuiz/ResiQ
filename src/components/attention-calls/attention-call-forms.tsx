@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { useRouter } from "next/navigation";
 import { changeAttentionCallStatus, createAttentionCall, markAttentionCallRead, type AttentionCallState } from "@/app/panel/propiedades/[propertyId]/llamados/actions";
 import { Button } from "@/components/ui/button";
@@ -16,11 +17,11 @@ const labelClass = "block text-sm font-medium";
 function Result({ state }: { state: AttentionCallState }) { if (state?.error) return <p role="alert" className="text-sm text-destructive">{state.error}</p>; if (state?.success) return <p role="status" className="text-sm text-primary">{state.success}</p>; return null; }
 
 export function CreateAttentionCallForm({ propertyId, directory }: { propertyId: string; directory: AttentionDirectoryRow[] }) {
-  const [state, action, pending] = useActionState(createAttentionCall, undefined as AttentionCallState);
+  const [state, action, pending] = useFormActionState(createAttentionCall, undefined as AttentionCallState);
   const [unitId, setUnitId] = useState("");
   const units = useMemo(() => Array.from(new Map(directory.map((row) => [row.unit_id, { id: row.unit_id, label: `${row.building_name} · ${row.unit_code}` }])).values()), [directory]);
   const members = directory.filter((row) => row.unit_id === unitId && row.member_id && row.display_name);
-  return <form action={action} className="grid gap-5">
+  return <form onSubmit={action} className="grid gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" value={unitId} onChange={(event) => setUnitId(event.target.value)} required><option value="" disabled>Selecciona</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></label>
     <fieldset className="rounded-xl border p-4"><legend className="px-2 text-sm font-medium">Destinatarios explícitos</legend>{!unitId ? <p className="text-sm text-muted-foreground">Selecciona primero el apartamento.</p> : members.length ? <div className="grid gap-3">{members.map((member) => <label key={member.member_id!} className="flex items-center gap-3 text-sm"><input type="checkbox" name="recipientIds" value={member.member_id!} className="size-4 accent-primary" />{member.display_name}</label>)}</div> : <p className="text-sm text-muted-foreground">Este apartamento no tiene miembros vigentes.</p>}</fieldset>
@@ -33,10 +34,10 @@ export function CreateAttentionCallForm({ propertyId, directory }: { propertyId:
 }
 
 export function AttentionCallStatusForm({ propertyId, attentionCallId, currentStatus }: { propertyId: string; attentionCallId: string; currentStatus: string }) {
-  const [state, action, pending] = useActionState(changeAttentionCallStatus, undefined as AttentionCallState);
+  const [state, action, pending] = useFormActionState(changeAttentionCallStatus, undefined as AttentionCallState);
   const target = currentStatus === "notified" ? "in_review" : currentStatus === "in_review" ? "closed" : null;
   if (!target) return null;
-  return <form action={action} className="grid gap-4"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="attentionCallId" value={attentionCallId} /><input type="hidden" name="status" value={target} />{target === "closed" && <label className={labelClass}>Nota de cierre<textarea className={areaClass} name="note" minLength={4} maxLength={1000} required placeholder="Explica cómo terminó el caso." /></label>}<div className="flex items-center gap-4"><Button variant="outline" disabled={pending}>{pending ? "Actualizando…" : target === "closed" ? "Cerrar llamado" : "Iniciar revisión"}</Button><Result state={state} /></div></form>;
+  return <form onSubmit={action} className="grid gap-4"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="attentionCallId" value={attentionCallId} /><input type="hidden" name="status" value={target} />{target === "closed" && <label className={labelClass}>Nota de cierre<textarea className={areaClass} name="note" minLength={4} maxLength={1000} required placeholder="Explica cómo terminó el caso." /></label>}<div className="flex items-center gap-4"><Button variant="outline" disabled={pending}>{pending ? "Actualizando…" : target === "closed" ? "Cerrar llamado" : "Iniciar revisión"}</Button><Result state={state} /></div></form>;
 }
 
 export function MarkAttentionCallRead({ propertyId, attentionCallId, alreadyRead }: { propertyId: string; attentionCallId: string; alreadyRead: boolean }) {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+
 import { requestPasswordReset, type AuthState } from "@/app/auth/actions";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Button } from "@/components/ui/button";
 
 export function ResetRequestForm() {
-  const [state, action, pending] = useActionState(requestPasswordReset, undefined as AuthState);
-  return <form action={action} className="mt-6 space-y-4">
+  const [state, action, pending] = useFormActionState(requestPasswordReset, undefined as AuthState);
+  return <form onSubmit={action} className="mt-6 space-y-4">
     <label className="block text-sm font-medium">Correo
       <input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="email" type="email" autoComplete="email" maxLength={254} required />
     </label>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { createInvitation, type InvitationState } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 
@@ -9,12 +10,12 @@ type Unit = { id: string; buildingId: string; code: string };
 const selectClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-base sm:text-sm";
 
 export function InvitationCreateForm({ propertyId, buildings, units }: { propertyId: string; buildings: Building[]; units: Unit[] }) {
-  const [state, action, pending] = useActionState(createInvitation, undefined as InvitationState);
+  const [state, action, pending] = useFormActionState(createInvitation, undefined as InvitationState);
   const [buildingId, setBuildingId] = useState("");
   const [unitId, setUnitId] = useState("");
   const availableUnits = units.filter((unit) => unit.buildingId === buildingId);
 
-  return <form action={action} className="mt-6 space-y-4">
+  return <form onSubmit={action} className="mt-6 space-y-4">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="role" value="member" />
     <label className="block text-sm font-medium">Correo electrónico<input className={selectClass} name="email" type="email" required autoComplete="email" /></label>

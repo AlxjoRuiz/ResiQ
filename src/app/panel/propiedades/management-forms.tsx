@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+
 import { Button } from "@/components/ui/button";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { endUnitMembership, manageMember, queueResidentInvitation, revealInvitationLink, saveBuilding, saveUnit, updateProperty, type InvitationLinkState, type ManagementState } from "./actions";
 
 const inputClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -14,8 +15,8 @@ function Result({ state }: { state: ManagementState }) {
 }
 
 export function PropertyForm({ property }: { property: { id: string; name: string; address: string | null; city: string | null; timezone: string } }) {
-  const [state, action, pending] = useActionState(updateProperty, undefined as ManagementState);
-  return <form action={action} className="grid gap-4 md:grid-cols-2">
+  const [state, action, pending] = useFormActionState(updateProperty, undefined as ManagementState);
+  return <form onSubmit={action} className="grid gap-4 md:grid-cols-2">
     <input type="hidden" name="propertyId" value={property.id} />
     <label className={labelClass}>Nombre<input className={inputClass} name="name" defaultValue={property.name} required minLength={2} maxLength={120} /></label>
     <label className={labelClass}>Ciudad<input className={inputClass} name="city" defaultValue={property.city ?? ""} maxLength={80} /></label>
@@ -27,8 +28,8 @@ export function PropertyForm({ property }: { property: { id: string; name: strin
 }
 
 export function BuildingForm({ propertyId, building }: { propertyId: string; building: { id: string; name: string; code: string; active: boolean } }) {
-  const [state, action, pending] = useActionState(saveBuilding, undefined as ManagementState);
-  return <form action={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_8rem_9rem_auto] lg:items-end">
+  const [state, action, pending] = useFormActionState(saveBuilding, undefined as ManagementState);
+  return <form onSubmit={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_8rem_9rem_auto] lg:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="buildingId" value={building.id} />
     <label className={labelClass}>Nombre<input className={inputClass} name="name" defaultValue={building.name} required maxLength={80} placeholder="Torre 2" /></label>
@@ -44,8 +45,8 @@ export function UnitForm({ propertyId, buildings, unit }: {
   buildings: { id: string; name: string; active: boolean }[];
   unit: { id: string; building_id: string; code: string; floor: string | null; status: string };
 }) {
-  const [state, action, pending] = useActionState(saveUnit, undefined as ManagementState);
-  return <form action={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+  const [state, action, pending] = useFormActionState(saveUnit, undefined as ManagementState);
+  return <form onSubmit={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="unitId" value={unit.id} />
     <label className={labelClass}>Torre<select className={inputClass} name="buildingId" defaultValue={unit.building_id} required><option value="" disabled>Selecciona</option>{buildings.filter((item) => item.active || item.id === unit.building_id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
@@ -58,8 +59,8 @@ export function UnitForm({ propertyId, buildings, unit }: {
 }
 
 export function MemberForm({ propertyId, member }: { propertyId: string; member: { id: string; roles: string[]; status: string } }) {
-  const [state, action, pending] = useActionState(manageMember, undefined as ManagementState);
-  return <form action={action} className="mt-4 grid gap-3 sm:grid-cols-3 sm:items-end">
+  const [state, action, pending] = useFormActionState(manageMember, undefined as ManagementState);
+  return <form onSubmit={action} className="mt-4 grid gap-3 sm:grid-cols-3 sm:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="memberId" value={member.id} />
     <fieldset className="flex h-11 items-center gap-4 rounded-lg border px-3"><legend className="sr-only">Roles</legend><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="member" defaultChecked={member.roles.includes("member")} />Miembro</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="roles" value="concierge" defaultChecked={member.roles.includes("concierge")} />Portería</label></fieldset>
@@ -70,8 +71,8 @@ export function MemberForm({ propertyId, member }: { propertyId: string; member:
 }
 
 export function EndMembershipForm({ propertyId, unitMembershipId }: { propertyId: string; unitMembershipId: string }) {
-  const [state, action, pending] = useActionState(endUnitMembership, undefined as ManagementState);
-  return <form action={action} className="flex flex-wrap items-center gap-2">
+  const [state, action, pending] = useFormActionState(endUnitMembership, undefined as ManagementState);
+  return <form onSubmit={action} className="flex flex-wrap items-center gap-2">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="unitMembershipId" value={unitMembershipId} />
     <Button type="submit" size="sm" variant="outline" disabled={pending}>{pending ? "Desvinculando…" : "Desvincular del apartamento"}</Button>
@@ -81,8 +82,8 @@ export function EndMembershipForm({ propertyId, unitMembershipId }: { propertyId
 
 // Apartamento vacío: el admin agrega un residente; la invitación entra a la cola de correos.
 export function UnitResidentInvitationForm({ propertyId, unitId }: { propertyId: string; unitId: string }) {
-  const [state, action, pending] = useActionState(queueResidentInvitation, undefined as ManagementState);
-  return <form action={action} className="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
+  const [state, action, pending] = useFormActionState(queueResidentInvitation, undefined as ManagementState);
+  return <form onSubmit={action} className="grid gap-3 sm:grid-cols-[1fr_12rem_auto] sm:items-end">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="unitId" value={unitId} />
     <label className={labelClass}>Correo del residente<input className={inputClass} name="email" type="email" required autoComplete="off" /></label>
@@ -94,8 +95,8 @@ export function UnitResidentInvitationForm({ propertyId, unitId }: { propertyId:
 
 // «Ver enlace»: genera un enlace nuevo de 72 horas; el anterior deja de funcionar.
 export function RevealInvitationLinkForm({ propertyId, invitationId }: { propertyId: string; invitationId: string }) {
-  const [state, action, pending] = useActionState(revealInvitationLink, undefined as InvitationLinkState);
-  return <form action={action} className="space-y-2">
+  const [state, action, pending] = useFormActionState(revealInvitationLink, undefined as InvitationLinkState);
+  return <form onSubmit={action} className="space-y-2">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="invitationId" value={invitationId} />
     <Button type="submit" size="sm" variant="outline" disabled={pending}>{pending ? "Generando…" : "Ver enlace"}</Button>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { readSheet } from "read-excel-file/browser";
 import { importCensus, type CensusImportState } from "@/app/panel/propiedades/[propertyId]/censo/actions";
 import { CENSUS_MAX_COLUMNS, CENSUS_MAX_FILE_BYTES, CENSUS_MAX_FILE_LABEL, censusXlsxLimits, parseCensusRows, type CensusPreview } from "@/lib/census/parse";
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { FilePicker } from "@/components/ui/file-picker";
 
 export function CensusImportForm({ propertyId }: { propertyId: string }) {
-  const [state, action, pending] = useActionState(importCensus, undefined as CensusImportState);
+  const [state, action, pending] = useFormActionState(importCensus, undefined as CensusImportState);
   const [preview, setPreview] = useState<CensusPreview | null>(null);
   const [fileName, setFileName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -55,7 +56,7 @@ export function CensusImportForm({ propertyId }: { propertyId: string }) {
     .filter((item) => item.source_row > 0);
   const primaryCheck = preview ? validatePrimarySelections(preview.rows, selected) : null;
 
-  return <form action={action} className="grid min-w-0 gap-5">
+  return <form onSubmit={action} className="grid min-w-0 gap-5">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="primarySelections" value={JSON.stringify(selected)} />
     <FilePicker inputRef={fileInput} files={selectedFile ? [selectedFile] : []} onFilesChange={(files) => { void onFile(files[0]); }} title="Archivo del censo" hint={`Excel .xlsx · máximo ${CENSUS_MAX_FILE_LABEL}`} accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" name="file" disabled={pending || reading} />

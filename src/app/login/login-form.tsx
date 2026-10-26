@@ -1,18 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
+
 import { registerWithInvitation, signIn, signInWithGoogle, type AuthState } from "@/app/auth/actions";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Button } from "@/components/ui/button";
 
 const initialState: AuthState = undefined;
 
 export function LoginForm({ next, invitationToken }: { next: string; invitationToken?: string }) {
-  const [state, action, pending] = useActionState(signIn, initialState);
-  const [registerState, registerAction, registerPending] = useActionState(registerWithInvitation, initialState);
+  const [state, action, pending] = useFormActionState(signIn, initialState);
+  const [registerState, registerAction, registerPending] = useFormActionState(registerWithInvitation, initialState);
   return (
     <div className="space-y-5">
       {invitationToken && <p className="text-sm text-muted-foreground">Puedes aceptar la invitación con Google o crear tu cuenta con el correo invitado y una contraseña.</p>}
-      <form action={action} className="space-y-4">
+      <form onSubmit={action} className="space-y-4">
         <input type="hidden" name="next" value={next} />
         <label className="block text-sm font-medium">Correo o usuario de portería
           <input className="mt-2 h-11 w-full rounded-lg border bg-white px-3 outline-none focus:ring-2 focus:ring-ring" name="identifier" type="text" autoComplete="username" required />
@@ -28,7 +29,7 @@ export function LoginForm({ next, invitationToken }: { next: string; invitationT
         <input type="hidden" name="next" value={next} />
         <Button variant="outline" className="w-full login-alternative">Continuar con Google</Button>
       </form>
-      {invitationToken && <div className="border-t pt-6"><h2 className="font-semibold">Crear cuenta con invitación</h2><p className="mt-1 text-sm text-muted-foreground">Usa exactamente el correo al que llegó la invitación.</p><form action={registerAction} className="mt-4 space-y-4"><input type="hidden" name="token" value={invitationToken} /><label className="block text-sm font-medium">Nombre completo<input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="displayName" minLength={2} maxLength={80} required /></label><label className="block text-sm font-medium">Correo invitado<input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="email" type="email" required /></label><label className="block text-sm font-medium">Nueva contraseña<input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="password" type="password" minLength={8} required /></label>{registerState?.error && <p role="alert" className="text-sm text-destructive">{registerState.error}</p>}{registerState?.success && <p role="status" className="text-sm text-primary">{registerState.success}</p>}<Button className="w-full login-alternative" variant="outline" disabled={registerPending}>{registerPending ? "Creando…" : "Crear cuenta"}</Button></form></div>}
+      {invitationToken && <div className="border-t pt-6"><h2 className="font-semibold">Crear cuenta con invitación</h2><p className="mt-1 text-sm text-muted-foreground">Usa exactamente el correo al que llegó la invitación.</p><form onSubmit={registerAction} className="mt-4 space-y-4"><input type="hidden" name="token" value={invitationToken} /><label className="block text-sm font-medium">Nombre completo<input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="displayName" minLength={2} maxLength={80} required /></label><label className="block text-sm font-medium">Correo invitado<input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="email" type="email" required /></label><label className="block text-sm font-medium">Nueva contraseña<input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="password" type="password" minLength={8} required /></label>{registerState?.error && <p role="alert" className="text-sm text-destructive">{registerState.error}</p>}{registerState?.success && <p role="status" className="text-sm text-primary">{registerState.success}</p>}<Button className="w-full login-alternative" variant="outline" disabled={registerPending}>{registerPending ? "Creando…" : "Crear cuenta"}</Button></form></div>}
     </div>
   );
 }

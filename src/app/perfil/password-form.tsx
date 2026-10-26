@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+
 import { setAccountPassword, type AuthState } from "@/app/auth/actions";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Button } from "@/components/ui/button";
 
 export function PasswordForm() {
-  const [state, action, pending] = useActionState(setAccountPassword, undefined as AuthState);
-  return <form action={action} className="mt-4 space-y-4">
+  const [state, action, pending] = useFormActionState(setAccountPassword, undefined as AuthState);
+  return <form onSubmit={action} className="mt-4 space-y-4">
     <label className="block text-sm font-medium">Nueva contraseña
       <input className="mt-2 h-11 w-full rounded-lg border bg-white px-3" name="password" type="password" autoComplete="new-password" minLength={8} required />
     </label>

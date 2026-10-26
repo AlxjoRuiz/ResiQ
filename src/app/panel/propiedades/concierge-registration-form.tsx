@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Button } from "@/components/ui/button";
 import { FilePicker } from "@/components/ui/file-picker";
 import { conciergeUsername } from "@/lib/concierge/identity";
@@ -12,7 +13,7 @@ const input = "mt-1 h-11 w-full rounded-lg border bg-white px-3 text-sm";
 const blankVehicle = (): Vehicle => ({ type: "", brand: "", model: "", plate: "" });
 
 export function ConciergeRegistrationForm({ propertyId }: { propertyId: string }) {
-  const [state, action, pending] = useActionState(registerConcierge, undefined as ConciergeState);
+  const [state, action, pending] = useFormActionState(registerConcierge, undefined as ConciergeState);
   const [firstName, setFirstName] = useState("");
   const [firstSurname, setFirstSurname] = useState("");
   const [documentNumber, setDocumentNumber] = useState("");
@@ -26,7 +27,7 @@ export function ConciergeRegistrationForm({ propertyId }: { propertyId: string }
   const birth = birthDate ? new Date(`${birthDate}T12:00:00Z`) : null;
   const age = birth && !Number.isNaN(birth.getTime()) ? Number(today.slice(0, 4)) - Number(birthDate.slice(0, 4)) - (today.slice(5) < birthDate.slice(5) ? 1 : 0) : null;
   const vehicleStarted = Object.values(vehicle).some((field) => field.trim().length > 0);
-  return <form action={action} className="grid gap-4 sm:grid-cols-2">
+  return <form onSubmit={action} className="grid gap-4 sm:grid-cols-2">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="vehicles" value={JSON.stringify(vehicleStarted ? [vehicle] : [])} />
     <label className="text-sm font-medium">Nombres<input className={input} name="firstName" value={firstName} onChange={(event) => setFirstName(event.target.value)} required maxLength={60} autoComplete="given-name" placeholder="Uno o dos nombres" /></label>

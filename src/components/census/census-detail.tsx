@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Plus, UserPlus } from "lucide-react";
 import { unlinkUnitResidents, updateCensusRecord, type ManagementState } from "@/app/panel/propiedades/actions";
 import { Button } from "@/components/ui/button";
@@ -35,14 +36,14 @@ export type LinkedResident = { linkId: string; label: string };
 // Desvincular junto a Editar, con confirmación antes de quitar el acceso.
 function UnlinkResidents({ propertyId, residents }: { propertyId: string; residents: LinkedResident[] }) {
   const [confirming, setConfirming] = useState(false);
-  const [state, action, pending] = useActionState(unlinkUnitResidents, undefined as ManagementState);
+  const [state, action, pending] = useFormActionState(unlinkUnitResidents, undefined as ManagementState);
   if (!confirming) return <>
     <Button type="button" size="sm" variant="outline" onClick={() => setConfirming(true)}>Desvincular</Button>
     {state?.error && <p role="alert" className="w-full text-sm text-destructive">{state.error}</p>}
   </>;
   // Confirmación centrada sobre la ficha, con el contenido desenfocado detrás.
   return <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Confirmar desvinculación">
-    <form action={action} className="w-full max-w-md space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-lg">
+    <form onSubmit={action} className="w-full max-w-md space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-lg">
       <input type="hidden" name="propertyId" value={propertyId} />
       {residents.map((resident) => <input key={resident.linkId} type="hidden" name="unitMembershipId" value={resident.linkId} />)}
       <p>¿Seguro que quieres desvincular a {residents.map((resident) => resident.label).join(" y ")}? Perderá el acceso a ResiQ para este apartamento. El apartamento y su historial se conservan.</p>
@@ -57,7 +58,7 @@ export function CensusDetail({ headers, cells, propertyId, recordId, residents, 
   const [active, setActive] = useState<Section>("Residente");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(cells);
-  const [state, action, pending] = useActionState(async (previous: ManagementState, formData: FormData) => {
+  const [state, action, pending] = useFormActionState(async (previous: ManagementState, formData: FormData) => {
     const result = await updateCensusRecord(previous, formData);
     if (result?.success) setEditing(false);
     return result;
@@ -83,7 +84,7 @@ export function CensusDetail({ headers, cells, propertyId, recordId, residents, 
       <nav aria-label="Secciones del censo" className="flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">{sections.map((section) => <button key={section} type="button" aria-pressed={active === section} onClick={() => setActive(section)} className={`shrink-0 rounded-full border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active === section ? "border-foreground bg-foreground text-background" : "bg-white hover:bg-secondary"}`}>{section}</button>)}</nav>
       {!editing && <div className="flex flex-wrap items-center gap-2"><Button type="button" size="sm" variant="outline" onClick={() => { setDraft(cells); setEditing(true); }}>Editar</Button>{occupied && <UnlinkResidents propertyId={propertyId} residents={residents} />}</div>}
     </div>
-    <form action={action} className="space-y-6">
+    <form onSubmit={action} className="space-y-6">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="recordId" value={recordId} />
     <input type="hidden" name="cells" value={JSON.stringify(draft)} />

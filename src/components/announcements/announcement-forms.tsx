@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,8 +76,8 @@ export function CreateAnnouncementForm({ propertyId }: { propertyId: string }) {
 }
 
 export function AnnouncementDraftForm({ propertyId, recipients, draft }: { propertyId: string; recipients: AnnouncementRecipient[]; draft?: Draft }) {
-  const [state, action, pending] = useActionState(saveAnnouncementDraft, undefined as AnnouncementState);
-  return <form action={action} className="grid gap-5"><input type="hidden" name="propertyId" value={propertyId} />{draft && <input type="hidden" name="announcementId" value={draft.id} />}
+  const [state, action, pending] = useFormActionState(saveAnnouncementDraft, undefined as AnnouncementState);
+  return <form onSubmit={action} className="grid gap-5"><input type="hidden" name="propertyId" value={propertyId} />{draft && <input type="hidden" name="announcementId" value={draft.id} />}
     <label className="grid gap-2 text-sm font-medium">Asunto<input name="subject" defaultValue={draft?.subject} required minLength={5} maxLength={160} className="h-11 rounded-lg border bg-background px-3" /></label>
     <label className="grid gap-2 text-sm font-medium">Mensaje<textarea name="body" defaultValue={draft?.body} required minLength={10} maxLength={4000} rows={8} className="rounded-lg border bg-background px-3 py-2" /></label>
     <RecipientsFieldset recipients={recipients} selected={draft?.recipientIds} />
@@ -85,6 +86,6 @@ export function AnnouncementDraftForm({ propertyId, recipients, draft }: { prope
 }
 
 export function PublishAnnouncementForm({ propertyId, announcementId }: { propertyId: string; announcementId: string }) {
-  const [state, action, pending] = useActionState(publishAnnouncement, undefined as AnnouncementState);
-  return <form action={action}><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="announcementId" value={announcementId} /><Button type="submit" disabled={pending}>{pending ? "Publicando…" : "Publicar comunicado"}</Button>{state?.error && <p role="alert" className="mt-2 text-sm text-destructive">{state.error}</p>}</form>;
+  const [state, action, pending] = useFormActionState(publishAnnouncement, undefined as AnnouncementState);
+  return <form onSubmit={action}><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="announcementId" value={announcementId} /><Button type="submit" disabled={pending}>{pending ? "Publicando…" : "Publicar comunicado"}</Button>{state?.error && <p role="alert" className="mt-2 text-sm text-destructive">{state.error}</p>}</form>;
 }
