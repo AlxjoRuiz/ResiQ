@@ -12,6 +12,7 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles 
   const searchParams = useSearchParams();
   const [returnContext, setReturnContext] = useState<{ noticeId: string; section: string } | null>(null);
   const navigationRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const base = `/panel/propiedades/${propertyId}`;
   const section = pathname.startsWith(`${base}/`) ? pathname.slice(base.length + 1).split("/")[0] : "";
   const originNoticeId = searchParams.get("desdeAviso");
@@ -35,6 +36,8 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles 
       behavior: "auto",
     });
   }, [pathname]);
+  // El contenido se desplaza dentro del recuadro: al cambiar de sección vuelve arriba.
+  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [pathname]);
   if (pathname === `${base}/dashboard`) return children;
   const noticeReturnId = section !== "notificaciones" && section !== "dashboard" && (validNoticeId || (returnContext?.section === section ? returnContext.noticeId : null));
   const view = roles.includes("administrator") ? "administracion" : roles.includes("concierge") ? "porteria" : "residente";
@@ -47,6 +50,6 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles 
       <Link href={`${base}/notificaciones`} aria-current={pathname.startsWith(`${base}/notificaciones`) ? "page" : undefined} className={pathname.startsWith(`${base}/notificaciones`) ? styles.activeLink : undefined}><Bell size={19} aria-hidden="true" />Notificaciones</Link>
       <Link href={`${base}/comunicados`} aria-current={pathname.startsWith(`${base}/comunicados`) ? "page" : undefined} className={pathname.startsWith(`${base}/comunicados`) ? styles.activeLink : undefined}><Bell size={19} aria-hidden="true" />Comunicados</Link>
     </nav><Link href="/panel" className={styles.communityLink}>← Mis comunidades</Link></aside>
-    <div className={styles.content}><header className={styles.topbar}><div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{propertyName}</span></div><Link href="/perfil" className={styles.profileLink}><UserRound size={16} aria-hidden="true" />{label}</Link></header><div className={styles.moduleContent}>{noticeReturnId && <Link href={`${base}/notificaciones/${noticeReturnId}`} className="my-4 inline-flex rounded-lg border px-3 py-2 text-sm font-medium text-primary hover:bg-muted">← Volver al aviso</Link>}{children}</div></div>
+    <div ref={contentRef} className={styles.content}><header className={styles.topbar}><div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{propertyName}</span></div><Link href="/perfil" className={styles.profileLink}><UserRound size={16} aria-hidden="true" />{label}</Link></header><div className={styles.moduleContent}>{noticeReturnId && <Link href={`${base}/notificaciones/${noticeReturnId}`} className="my-4 inline-flex rounded-lg border px-3 py-2 text-sm font-medium text-primary hover:bg-muted">← Volver al aviso</Link>}{children}</div></div>
   </div></div>;
 }
