@@ -84,6 +84,13 @@ export async function markEvidenceReceived(propertyId: string, unitId: string, e
   refreshFinance(propertyId,unitId);return{success:"Comprobante recibido."};
 }
 
+// Acepta el comprobante y registra el pago con el valor y la deuda que eligió el residente.
+export async function acceptEvidence(propertyId: string, unitId: string, evidenceId: string): Promise<FinanceState> {
+  if(![propertyId,unitId,evidenceId].every((value)=>uuidPattern.test(value)))return{error:"Comprobante inválido."};
+  const supabase=await createClient();const result=await supabase.rpc("accept_payment_evidence",{target_evidence_id:evidenceId});if(result.error)return{error:result.error.message.includes("nothing_to_apply")?"Ese comprobante no tiene un valor para registrar.":friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Pago registrado."};
+}
+
 // Acuerdo de pago: cuotas con valor y fecha; el total es la suma de las cuotas.
 export async function createPaymentAgreement(_: FinanceState, data: FormData): Promise<FinanceState> {
   const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),notes=field(data,"notes");
