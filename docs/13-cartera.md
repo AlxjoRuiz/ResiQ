@@ -131,3 +131,12 @@ La etapa 12 quedó implementada y validada en local y Supabase. Las pruebas tran
 ## Importación sin tope de filas (25/10/2026)
 
 A pedido de Alejandro, `import_receivables` ya no limita las filas (`20261025240000_receivables_import_no_cap.sql`) y avisa a todos los apartamentos del archivo. El lector del Excel conserva un máximo de seguridad de 5000 filas y 4 MB (`src/lib/finance/import-limits.ts`), por encima de los 2000 apartamentos del censo.
+
+## Acuerdos de pago, mora y acceso abierto (26/10/2026)
+
+Decisiones de Alejandro, con `20261026100000_finance_agreements_open_access.sql`:
+
+- **Acceso:** todo propietario o residente vinculado a un apartamento ve su cartera, sin activación del admin. Todos los vínculos quedan con `finance_access = true` (valor por defecto `true`) y se retira el interruptor administrativo (`set_unit_finance_access` sin permiso para `authenticated`; se quitó la sección «Acceso financiero» y su acción). Esto reemplaza la propuesta P02 de acceso desactivado por defecto.
+- **Mora:** el estado de cuenta muestra «En mora · N días», contados desde el vencimiento más antiguo con saldo (fecha local del conjunto), el total adeudado y el valor vencido.
+- **Vista del residente:** al día, ve solo su obligación más reciente; en mora, sus obligaciones pendientes. En ambos casos el historial completo queda en «Ver historial». Administración conserva la vista completa.
+- **Acuerdos de pago:** administración crea un acuerdo para un apartamento en mora (`create_payment_agreement`): genera cuotas mensuales iguales desde un total y ajusta valor o fecha de cada una. Un solo acuerdo activo por apartamento; se cancela con motivo (`cancel_payment_agreement`). Las cuotas se marcan pagadas en orden con los pagos registrados desde la fecha del acuerdo; no modifican obligaciones ni saldos. El residente ve el acuerdo, la próxima cuota y el estado de cada cuota (pagada, pendiente, vencida). Sin avisos por correo en esta entrega.

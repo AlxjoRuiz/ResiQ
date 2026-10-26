@@ -24,6 +24,7 @@ function friendlyError(message?: string) {
   if (message?.includes("invalid_receivable")) return "Una obligación seleccionada ya no está disponible.";
   if (message?.includes("inactive_membership")) return "El vínculo ya no está vigente.";
   if (message?.includes("invalid_import")) return "El archivo debe contener al menos un registro.";
+  if (message?.includes("agreement_exists")) return "Este apartamento ya tiene un acuerdo de pago activo. Cancélalo antes de crear otro.";
   if (message?.includes("invalid_import_row")) return "Una fila del archivo no cumple las reglas de cartera.";
   return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
 }
@@ -76,11 +77,21 @@ export async function updateFinancePolicy(_: FinanceState, data: FormData): Prom
   refreshFinance(propertyId);return{success:"Política de mora actualizada."};
 }
 
-export async function setFinanceAccess(_: FinanceState, data: FormData): Promise<FinanceState> {
-  const propertyId=field(data,"propertyId"),membershipId=field(data,"unitMembershipId"),enabled=field(data,"enabled")==="true";
-  if(!uuidPattern.test(propertyId)||!uuidPattern.test(membershipId))return{error:"No encontramos el vínculo."};
-  const supabase=await createClient();const result=await supabase.rpc("set_unit_finance_access",{target_unit_membership_id:membershipId,target_enabled:enabled});if(result.error)return{error:friendlyError(result.error.message)};
-  refreshFinance(propertyId);revalidatePath(`/panel/propiedades/${propertyId}/miembros`);return{success:enabled?"Acceso financiero habilitado.":"Acceso financiero retirado."};
+// Acuerdo de pago: cuotas con valor y fecha; el total es la suma de las cuotas.
+export async function createPaymentAgreement(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),notes=field(data,"notes");
+  let installments:{amount:number;due_on:string}[]=[];
+  try{const parsed:unknown=JSON.parse(field(data,"installments")||"[]");if(Array.isArray(parsed))installments=parsed.map((item)=>({amount:Number((item as {amount?:unknown}).amount),due_on:String((item as {due_on?:unknown}).due_on??"")}));}catch{installments=[];}
+  if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||installments.length<1||installments.length>120||installments.some((item)=>!Number.isFinite(item.amount)||item.amount<=0||!isoDatePattern.test(item.due_on))||(notes&&(notes.length<3||notes.length>1000)))return{error:"Revisa las cuotas: cada una necesita valor y fecha. La nota debe tener entre 3 y 1000 caracteres."};
+  const supabase=await createClient();const result=await supabase.rpc("create_payment_agreement",{target_property_id:propertyId,target_unit_id:unitId,target_notes:notes||null,target_installments:installments});if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Acuerdo de pago registrado."};
+}
+
+export async function cancelPaymentAgreement(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),agreementId=field(data,"agreementId"),reason=field(data,"reason");
+  if(![propertyId,unitId,agreementId].every((value)=>uuidPattern.test(value))||reason.length<4||reason.length>1000)return{error:"Escribe un motivo de al menos 4 caracteres."};
+  const supabase=await createClient();const result=await supabase.rpc("cancel_payment_agreement",{target_agreement_id:agreementId,target_reason:reason});if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Acuerdo cancelado."};
 }
 
 function normalizeHeader(value: CellValue | null) { return String(value??"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"_"); }
