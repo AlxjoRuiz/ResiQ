@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { pqrsCategories,pqrsRequestTypes,pqrsStatuses } from "@/lib/pqrs/constants";
-export type PqrsState={error?:string;success?:string;createdId?:string}|undefined;
+export type PqrsState={error?:string;success?:string;createdId?:string;messageId?:string}|undefined;
 const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const field=(data:FormData,name:string)=>String(data.get(name)??"").trim();
 function friendlyError(message?:string){if(message?.includes("invalid_transition"))return "Ese cambio de estado no está permitido.";if(message?.includes("not_authorized"))return "No tienes permiso para realizar esta acción.";return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";}
@@ -14,7 +14,7 @@ export async function createPqrs(_:PqrsState,data:FormData):Promise<PqrsState>{
 }
 export async function addPqrsMessage(_:PqrsState,data:FormData):Promise<PqrsState>{
   const propertyId=field(data,"propertyId"),pqrsId=field(data,"pqrsId"),body=field(data,"body");if(!uuidPattern.test(propertyId)||!uuidPattern.test(pqrsId)||body.length<1||body.length>5000)return{error:"Escribe una respuesta válida."};
-  const supabase=await createClient();const result=await supabase.rpc("add_pqrs_message",{target_pqrs_id:pqrsId,target_body:body});if(result.error)return{error:friendlyError(result.error.message)};revalidatePath(`/panel/propiedades/${propertyId}/pqrs/${pqrsId}`);revalidatePath(`/panel/propiedades/${propertyId}/pqrs`);return{success:"Respuesta enviada."};
+  const supabase=await createClient();const result=await supabase.rpc("add_pqrs_message",{target_pqrs_id:pqrsId,target_body:body});if(result.error||!result.data)return{error:friendlyError(result.error?.message)};revalidatePath(`/panel/propiedades/${propertyId}/pqrs/${pqrsId}`);revalidatePath(`/panel/propiedades/${propertyId}/pqrs`);return{success:"Respuesta enviada.",messageId:String(result.data)};
 }
 export async function changePqrsStatus(_:PqrsState,data:FormData):Promise<PqrsState>{
   const propertyId=field(data,"propertyId"),pqrsId=field(data,"pqrsId"),status=field(data,"status");if(!uuidPattern.test(propertyId)||!uuidPattern.test(pqrsId)||!pqrsStatuses.slice(1).some(([value])=>value===status))return{error:"Selecciona un estado válido."};

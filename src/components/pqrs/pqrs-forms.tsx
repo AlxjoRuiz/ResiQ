@@ -53,12 +53,39 @@ export function CreatePqrsForm({ propertyId, units }: { propertyId: string; unit
   </form>;
 }
 
+// Respuesta en la conversación con adjuntos opcionales: se envía el mensaje y luego se suben
+// sus archivos (hasta 5 por mensaje), con la misma carga validada de la solicitud inicial.
 export function PqrsMessageForm({ propertyId, pqrsId }: { propertyId: string; pqrsId: string }) {
-  const [state, action, pending] = useActionState(addPqrsMessage, undefined as PqrsState);
-  return <form action={action} className="grid gap-3">
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null), inputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [status, setStatus] = useState<"idle" | "sending" | "uploading">("idle");
+  const [state, setState] = useState<PqrsState>();
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (status !== "idle") return;
+    if (selectedFiles.length > 5 || selectedFiles.some((file) => !["application/pdf", "image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > 10 * 1024 * 1024 || file.name.length > 180)) return setState({ error: "Selecciona hasta 5 archivos PDF, JPG o PNG de máximo 10 MB cada uno." });
+    setStatus("sending"); setState(undefined);
+    const result = await addPqrsMessage(undefined, new FormData(event.currentTarget));
+    if (!result?.messageId) { setState(result); setStatus("idle"); return; }
+    formRef.current?.reset();
+    if (selectedFiles.length) {
+      setStatus("uploading");
+      try { await uploadPqrsFiles(pqrsId, selectedFiles, result.messageId); setState(result); }
+      catch (error) { setState({ error: `La respuesta se envió, pero no se pudo adjuntar el archivo: ${error instanceof Error ? error.message : "Error desconocido."}` }); }
+      setSelectedFiles([]); if (inputRef.current) inputRef.current.value = "";
+    } else setState(result);
+    setStatus("idle");
+    router.refresh();
+  }
+
+  const busy = status !== "idle";
+  return <form ref={formRef} onSubmit={submit} className="grid gap-3">
     <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="pqrsId" value={pqrsId} />
-    <label className={labelClass}>Nueva respuesta<textarea className={areaClass} name="body" required maxLength={5000} placeholder="Escribe tu respuesta" /></label>
-    <div className="flex items-center gap-4"><Button disabled={pending}>{pending ? "Enviando…" : "Enviar respuesta"}</Button><Result state={state} /></div>
+    <label className={labelClass}>Nueva respuesta<textarea className={areaClass} name="body" required maxLength={5000} placeholder="Escribe tu respuesta" disabled={busy} /></label>
+    <FilePicker inputRef={inputRef} files={selectedFiles} onFilesChange={(files) => { setSelectedFiles(files); setState(undefined); }} title="Adjuntos" hint="Opcional · hasta 5 archivos PDF, JPG o PNG · 10 MB cada uno" multiple maxFiles={5} disabled={busy} />
+    <div className="flex flex-wrap items-center gap-4"><Button disabled={busy}>{status === "sending" ? "Enviando…" : status === "uploading" ? "Subiendo adjuntos…" : "Enviar respuesta"}</Button><Result state={state} /></div>
   </form>;
 }
 
@@ -73,9 +100,9 @@ export function PqrsStatusForm({ propertyId, pqrsId, currentStatus }: { property
 
 type PreparedUpload = { documentId: string; path: string; token: string };
 
-async function uploadPqrsFiles(pqrsId: string, files: File[]) {
+async function uploadPqrsFiles(pqrsId: string, files: File[], messageId?: string) {
   for (const file of files) {
-    const preparedResponse = await fetch("/api/pqrs/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", pqrsId, name: file.name, mimeType: file.type, size: file.size }) });
+    const preparedResponse = await fetch("/api/pqrs/attachments", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "prepare", pqrsId, messageId, name: file.name, mimeType: file.type, size: file.size }) });
     const prepared = await preparedResponse.json() as PreparedUpload & { error?: string };
     if (!preparedResponse.ok) throw new Error(prepared.error ?? "No se pudo preparar el archivo.");
     const supabase = createClient();

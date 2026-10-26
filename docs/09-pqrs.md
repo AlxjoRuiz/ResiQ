@@ -44,3 +44,7 @@ La migración `20261007030000_pqrs_request_types.sql` añade `request_type` y un
 Migración aplicada en Supabase. TypeScript y ESLint correctos. Prueba `supabase/tests/pqrs_request_types_transaction.sql` PASS: los cuatro tipos se guardan con tema Aseo, se rechazan tipos/temas inválidos y la creación por usuario sin vínculo. Rollback de todos los datos y avisos de prueba.
 
 Publicación confirmada en Vercel desde el perfil de residente: Tipo de solicitud encima de Categoría del tema, con selecciones obligatorias independientes. Captura del formulario guardada para revisión.
+
+## Adjuntos en la conversación (25/10/2026)
+
+A pedido de Alejandro, administración y residente pueden adjuntar archivos al responder en la conversación (hasta 5 PDF, JPG o PNG de 10 MB por mensaje). Primero se guarda el mensaje y luego se suben sus archivos con la misma carga validada de la solicitud inicial (`/api/pqrs/attachments` con `messageId`). `20261025250000_pqrs_message_attachments.sql` cambia el cupo de cinco por PQRS a cinco por mensaje (y cinco en la solicitud inicial), exige que solo el autor del mensaje adjunte a él y bloquea adjuntos en una PQRS cerrada. Los archivos se muestran dentro de cada mensaje y se descargan con enlace firmado.

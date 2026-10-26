@@ -23,13 +23,15 @@ export async function POST(request: Request) {
 
   if (payload.action === "prepare") {
     const pqrsId = String(payload.pqrsId ?? "");
+    // Adjuntos de un mensaje de la conversación; sin messageId son de la solicitud inicial.
+    const messageId = payload.messageId ? String(payload.messageId) : null;
     const name = String(payload.name ?? "").trim();
     const mimeType = String(payload.mimeType ?? "");
     const size = Number(payload.size);
-    if (!uuidPattern.test(pqrsId) || !name || name.length > 180 || !allowedTypes.has(mimeType) || !Number.isInteger(size) || size < 1 || size > maximumSize) return NextResponse.json({ error: "El archivo no cumple los requisitos." }, { status: 400 });
-    const { data, error } = await supabase.rpc("prepare_pqrs_document", { target_pqrs_id: pqrsId, target_message_id: null, target_original_name: name, target_mime_type: mimeType, target_size_bytes: size });
+    if (!uuidPattern.test(pqrsId) || (messageId !== null && !uuidPattern.test(messageId)) || !name || name.length > 180 || !allowedTypes.has(mimeType) || !Number.isInteger(size) || size < 1 || size > maximumSize) return NextResponse.json({ error: "El archivo no cumple los requisitos." }, { status: 400 });
+    const { data, error } = await supabase.rpc("prepare_pqrs_document", { target_pqrs_id: pqrsId, target_message_id: messageId, target_original_name: name, target_mime_type: mimeType, target_size_bytes: size });
     const prepared = Array.isArray(data) ? data[0] : undefined;
-    if (error || !prepared) return NextResponse.json({ error: error?.message.includes("file_limit") ? "La PQRS ya tiene 5 adjuntos." : "No fue posible preparar el archivo." }, { status: 400 });
+    if (error || !prepared) return NextResponse.json({ error: error?.message.includes("file_limit") ? messageId ? "Cada mensaje admite hasta 5 adjuntos." : "La PQRS ya tiene 5 adjuntos." : "No fue posible preparar el archivo." }, { status: 400 });
     const { data: signed, error: signedError } = await supabase.storage.from("private-documents").createSignedUploadUrl(prepared.object_path, { upsert: false });
     if (signedError || !signed) {
       await supabase.rpc("reject_pqrs_document", { target_document_id: prepared.document_id, target_reason: "signed_upload_failed" });
