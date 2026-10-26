@@ -135,7 +135,13 @@ export async function acceptInvitation(_: AuthState, formData: FormData): Promis
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Inicia sesión con el correo invitado para continuar." };
   const { error } = await supabase.rpc("accept_invitation", { invitation_token: token });
-  if (error) return { error: "La invitación es inválida, venció o pertenece a otro correo." };
+  if (error) {
+    // Mensaje según la causa, para que quien acepta sepa qué hacer.
+    if (error.message.includes("email_mismatch")) return { error: `Esta invitación es para otro correo. Ahora tienes la sesión iniciada con ${user.email ?? "otra cuenta"}: cierra sesión y entra con el correo invitado.` };
+    if (error.message.includes("invalid_invitation")) return { error: "La invitación venció o ya no es válida. Si se generó un enlace nuevo, usa el último." };
+    if (error.message.includes("membership_exists") || error.message.includes("already_assigned")) return { error: "Esta cuenta ya tiene acceso a esta comunidad o a este apartamento." };
+    return { error: "No pudimos aceptar la invitación. Intenta nuevamente." };
+  }
   redirect(user.identities?.some((identity) => identity.provider === "google") && !user.identities.some((identity) => identity.provider === "email") ? "/invitacion/contrasena" : "/panel?invitation=accepted");
 }
 
