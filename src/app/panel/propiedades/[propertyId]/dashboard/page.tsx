@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SeasonalDecor } from "@/components/seasonal/seasonal-decor";
 import styles from "@/components/dashboard/dashboard.module.css";
 import { redirect } from "next/navigation";
 import { residentModules, conciergeModules, adminModules } from "@/components/dashboard/navigation";
@@ -53,6 +54,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   const modules = view === "administracion" ? adminModules(propertyId) : view === "porteria" ? conciergeModules(propertyId) : residentModules(propertyId);
   const viewLabel = view === "administracion" ? "Administración" : view === "porteria" ? "Portería" : "Residente";
   return <main className={styles.canvas}>
+    <SeasonalDecor />
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
         <Link href="/panel" className={styles.brand}><Building2 size={27} aria-hidden="true" />ResiQ</Link>

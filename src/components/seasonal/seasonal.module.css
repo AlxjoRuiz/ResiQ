@@ -1,0 +1,12 @@
+/* Capa decorativa de temporada: detrás del recuadro del dashboard, sin recibir clics. */
+.layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.item { position: absolute; top: -40px; font-size: 15px; line-height: 1; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
+@keyframes fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(14px, 27vh, 0) rotate(20deg); }
+  50% { transform: translate3d(-10px, 55vh, 0) rotate(-15deg); }
+  75% { transform: translate3d(12px, 82vh, 0) rotate(15deg); }
+  100% { transform: translate3d(0, calc(100vh + 80px), 0) rotate(0deg); }
+}
+/* Quien pide menos movimiento ve las figuras quietas, repartidas por el fondo. */
+@media (prefers-reduced-motion: reduce) { .item { animation: none; top: var(--rest-top); } }

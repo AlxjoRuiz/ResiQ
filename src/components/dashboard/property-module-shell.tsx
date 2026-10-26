@@ -1,5 +1,6 @@
 "use client";
 
+import { SeasonalDecor } from "@/components/seasonal/seasonal-decor";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -40,7 +41,7 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles 
   const view = roles.includes("administrator") ? "administracion" : roles.includes("concierge") ? "porteria" : "residente";
   const label = view === "administracion" ? "Administración" : view === "porteria" ? "Portería" : "Residente";
   const modules = view === "administracion" ? adminModules(propertyId) : view === "porteria" ? conciergeModules(propertyId) : residentModules(propertyId);
-  return <div className={styles.canvas}><div className={styles.shell}>
+  return <div className={styles.canvas}><SeasonalDecor /><div className={styles.shell}>
     <aside className={styles.sidebar}><Link href="/panel" className={styles.brand}><Building2 size={27} aria-hidden="true" />ResiQ</Link><p className={styles.sidebarLabel}>{label}</p><nav ref={navigationRef} aria-label={`Navegación de ${label.toLowerCase()}`} className={styles.navigation}>
       <Link href={`${base}/dashboard`}><House size={19} aria-hidden="true" />Inicio</Link>
       {modules.filter((module) => module.href).map(({ title, href, icon: Icon }) => { const active = !href!.includes("?") && (pathname === href || (href !== base && pathname.startsWith(`${href}/`))); return <Link key={title} href={href!} aria-current={active ? "page" : undefined} className={active ? styles.activeLink : undefined}><Icon size={19} aria-hidden="true" />{title}</Link>; })}

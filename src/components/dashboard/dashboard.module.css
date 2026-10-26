@@ -1,9 +1,10 @@
 .canvas { min-height: 100vh; background: #ffffff; padding: 12px; color: #000000; }
 .shell { display: grid; grid-template-columns: 198px minmax(0, 1fr); width: 100%; min-height: calc(100vh - 24px); border: 1px solid #e1e5ec; border-radius: 22px; background: #ffffff; box-shadow: 0 18px 60px #314f3810; overflow: clip; }
-.sidebar { position: sticky; top: 12px; align-self: start; height: calc(100vh - 24px); overflow-y: auto; background: #f8f9fb; padding: 22px 14px; display: flex; flex-direction: column; }
+/* Alto del menú: pantalla menos el margen (12 px arriba y abajo) y el borde del recuadro (1 px y 1 px). */
+.sidebar { position: sticky; top: 12px; align-self: start; height: calc(100vh - 26px); overflow-y: auto; background: #f8f9fb; padding: 22px 14px; display: flex; flex-direction: column; }
 /* El recuadro del dashboard tiene un ancho máximo y queda centrado; en pantallas pequeñas usa todo
    el ancho disponible (26/10/2026). */
-.shell { max-width: 1440px; margin-inline: auto; }
+.shell { max-width: 1440px; margin-inline: auto; position: relative; z-index: 1; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #000000; font-size: 24px; font-weight: 700; letter-spacing: -1px; }
 .sidebarLabel { margin: 30px 12px 12px; color: #3e495d; font-size: 13px; line-height: 20px; letter-spacing: 0; font-weight: 700; }
 .navigation { display: grid; gap: 5px; }
