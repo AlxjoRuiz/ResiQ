@@ -200,3 +200,7 @@ A pedido de Alejandro, las asambleas nuevas empiezan como **Convocatoria**. `202
 - `change_assembly_status` no permite iniciar una convocatoria sin aprobar (`convocation_not_approved`). Si no se aprueba, administración puede cancelarla y crear otra convocatoria.
 
 Es una regla operativa de ResiQ basada en confirmaciones previas; no calcula quórum legal por coeficientes ni asistencia real (Ley 675 de 2001). **Validar con asesor legal.**
+
+## Convocados sin tope (25/10/2026)
+
+A pedido de Alejandro, las convocatorias pueden llegar a todos los residentes sin el máximo anterior de 500 convocados (`20261025230000_assembly_audience_no_cap.sql`). «Seleccionar todos los residentes» funciona con cualquier tamaño de comunidad. Los avisos internos y los correos se crean uno por convocado, sin tope; el envío real de correos depende del plan del proveedor (Resend) cuando se active el dominio.

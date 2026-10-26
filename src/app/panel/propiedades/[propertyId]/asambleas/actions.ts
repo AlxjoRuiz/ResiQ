@@ -40,7 +40,7 @@ export async function createAssembly(data: FormData): Promise<CreateAssemblyResu
   try { const parsed: unknown = JSON.parse(field(data, "uploadIds")); uploadIds = Array.isArray(parsed) && parsed.every((id) => typeof id === "string" && uuidPattern.test(id)) ? parsed : []; }
   catch { uploadIds = []; }
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(requestId) || !assemblyTypes.some(([value]) => value === type) || title.length < 4 || title.length > 180
-    || location.length < 3 || location.length > 240 || agenda.length < 1 || agenda.length > 100 || audience.length < 1 || audience.length > 500 || uploadIds.length < 1 || uploadIds.length > 5) {
+    || location.length < 3 || location.length > 240 || agenda.length < 1 || agenda.length > 100 || audience.length < 1 || uploadIds.length < 1 || uploadIds.length > 5) {
     return { error: "Completa la fecha futura, el lugar, la agenda, al menos un convocado y la convocatoria adjunta." };
   }
   const supabase = await createClient();
