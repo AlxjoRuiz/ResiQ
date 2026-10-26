@@ -1,8 +1,9 @@
 // Política de seguridad de contenido (CSP) con nonce por solicitud. Ver
 // node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md.
-// Se envía primero en modo observación (Report-Only): el navegador no bloquea nada y
-// reporta a /api/csp-report lo que habría bloqueado.
-export const CSP_ENFORCED = false;
+// Primero se envió en modo observación (Report-Only) sin infracciones en los tres perfiles.
+// Bloqueo activado el 25/10/2026 a pedido de Alejandro; las infracciones siguen llegando a
+// /api/csp-report. Para volver a solo observar, poner false.
+export const CSP_ENFORCED = true;
 export const CSP_HEADER = CSP_ENFORCED ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only";
 
 export function createNonce() {
