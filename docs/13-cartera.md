@@ -147,7 +147,7 @@ Comprobantes (26/10/2026): en «Ver cuenta» del admin, arriba quedan «Comproba
 
 Mes y comentario del comprobante (26/10/2026): al subir un comprobante, el residente indica el mes que paga (obligatorio) y puede dejar un comentario (hasta 500 caracteres). `20261026140000_payment_evidence_month_comment.sql` agrega `paid_period` y `comment` y un disparador que crea un aviso interno a cada administrador activo: título «Pago de <mes> · <torre · apto>» y el comentario como texto (sin correo). En «Comprobantes de pago» el admin ve el mes como título pequeño y el comentario; el residente ve el mes en sus comprobantes recibidos.
 
-Historial del admin (26/10/2026): «Ver historial de pagos» es una sola tarjeta de solo lectura con cada pago registrado: mes pagado (del comprobante de la obligación a la que se aplicó; si no hay, el concepto), fecha del pago y enlace al comprobante. Sin anulaciones ni motivos en esa vista.
+Historial del admin (26/10/2026): «Ver historial de pagos» es una sola tarjeta de solo lectura con cada pago registrado: mes pagado (del comprobante que originó ese pago; si no hay, el concepto), fecha del pago y enlace al comprobante. Sin anulaciones ni motivos en esa vista.
 Anular pago: dentro de la tarjeta «Registrar pago», «Anular un pago» permite elegir un pago registrado y escribir el motivo (usa `void_payment`).
 Acuerdos para cualquier apartamento (26/10/2026): la pestaña «Acuerdo de pago» lista todos los apartamentos sin acuerdo activo, estén o no en mora (la base de datos nunca exigió mora).
 
