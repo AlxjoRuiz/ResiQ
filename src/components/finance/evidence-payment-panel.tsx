@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { acceptEvidence, markEvidenceReceived, voidPayment, voidReceivable, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
-import { PaymentForm, type OpenReceivable, type PaymentPrefill } from "@/components/finance/finance-forms";
+import { acceptEvidence, voidPayment, voidReceivable, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
+import { PaymentForm, type OpenReceivable } from "@/components/finance/finance-forms";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { statusPill } from "@/lib/ui/status-tones";
@@ -38,24 +38,12 @@ function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId:
 export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar y registrar pago»
-// registra el pago con la deuda y el valor que eligió el residente. «Revisar en el formulario» marca
-// el comprobante como recibido y llena el formulario para ajustarlo antes de guardar.
+// registra el pago con la deuda y el valor que eligió el residente y lo vincula al comprobante
+// (un comprobante no se puede registrar dos veces). «Registrar pago» es para pagos sin comprobante.
 export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments, voidableReceivables }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[]; voidableReceivables: PostedPayment[] }) {
-  const [prefill, setPrefill] = useState<PaymentPrefill & { key: string }>();
   const [error, setError] = useState<string>();
   const [pendingId, setPendingId] = useState<string>();
   const [, startTransition] = useTransition();
-
-  function receive(evidence: EvidenceRow) {
-    setError(undefined); setPendingId(evidence.id);
-    startTransition(async () => {
-      const result = evidence.receivedAt ? undefined : await markEvidenceReceived(propertyId, unitId, evidence.id);
-      setPendingId(undefined);
-      if (result?.error) { setError(result.error); return; }
-      const outstanding = receivables.find((item) => item.id === evidence.receivableId)?.outstanding ?? 0;
-      if (outstanding > 0) setPrefill({ key: evidence.id, amount: Math.min(evidence.declaredAmount ?? outstanding, outstanding), paidOn: evidence.uploadedDay, reference: `Comprobante: ${evidence.originalName}`.slice(0, 120), receivableId: evidence.receivableId });
-    });
-  }
 
   function accept(evidence: EvidenceRow) {
     setError(undefined); setPendingId(evidence.id);
@@ -78,7 +66,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
           </div>
           {evidence.comment && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-secondary px-3 py-2 text-sm">{evidence.comment}</p>}
           {evidence.receivedAt && <p className="mt-2 text-xs text-muted-foreground">Recibido {evidence.receivedAt}</p>}
-          {!evidence.registered && <div className="mt-3 flex flex-wrap gap-2"><Button type="button" size="sm" disabled={pendingId === evidence.id} onClick={() => accept(evidence)}>{pendingId === evidence.id ? "Registrando…" : "Aceptar y registrar pago"}</Button><Button type="button" size="sm" variant="outline" disabled={pendingId === evidence.id} onClick={() => receive(evidence)}>Revisar en el formulario</Button></div>}
+          {!evidence.registered && <div className="mt-3 flex flex-wrap gap-2"><Button type="button" size="sm" disabled={pendingId === evidence.id} onClick={() => accept(evidence)}>{pendingId === evidence.id ? "Registrando…" : "Aceptar y registrar pago"}</Button></div>}
         </article>)}
         {!evidences.length && <p className="text-sm text-muted-foreground">El residente aún no ha subido comprobantes.</p>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
@@ -86,8 +74,8 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
     </CardContent></Card>
     <Card><CardContent>
       <h2 className="text-lg font-semibold">Registrar pago</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{prefill ? "Datos tomados del comprobante. Revisa el valor antes de guardar." : "Puedes proponer la distribución por antigüedad y revisarla antes de guardar."}</p>
-      <div className="mt-5"><PaymentForm key={prefill?.key ?? "manual"} propertyId={propertyId} unitId={unitId} receivables={receivables} prefill={prefill} /></div>
+      <p className="mt-2 text-sm text-muted-foreground">Para pagos recibidos sin comprobante. Los comprobantes se registran con «Aceptar y registrar pago».</p>
+      <div className="mt-5"><PaymentForm propertyId={propertyId} unitId={unitId} receivables={receivables} /></div>
       <VoidPaymentPicker propertyId={propertyId} unitId={unitId} payments={payments} />
       <VoidReceivablePicker propertyId={propertyId} unitId={unitId} receivables={voidableReceivables} />
     </CardContent></Card>
