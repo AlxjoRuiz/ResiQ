@@ -5,7 +5,7 @@ Alejandro aprobo continuar esta ampliacion el 21 de octubre de 2026. No forma pa
 ## Reglas comunicadas
 
 - Se conservan convocatoria, agenda, documentos, RSVP, representaciones y registro administrativo de asistencia.
-- Antes de iniciar, cada convocado puede plantear dudas. Las dudas y respuestas deben ser visibles para todos los convocados; Administracion debe recibirlas en su panel.
+- ~~Antes de iniciar, cada convocado puede plantear dudas.~~ Retirado por Alejandro el 25/10/2026: los residentes no hacen preguntas en la convocatoria antes de la asamblea. Nunca llego a construirse.
 - Cuando Administracion inicia la asamblea, cada convocado marca su propia llegada desde su perfil, sin codigo. El registro es autodeclarado y no demuestra presencia fisica.
 - Durante la asamblea, Administracion abre preguntas de participacion con respuesta por seleccion o texto, y votaciones. Se muestran sin esperar recarga manual prolongada.
 - Cada convocado tiene un voto por votacion; un poder no agrega automaticamente otro voto. Al cerrar, el resultado se muestra enseguida sin aprobacion posterior.
@@ -15,7 +15,7 @@ Alejandro aprobo continuar esta ampliacion el 21 de octubre de 2026. No forma pa
 ## Orden de entregas
 
 1. Auto-registro de asistencia: migracion y prueba de catalogo, confirmacion de Alejandro en SQL Editor, interfaz y prueba con una asamblea sintetica dirigida solo a cuentas controladas.
-2. Dudas previas publicas para convocados y aviso interno a Administracion.
+2. ~~Dudas previas publicas para convocados y aviso interno a Administracion.~~ Retirada (25/10/2026).
 3. Preguntas de participacion y votaciones en vivo, con bloqueo al cerrar, resultado inmediato, aislamiento entre propiedades y pruebas de concurrencia. El requisito de asistencia y la privacidad del voto individual quedaron confirmados por Alejandro.
 
 ## Entrega 1 preparada, sin publicar
