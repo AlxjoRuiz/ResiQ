@@ -204,3 +204,77 @@ export async function registerAdminAssistant(_: ConciergeState, data: FormData):
   refresh(propertyId);
   return { success: `Auxiliar registrado. Usuario permanente: ${username}. Entrega la contraseña asignada de forma privada; ResiQ no volverá a mostrarla.` };
 }
+
+// Editar, sustituir contraseña y eliminar auxiliares: mismas reglas que portería (27/10/2026).
+async function findAssistant(propertyId: string, recordId: string) {
+  const admin = createAdminClient();
+  const { data: record, error } = await admin.from("admin_assistant_records").select("id,user_id,member_id,document_number,removed_at").eq("id", recordId).eq("property_id", propertyId).maybeSingle();
+  return { admin, record: error || !record || record.removed_at || !record.user_id || !record.member_id ? null : record };
+}
+
+export async function editAdminAssistant(_: ConciergeState, data: FormData): Promise<ConciergeState> {
+  const propertyId = value(data, "propertyId");
+  await requirePropertyAdmin(propertyId);
+  const firstName = value(data, "firstName"), firstSurname = value(data, "firstSurname");
+  const fullName = conciergeFullName(firstName, firstSurname);
+  const documentNumber = value(data, "documentNumber"), birthDate = value(data, "birthDate");
+  const phone = normalizePhone(value(data, "phone")), address = value(data, "address");
+  const vehicles = parseVehicles(value(data, "vehicles")), age = ageOn(birthDate);
+  if (!firstName || !firstSurname || firstName.length > 60 || firstSurname.length > 60) return { error: "Revisa los nombres y apellidos (máximo 60 caracteres cada uno)." };
+  if (!/^\d{5,20}$/u.test(documentNumber)) return { error: "Revisa la cédula: solo números, entre 5 y 20 dígitos." };
+  if (age === null || age < 18 || age > 100) return { error: "Revisa la fecha de nacimiento: el auxiliar debe ser mayor de 18 años." };
+  if (!phone) return { error: "Revisa el teléfono: celular de 10 dígitos que empiece por 3 o número internacional con +." };
+  if (!vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa la dirección y el vehículo (máximo uno, con sus cuatro datos)." };
+  const { admin, record } = await findAssistant(propertyId, value(data, "recordId"));
+  if (!record) return { error: "La ficha ya no está disponible." };
+  const saved = await admin.from("admin_assistant_records").update({ first_name: firstName, first_surname: firstSurname, document_number: documentNumber, birth_date: birthDate, phone_e164: phone, address: address || null, vehicles }).eq("id", record.id).select("id").single();
+  if (saved.error || !saved.data) return { error: "No pudimos guardar los cambios." };
+  await admin.from("profiles").update({ display_name: fullName }).eq("id", record.user_id!);
+  await admin.auth.admin.updateUserById(record.user_id!, { user_metadata: { display_name: fullName } });
+  refresh(propertyId);
+  return { success: "Ficha actualizada. El usuario permanente y el correo de acceso no cambiaron." };
+}
+
+export async function changeAdminAssistantPassword(_: ConciergeState, data: FormData): Promise<ConciergeState> {
+  const propertyId = value(data, "propertyId");
+  await requirePropertyAdmin(propertyId);
+  const password = String(data.get("password") ?? ""), confirmation = String(data.get("confirmation") ?? "");
+  if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
+  if (password.length < 12 || password.length > 128 || !/[a-z]/u.test(password) || !/[A-Z]/u.test(password) || !/\d/u.test(password)) return { error: "Usa entre 12 y 128 caracteres, con mayúscula, minúscula y número." };
+  const { admin, record } = await findAssistant(propertyId, value(data, "recordId"));
+  if (!record) return { error: "El auxiliar no tiene una cuenta activa." };
+  if (password.includes(record.document_number)) return { error: "La contraseña no puede contener la cédula." };
+  const { error } = await admin.auth.admin.updateUserById(record.user_id!, { password });
+  if (error) return { error: "No pudimos sustituir la contraseña." };
+  return { success: "Contraseña sustituida. Entrégala al auxiliar de forma privada; ResiQ no puede mostrar la anterior." };
+}
+
+export async function removeAdminAssistant(_: ConciergeState, data: FormData): Promise<ConciergeState> {
+  const propertyId = value(data, "propertyId");
+  const { user } = await requirePropertyAdmin(propertyId);
+  if (value(data, "confirmation") !== "RETIRAR") return { error: "Escribe RETIRAR para confirmar la baja." };
+  const { admin, record } = await findAssistant(propertyId, value(data, "recordId"));
+  if (!record) return { error: "La ficha ya no está disponible." };
+  if (record.user_id === user.id) return { error: "No puedes eliminar tu propia cuenta." };
+  const { data: member, error: memberError } = await admin.from("property_members").select("id,status,is_admin_assistant").eq("id", record.member_id!).eq("property_id", propertyId).maybeSingle();
+  if (memberError || !member || !member.is_admin_assistant) return { error: "El acceso cambió; revisa la cuenta antes de retirarla." };
+  const [otherMemberships, platformRoles] = await Promise.all([
+    admin.from("property_members").select("id").eq("user_id", record.user_id!).neq("id", member.id).eq("status", "active").limit(1),
+    admin.from("platform_admins").select("id").eq("user_id", record.user_id!).eq("status", "active").limit(1),
+  ]);
+  if (otherMemberships.error || platformRoles.error) return { error: "No pudimos comprobar otros accesos de esta cuenta." };
+  const hasOtherAccess = Boolean(otherMemberships.data?.length || platformRoles.data?.length);
+  // Primero se revoca la membresía: una sesión abierta ya no pasa los controles de miembro activo.
+  if (member.status !== "revoked") {
+    const revoked = await admin.from("property_members").update({ status: "revoked", revoked_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", member.id).eq("property_id", propertyId).select("id").single();
+    if (revoked.error || !revoked.data) return { error: "No pudimos revocar el acceso. La baja no se completó." };
+  }
+  if (!hasOtherAccess) {
+    const banned = await admin.auth.admin.updateUserById(record.user_id!, { ban_duration: "876000h" });
+    if (banned.error) { refresh(propertyId); return { error: "El acceso a ResiQ quedó revocado, pero falta bloquear la cuenta. Intenta de nuevo." }; }
+  }
+  const removed = await admin.from("admin_assistant_records").update({ removed_at: new Date().toISOString(), address: null, vehicles: [] }).eq("id", record.id).select("id").single();
+  if (removed.error || !removed.data) { refresh(propertyId); return { error: "El acceso quedó bloqueado, pero falta marcar la ficha. Intenta de nuevo." }; }
+  refresh(propertyId);
+  return { success: hasOtherAccess ? "Auxiliar retirado. La cuenta conserva otros accesos activos; no se bloqueó globalmente." : "Auxiliar retirado: acceso revocado, cuenta bloqueada y tarjeta retirada." };
+}

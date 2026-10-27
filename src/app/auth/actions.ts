@@ -30,7 +30,7 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
     const admin = createAdminClient();
     const [{ data: account, error: lookupError }, { data: assistant, error: assistantError }] = await Promise.all([
       admin.from("concierge_accounts").select("user_id,email_normalized,status").eq("username", identifier).maybeSingle(),
-      admin.from("admin_assistant_records").select("user_id,email_normalized").eq("username", identifier).maybeSingle(),
+      admin.from("admin_assistant_records").select("user_id,email_normalized").eq("username", identifier).is("removed_at", null).maybeSingle(),
     ]);
     if (lookupError || assistantError || (!assistant && (!account || account.status !== "active"))) {
       logAuthFailure("concierge_lookup", { method: "username", reason: lookupError || assistantError ? "lookup_error" : !account ? "unknown_username" : `account_${account.status}` });
