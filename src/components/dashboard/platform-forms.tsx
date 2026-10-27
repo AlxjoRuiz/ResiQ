@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { setPropertyStatus, setSeasonalDecor, type PlatformState } from "@/app/plataforma/actions";
+import { setPropertyStatus, setSeasonalDecor, setSeasonalTheme, type PlatformState } from "@/app/plataforma/actions";
 import { Button } from "@/components/ui/button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 
@@ -10,6 +10,13 @@ function Result({ state }: { state: PlatformState }) { if (state?.error) return 
 export function SeasonalDecorForm({ enabled }: { enabled: boolean }) {
   const [state, action, pending] = useFormActionState(setSeasonalDecor, undefined as PlatformState);
   return <form onSubmit={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="enabled" value={enabled ? "false" : "true"} /><Button disabled={pending} variant={enabled ? "outline" : "default"}>{pending ? "Guardando…" : enabled ? "Apagar decoración" : "Activar decoración"}</Button><Result state={state} /></form>;
+}
+
+const themeLabels = { christmas: "🎄 Navidad", halloween: "🎃 Halloween" } as const;
+
+export function SeasonalThemeForm({ theme }: { theme: keyof typeof themeLabels }) {
+  const [state, action, pending] = useFormActionState(setSeasonalTheme, undefined as PlatformState);
+  return <form onSubmit={action} className="flex flex-wrap items-center gap-2">{(Object.keys(themeLabels) as (keyof typeof themeLabels)[]).map((key) => <Button key={key} name="theme" value={key} size="sm" variant={key === theme ? "default" : "outline"} aria-pressed={key === theme} disabled={pending}>{themeLabels[key]}</Button>)}<Result state={state} /></form>;
 }
 
 // Suspender pide confirmación centrada con el fondo desenfocado (mismo diseño que desvincular).

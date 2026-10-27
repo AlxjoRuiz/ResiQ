@@ -36,7 +36,18 @@ export async function setSeasonalDecor(_: PlatformState, data: FormData): Promis
   const { error } = await supabase.rpc("platform_set_seasonal_decor", { target_enabled: enabled });
   if (error) return { error: "No pudimos guardar el cambio." };
   revalidatePath("/", "layout");
-  return { success: enabled ? "Decoración de Navidad activada para todos." : "Decoración de Navidad apagada para todos." };
+  return { success: enabled ? "Decoración activada para todos." : "Decoración apagada para todos." };
+}
+
+// Configuración: tema de la decoración (Navidad o Halloween).
+export async function setSeasonalTheme(_: PlatformState, data: FormData): Promise<PlatformState> {
+  const theme = field(data, "theme");
+  if (!["christmas", "halloween"].includes(theme)) return { error: "Tema inválido." };
+  const { supabase } = await requirePlatformAdmin();
+  const { error } = await supabase.rpc("platform_set_seasonal_theme", { target_theme: theme });
+  if (error) return { error: "No pudimos guardar el tema." };
+  revalidatePath("/", "layout");
+  return { success: theme === "halloween" ? "Tema de Halloween elegido." : "Tema de Navidad elegido." };
 }
 
 // Administradores: invitar otro admin a un conjunto o generar de nuevo un enlace de invitación.
