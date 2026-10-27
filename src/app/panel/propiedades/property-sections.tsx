@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
 import { CensusDetail } from "@/components/census/census-detail";
 import { CensusImportForm } from "@/components/census/census-import-form";
 import { CensusUpdateForm } from "@/components/census/census-update-form";
@@ -23,9 +22,9 @@ type Occupant = { member: Member; link: UnitLink };
 type CensusRecord = { id: string; unit_id: string; import_id: string; full_name: string | null; email_normalized: string | null; user_type: string | null; invitation_primary: boolean; invitation_relationship: string | null; cells: unknown };
 type CensusImport = { id: string; headers: unknown };
 type UnitInvitation = { unit_id: string; invitation_id: string; email: string; relationship: string; invitation_status: string; delivery_status: string | null; expires_at: string; link_issued_at: string | null };
-type AdminAssistant = { member_id: string | null; invitation_id: string | null; display_name: string | null; email: string; assistant_status: string; since: string };
+type AdminAssistant = { member_id: string | null; invitation_id: string | null; display_name: string | null; email: string; assistant_status: string; since: string; full_name: string | null; document_number: string | null; birth_date: string | null; phone_e164: string | null; address: string | null; vehicles: unknown };
 const assistantLabels: Record<string, string> = { active: "Activo", suspended: "Suspendido", invited: "Invitación pendiente", expired: "Invitación vencida" };
-type ConciergeAccount = { id: string; member_id: string; username: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; email_normalized: string; address: string | null; photo_path: string | null; vehicles: unknown; status: string; photoUrl?: string | null };
+type ConciergeAccount = { id: string; member_id: string; username: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; email_normalized: string; address: string | null; vehicles: unknown; status: string };
 function ageFor(birthDate: string) { const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE); return Number(today.slice(0, 4)) - Number(birthDate.slice(0, 4)) - (today.slice(5) < birthDate.slice(5) ? 1 : 0); }
 
 function one<T>(value: T | T[] | null): T | null { return Array.isArray(value) ? value[0] ?? null : value; }
@@ -82,7 +81,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
     supabase.from("property_members").select("id,user_id,roles,status,profiles!property_members_user_id_fkey(display_name),unit_memberships(id,relationship,valid_to,units(id,code))").eq("property_id", propertyId).order("joined_at"),
     supabase.from("census_records").select("id,unit_id,import_id,full_name,email_normalized,user_type,invitation_primary,invitation_relationship,cells").eq("property_id", propertyId).limit(CENSUS_MAX_ROWS),
     supabase.from("census_imports").select("id,headers").eq("property_id", propertyId),
-    supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,photo_path,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
+    supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
   ]);
   if (buildingError || memberError || censusError || importError || conciergeError) throw new Error("No se pudieron cargar las torres y sus accesos.");
   const [{ data: invitationData, error: invitationError }, { data: assistantData, error: assistantError }] = await Promise.all([
@@ -112,7 +111,6 @@ export async function PropertyManagementSections({ propertyId, canImport, import
     }
   }
   const conciergeAccounts = (conciergeData ?? []) as ConciergeAccount[];
-  await Promise.all(conciergeAccounts.map(async (account) => { if (account.photo_path) { const { data } = await admin.storage.from("private-documents").createSignedUrl(account.photo_path, 60); account.photoUrl = data?.signedUrl ?? null; } }));
   const newConciergeMemberIds = new Set(conciergeAccounts.map((account) => account.member_id));
   const conciergeMembers = members.filter((member) => member.roles.includes("concierge") && member.status !== "revoked" && !member.roles.includes("administrator") && !newConciergeMemberIds.has(member.id));
   const headersByImport = new Map((importData as CensusImport[] ?? []).map((item) => [item.id, Array.isArray(item.headers) ? item.headers.map(String) : []]));
@@ -152,7 +150,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
       <div className="mt-4 grid gap-4">
         {conciergeAccounts.map((account) => <Card key={account.id}><CardContent>
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{account.full_name}</h3><p className="text-sm text-muted-foreground">Usuario: {account.username}</p><p className="text-sm">Cédula: {maskDocument(account.document_number)} · Edad: {ageFor(account.birth_date)} · Teléfono: {account.phone_e164}</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs">{account.status === "active" && memberStatusById.get(account.member_id) === "active" ? "Activo" : "Inactivo"}</span></div>
-          <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Ver detalles</summary><div className="mt-3 space-y-1 text-sm">{account.photoUrl && <Image unoptimized src={account.photoUrl} alt={`Fotografía de ${account.full_name}`} width={96} height={96} className="h-24 w-24 rounded-lg object-cover" />}<p>Cédula: {account.document_number}</p><p>Fecha de nacimiento: {account.birth_date}</p><p>Correo: {account.email_normalized}</p><p>Dirección: {account.address || "Sin información"}</p><p>Vehículos: {Array.isArray(account.vehicles) ? account.vehicles.length : 0}</p>{Array.isArray(account.vehicles) && account.vehicles.map((vehicle, index) => <p key={index}>{index + 1}. {String(vehicle.type ?? "")} · {String(vehicle.brand ?? "")} · {String(vehicle.model ?? "")} · {String(vehicle.plate ?? "")}</p>)}</div></details>
+          <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Ver detalles</summary><div className="mt-3 space-y-1 text-sm"><p>Cédula: {account.document_number}</p><p>Fecha de nacimiento: {account.birth_date}</p><p>Correo: {account.email_normalized}</p><p>Dirección: {account.address || "Sin información"}</p><p>Vehículos: {Array.isArray(account.vehicles) ? account.vehicles.length : 0}</p>{Array.isArray(account.vehicles) && account.vehicles.map((vehicle, index) => <p key={index}>{index + 1}. {String(vehicle.type ?? "")} · {String(vehicle.brand ?? "")} · {String(vehicle.model ?? "")} · {String(vehicle.plate ?? "")}</p>)}</div></details>
           <ConciergeManagementForms propertyId={propertyId} account={account} />
         </CardContent></Card>)}
         {conciergeMembers.map((member) => <ConciergeCard key={member.id} member={member} propertyId={propertyId} />)}
@@ -165,7 +163,8 @@ export async function PropertyManagementSections({ propertyId, canImport, import
       <Card className="mt-4"><CardContent><details><summary className="cursor-pointer font-semibold">Nuevo auxiliar</summary><div className="mt-5"><InviteAdminAssistantForm propertyId={propertyId} /></div></details></CardContent></Card>
       <div className="mt-4 grid gap-4">
         {assistants.map((assistant) => <Card key={assistant.member_id ?? assistant.invitation_id}><CardContent>
-          <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-semibold">{assistant.display_name ?? "Sin aceptar todavía"}</h3><p className="break-all text-sm text-muted-foreground">{assistant.email}</p></div><span className={`rounded-full px-3 py-1 text-xs ${assistant.assistant_status === "suspended" || assistant.assistant_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{assistantLabels[assistant.assistant_status] ?? assistant.assistant_status}</span></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-semibold">{assistant.full_name ?? assistant.display_name ?? "Sin aceptar todavía"}</h3><p className="break-all text-sm text-muted-foreground">{assistant.email}</p>{assistant.document_number && assistant.birth_date && <p className="text-sm">Cédula: {maskDocument(assistant.document_number)} · Edad: {ageFor(assistant.birth_date)} · Teléfono: {assistant.phone_e164}</p>}</div><span className={`rounded-full px-3 py-1 text-xs ${assistant.assistant_status === "suspended" || assistant.assistant_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{assistantLabels[assistant.assistant_status] ?? assistant.assistant_status}</span></div>
+          {assistant.document_number && <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Ver detalles</summary><div className="mt-3 space-y-1 text-sm"><p>Cédula: {assistant.document_number}</p><p>Fecha de nacimiento: {assistant.birth_date}</p><p>Correo: {assistant.email}</p><p>Dirección: {assistant.address || "Sin información"}</p><p>Vehículos: {Array.isArray(assistant.vehicles) ? assistant.vehicles.length : 0}</p>{Array.isArray(assistant.vehicles) && assistant.vehicles.map((vehicle, index) => <p key={index}>{index + 1}. {String(vehicle.type ?? "")} · {String(vehicle.brand ?? "")} · {String(vehicle.model ?? "")} · {String(vehicle.plate ?? "")}</p>)}</div></details>}
           <div className="mt-4 border-t pt-4">{assistant.invitation_id ? <AdminAssistantInvitationForm propertyId={propertyId} invitationId={assistant.invitation_id} /> : assistant.member_id && <AdminAssistantStatusForm key={assistant.assistant_status} propertyId={propertyId} memberId={assistant.member_id} suspended={assistant.assistant_status === "suspended"} />}</div>
         </CardContent></Card>)}
         {!assistants.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay auxiliares de administración.</p></CardContent></Card>}

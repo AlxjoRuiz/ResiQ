@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { ageOn, normalizePhone, parseVehicles } from "@/lib/concierge/person";
 
 export type ManagementState = { error?: string; success?: string } | undefined;
 
@@ -168,12 +169,16 @@ async function assistantLink(token: string) {
 export async function inviteAdminAssistant(_: AssistantLinkState, formData: FormData): Promise<AssistantLinkState> {
   const propertyId = field(formData, "propertyId");
   const email = field(formData, "email").toLowerCase();
-  if (!propertyId || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Escribe un correo válido." };
+  const firstName = field(formData, "firstName"), firstSurname = field(formData, "firstSurname"), documentNumber = field(formData, "documentNumber");
+  const birthDate = field(formData, "birthDate"), phone = normalizePhone(field(formData, "phone")), address = field(formData, "address");
+  const vehicles = parseVehicles(field(formData, "vehicles")), age = ageOn(birthDate);
+  if (!propertyId || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254 || formData.get("emailVerified") !== "yes") return { error: "Indica un correo real y confirma que pertenece al auxiliar." };
+  if (!firstName || !firstSurname || firstName.length > 60 || firstSurname.length > 60 || !/^[0-9]{5,20}$/.test(documentNumber) || age === null || age < 18 || age > 100 || !phone || !vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa nombres, apellidos, cédula, fecha de nacimiento (mayor de 18 años), teléfono, dirección y vehículo." };
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("invite_admin_assistant", { target_property_id: propertyId, target_email: email });
-  if (error || typeof data !== "string") return { error: error?.message.includes("already_member") ? "Ese correo ya tiene acceso a este conjunto. Si es un auxiliar suspendido, reactívalo desde la lista." : "No pudimos crear la invitación." };
+  const { data, error } = await supabase.rpc("invite_admin_assistant", { target_property_id: propertyId, target_email: email, target_first_name: firstName, target_first_surname: firstSurname, target_document: documentNumber, target_birth_date: birthDate, target_phone: phone, target_address: address, target_vehicles: vehicles });
+  if (error || typeof data !== "string") return { error: error?.message.includes("already_member") ? "Ese correo ya tiene acceso a este conjunto. Si es un auxiliar suspendido, reactívalo desde la lista." : "No pudimos registrar al auxiliar." };
   propertyPaths(propertyId);
-  return { success: `Invitación creada. Comparte el enlace; debe entrar con ${email}. Vence en 7 días.`, link: await assistantLink(data) };
+  return { success: `Auxiliar registrado. Comparte el enlace; debe entrar con ${email}. Vence en 7 días.`, link: await assistantLink(data) };
 }
 
 export async function manageAdminAssistantInvitation(_: AssistantLinkState, formData: FormData): Promise<AssistantLinkState> {
