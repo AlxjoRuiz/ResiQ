@@ -9,7 +9,8 @@ const themes = {
   halloween: ["🎃", "👻", "🕸️", "🍬", "🎃", "👻", "🕸️", "🎃"],
 } as const;
 type Theme = keyof typeof themes;
-const positions = Array.from({ length: 48 }, (_, index) => ({
+// 20 figuras (antes 48): menos animaciones para equipos con poca memoria (27/10/2026).
+const positions = Array.from({ length: 20 }, (_, index) => ({
   left: (index * 37) % 100,
   duration: 14 + (index * 7) % 12,
   delay: -((index * 5) % 20),
@@ -18,7 +19,7 @@ const positions = Array.from({ length: 48 }, (_, index) => ({
 // Navidad: además, Papá Noel en su trineo con renos cruzando el cielo una y otra vez.
 const sleighs = [{ top: 10, duration: 26, delay: 0 }, { top: 46, duration: 32, delay: -16 }];
 // Halloween: además, murciélagos que cruzan la pantalla volando de lado a lado.
-const bats = Array.from({ length: 14 }, (_, index) => ({
+const bats = Array.from({ length: 10 }, (_, index) => ({
   top: 5 + (index * 13) % 85,
   duration: 16 + (index * 5) % 10,
   delay: -((index * 7) % 22),

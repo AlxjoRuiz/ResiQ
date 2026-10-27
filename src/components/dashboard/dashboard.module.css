@@ -100,9 +100,8 @@
    al pasar el cursor crecen un poco (27/10/2026). */
 .panelSurface > main [data-slot="card"].glassCard, .glassCard {
   border: 1.5px solid rgb(59 130 246 / 45%);
-  background: linear-gradient(145deg, rgb(219 234 254 / 72%), rgb(239 246 255 / 48%));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* Fondo fijo (sin difuminado) para que no pese en equipos lentos; se ve igual de claro. */
+  background: linear-gradient(145deg, #dbeafe, #eff6ff);
   box-shadow: 0 14px 40px rgb(29 78 216 / 12%), inset 0 1px 0 rgb(255 255 255 / 75%);
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
@@ -111,7 +110,6 @@
 .panelSurface > main [data-slot="card"].glassHover:hover { transform: scale(1.03); border-color: rgb(29 78 216 / 65%); box-shadow: 0 18px 48px rgb(29 78 216 / 20%), inset 0 1px 0 rgb(255 255 255 / 80%); }
 @media (prefers-reduced-motion: reduce) { .panelSurface > main [data-slot="card"].glassHover:hover { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .panelSurface > main [data-slot="card"].glassCard { transition: none; } .panelSurface > main a:hover > [data-slot="card"].glassCard, .panelSurface > main a:focus-visible > [data-slot="card"].glassCard { transform: none; } }
-@supports not (backdrop-filter: blur(1px)) { .panelSurface > main [data-slot="card"].glassCard { background: #eaf2ff; } }
 .panelSurface > main [data-slot="card"] { border-radius: 22px; border-color: #e1e5ec; box-shadow: 0 4px 20px #344a3406; }
 @media (max-width: 560px) { .moduleContent header { gap: 14px; } .moduleContent input, .moduleContent select, .moduleContent textarea { max-width: 100%; } .panelSurface > main:not(.canvas) { border-radius: 22px; } }
 .communityLink { padding: 10px 12px; border-radius: 12px; transition: background-color 150ms ease, color 150ms ease; }
