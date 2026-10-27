@@ -27,6 +27,16 @@ export function PropertyForm({ property }: { property: { id: string; name: strin
   </form>;
 }
 
+// Solo la dirección del conjunto; nombre, ciudad y zona horaria se envían sin cambios.
+export function PropertyAddressForm({ property }: { property: { id: string; name: string; address: string | null; city: string | null; timezone: string } }) {
+  const [state, action, pending] = useFormActionState(updateProperty, undefined as ManagementState);
+  return <form onSubmit={action} className="grid gap-4">
+    <input type="hidden" name="propertyId" value={property.id} /><input type="hidden" name="name" value={property.name} /><input type="hidden" name="city" value={property.city ?? ""} /><input type="hidden" name="timezone" value={property.timezone} />
+    <label className={labelClass}>Dirección<input className={inputClass} name="address" defaultValue={property.address ?? ""} maxLength={180} placeholder="Calle 123 # 45-67" /></label>
+    <div className="flex flex-wrap items-center gap-3"><Button disabled={pending}>{pending ? "Guardando…" : "Guardar dirección"}</Button><Result state={state} /></div>
+  </form>;
+}
+
 export function BuildingForm({ propertyId, building }: { propertyId: string; building: { id: string; name: string; code: string; active: boolean } }) {
   const [state, action, pending] = useFormActionState(saveBuilding, undefined as ManagementState);
   return <form onSubmit={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_8rem_9rem_auto] lg:items-end">
