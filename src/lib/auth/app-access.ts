@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // «suspended»: todas las comunidades de la cuenta están suspendidas; «suspended_admin», además, la
-// cuenta administra alguna de ellas (recibe el aviso de pago).
-export type AppAccessStatus = "authorized" | "unauthorized" | "suspended" | "suspended_admin" | "error";
+// cuenta administra alguna de ellas (recibe el aviso de pago). «assistant_suspended»: la cuenta es
+// un auxiliar de administración con el acceso suspendido por la administración del conjunto.
+export type AppAccessStatus = "authorized" | "unauthorized" | "suspended" | "suspended_admin" | "assistant_suspended" | "error";
 type PropertyStatusRow = { property_id: string; property_status: string; roles: string[] | null };
 
 /** A session may enter ResiQ only through an active membership in an active property, or a platform role. */
@@ -19,17 +20,20 @@ export async function getAppAccessStatus(supabase: SupabaseClient, userId: strin
   if (rows.some((row) => row.property_status === "active")) return "authorized";
   const suspended = rows.filter((row) => row.property_status === "suspended");
   if (suspended.length) return suspended.some((row) => (row.roles ?? []).includes("administrator")) ? "suspended_admin" : "suspended";
-  return "unauthorized";
+  const assistant = await supabase.rpc("has_suspended_assistant_access");
+  if (assistant.error) return "error";
+  return assistant.data === true ? "assistant_suspended" : "unauthorized";
 }
 
 // Código de error de /login para cada estado sin acceso.
 export function accessErrorCode(status: AppAccessStatus) {
-  return status === "unauthorized" ? "no_invitation" : status === "suspended" || status === "suspended_admin" ? status : "access_check";
+  return status === "unauthorized" ? "no_invitation" : status === "suspended" || status === "suspended_admin" || status === "assistant_suspended" ? status : "access_check";
 }
 
 export const accessErrorMessages: Record<string, string> = {
   no_invitation: "No has sido invitado o aún no has aceptado tu invitación. Si recibiste un enlace, ábrelo y acéptalo con el correo invitado.",
   suspended: "No tienes acceso a ResiQ en este momento porque tu conjunto está suspendido. Comunícate con la administración de tu conjunto.",
   suspended_admin: "Por falta de pago, tu conjunto no tiene acceso a ResiQ. Comunícate con nosotros para ponerte al día y reactivar el servicio.",
+  assistant_suspended: "Tu acceso como auxiliar de administración está suspendido. Comunícate con la administración de tu conjunto para reactivarlo.",
   access_check: "No pudimos verificar tu acceso. Intenta nuevamente.",
 };

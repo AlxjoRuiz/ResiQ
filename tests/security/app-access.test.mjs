@@ -48,6 +48,14 @@ test("a suspended property blocks its members; admins get the payment notice", a
   assert.equal(await getAppAccessStatus(mixed, "user-1"), "authorized");
 });
 
+test("a suspended admin assistant gets its own notice, not the uninvited one", async () => {
+  const assistant = client({ platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [], error: null }, has_suspended_assistant_access: { data: true, error: null } });
+  assert.equal(await getAppAccessStatus(assistant, "user-1"), "assistant_suspended");
+  assert.equal(accessErrorCode("assistant_suspended"), "assistant_suspended");
+  const uninvited = client({ platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [], error: null }, has_suspended_assistant_access: { data: false, error: null } });
+  assert.equal(await getAppAccessStatus(uninvited, "user-1"), "unauthorized");
+});
+
 test("a failed access lookup does not turn into an authorization", async () => {
   const unavailable = client({ platform_admins: { data: null, error: new Error("unavailable") } });
   assert.equal(await getAppAccessStatus(unavailable, "user-1"), "error");
