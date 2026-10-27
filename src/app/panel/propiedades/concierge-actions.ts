@@ -166,7 +166,13 @@ export async function registerAdminAssistant(_: ConciergeState, data: FormData):
   const vehicles = parseVehicles(value(data, "vehicles"));
   const age = ageOn(birthDate);
   if (!expectedUsername || username !== expectedUsername) return { error: "Escribe el usuario con primer nombre, primer apellido y los dos últimos dígitos de la cédula, en minúsculas y sin espacios ni tildes." };
-  if (!firstName || !firstSurname || firstName.length > 60 || firstSurname.length > 60 || fullName.length > 120 || age === null || age < 18 || age > 100 || !phone || !vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa nombres, apellidos, cédula, fecha de nacimiento (mayor de 18 años), teléfono, dirección y vehículo." };
+  // Un mensaje por dato, para que la administración sepa exactamente qué corregir.
+  if (!firstName || !firstSurname || firstName.length > 60 || firstSurname.length > 60 || fullName.length > 120) return { error: "Revisa los nombres y apellidos (máximo 60 caracteres cada uno)." };
+  if (age === null) return { error: "Revisa la fecha de nacimiento." };
+  if (age < 18 || age > 100) return { error: `El auxiliar debe ser mayor de 18 años; con esa fecha de nacimiento tendría ${age}.` };
+  if (!phone) return { error: "Revisa el teléfono: escribe un celular de 10 dígitos que empiece por 3 (ej. 3001234567) o un número internacional con + y código de país." };
+  if (address.length > 180) return { error: "La dirección puede tener máximo 180 caracteres." };
+  if (!vehicles || vehicles.length > 1) return { error: "Revisa el vehículo: completa tipo, marca, modelo y placa, o déjalos todos vacíos." };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/u.test(email) || email.length > 254 || data.get("emailVerified") !== "yes") return { error: "Indica un correo real y confirma que pertenece al auxiliar." };
   if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
   if (password.length < 12 || password.length > 128 || !/[a-z]/u.test(password) || !/[A-Z]/u.test(password) || !/\d/u.test(password) || password.includes(documentNumber)) return { error: "La contraseña debe tener de 12 a 128 caracteres, mayúscula, minúscula y número; no puede contener la cédula." };
