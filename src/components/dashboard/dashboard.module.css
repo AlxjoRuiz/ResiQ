@@ -20,7 +20,8 @@
 /* Al pasar el cursor el botón se agranda un poco y se rellena de azul. */
 .navigation a:hover, .navigation .activeLink:hover { transform: scale(1.04); background: #1d4ed8; color: #ffffff; }
 @media (prefers-reduced-motion: reduce) { .navigation a { transition: none; } }
-.navigation .activeLink { background: white; color: #000000; font-weight: 600; box-shadow: 0 3px 12px #38513c08; }
+/* Opción seleccionada en azul con letra blanca (27/10/2026). */
+.navigation .activeLink { background: #1d4ed8; color: #ffffff; font-weight: 600; box-shadow: 0 3px 12px rgb(29 78 216 / 25%); }
 .communityLink { margin-top: auto; padding: 28px 12px 0; font-size: 13px; color: #515b6d; }
 .content { min-width: 0; padding: 20px 24px 28px; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid #e1e5ec; }
