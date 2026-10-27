@@ -34,13 +34,19 @@
   100% { transform: translate3d(0, 0, 0); }
 }
 /* Trineo de Papá Noel (Navidad): cruza de derecha a izquierda con los renos adelante, en ondas suaves. */
-.sleigh { position: absolute; left: 0; font-size: 18px; line-height: 1; white-space: nowrap; letter-spacing: -2px; animation-name: sleighRide; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
+.sleighArt { display: block; overflow: visible; }
+/* Patas de los renos: los pares cruzados se mueven en sentido contrario, como al galopar. */
+.legA, .legB { transform-box: fill-box; transform-origin: 50% 0; animation: gallop 0.36s ease-in-out infinite alternate; }
+.legB { animation-name: gallopBack; }
+@keyframes gallop { from { transform: rotate(28deg); } to { transform: rotate(-28deg); } }
+@keyframes gallopBack { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
+.sleigh { position: absolute; left: 0; line-height: 0; animation-name: sleighRide; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
 @keyframes sleighRide {
   0% { transform: translate3d(calc(100vw + 40px), 0, 0) rotate(-4deg); }
   25% { transform: translate3d(70vw, -5vh, 0) rotate(3deg); }
   50% { transform: translate3d(42vw, 2vh, 0) rotate(-4deg); }
   75% { transform: translate3d(15vw, -4vh, 0) rotate(3deg); }
-  100% { transform: translate3d(-160px, 0, 0) rotate(-4deg); }
+  100% { transform: translate3d(-200px, 0, 0) rotate(-4deg); }
 }
 /* Quien pide menos movimiento ve las figuras quietas, repartidas por el fondo, sin trineo ni murciélagos. */
 @media (prefers-reduced-motion: reduce) { .item { animation: none; top: var(--rest-top); } .bat, .sleigh { display: none; } }
