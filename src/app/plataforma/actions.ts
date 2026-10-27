@@ -26,3 +26,27 @@ export async function createPlatformProperty(_: CreatePropertyState, data: FormD
   revalidatePath("/panel");
   return { success: `Conjunto «${name}» creado. Comparte este enlace con el administrador; debe entrar con ${email}. Vence en 7 días.`, link: `${origin}/invitacion?token=${encodeURIComponent(token)}` };
 }
+
+export type PlatformState = { error?: string; success?: string } | undefined;
+
+// Configuración: prende o apaga la decoración de Navidad para todos.
+export async function setSeasonalDecor(_: PlatformState, data: FormData): Promise<PlatformState> {
+  const enabled = field(data, "enabled") === "true";
+  const { supabase } = await requirePlatformAdmin();
+  const { error } = await supabase.rpc("platform_set_seasonal_decor", { target_enabled: enabled });
+  if (error) return { error: "No pudimos guardar el cambio." };
+  revalidatePath("/", "layout");
+  return { success: enabled ? "Decoración de Navidad activada para todos." : "Decoración de Navidad apagada para todos." };
+}
+
+// Planes: ciclo de cobro y fecha hasta la que el conjunto está pago.
+export async function setPropertyPlan(_: PlatformState, data: FormData): Promise<PlatformState> {
+  const propertyId = field(data, "propertyId"), cycle = field(data, "cycle"), paidUntil = field(data, "paidUntil");
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId) || !["monthly", "annual"].includes(cycle)) return { error: "Datos del plan inválidos." };
+  if (paidUntil && !/^\d{4}-\d{2}-\d{2}$/.test(paidUntil)) return { error: "Fecha inválida." };
+  const { supabase } = await requirePlatformAdmin();
+  const { error } = await supabase.rpc("platform_set_property_plan", { target_property_id: propertyId, target_cycle: cycle, target_paid_until: paidUntil || null });
+  if (error) return { error: "No pudimos guardar el plan." };
+  revalidatePath("/plataforma", "layout");
+  return { success: "Plan guardado." };
+}

@@ -3,7 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { DashboardModules, MetricCard, type DashboardModule } from "@/components/dashboard/role-dashboard";
 
 const modules: DashboardModule[] = [
-  { title: "Propiedades", description: "Crea conjuntos nuevos con la invitación de su administrador.", icon: Building2, href: "/plataforma/propiedades" }, { title: "Administradores", description: "Asigna administradores iniciales mediante procesos auditados.", icon: ShieldCheck }, { title: "Usuarios", description: "Consulta métricas globales sin acceder a datos privados operativos.", icon: UsersRound }, { title: "Configuración", description: "Administra parámetros globales de la plataforma.", icon: Settings }, { title: "Planes", description: "Prepara límites comerciales sin activar facturación automática.", icon: WalletCards }, { title: "Métricas", description: "Consulta indicadores agregados de operación.", icon: ChartNoAxesCombined },
+  { title: "Propiedades", description: "Crea conjuntos nuevos con la invitación de su administrador.", icon: Building2, href: "/plataforma/propiedades" },
+  { title: "Administradores", description: "Consulta los administradores de cada conjunto y las invitaciones pendientes.", icon: ShieldCheck, href: "/plataforma/administradores" },
+  { title: "Usuarios", description: "Cifras de cuentas activas por conjunto, sin datos personales.", icon: UsersRound, href: "/plataforma/usuarios" },
+  { title: "Configuración", description: "Activa o apaga la decoración de Navidad para todos.", icon: Settings, href: "/plataforma/configuracion" },
+  { title: "Planes", description: "Plan mensual o anual de cada conjunto y hasta cuándo está pago.", icon: WalletCards, href: "/plataforma/planes" },
+  { title: "Métricas", description: "Uso por conjunto, cuentas activas y correos de los últimos 30 días.", icon: ChartNoAxesCombined, href: "/plataforma/metricas" },
 ];
 
 export async function PlatformOverview({ supabase }: { supabase: SupabaseClient }) {

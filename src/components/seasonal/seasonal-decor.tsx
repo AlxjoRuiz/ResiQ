@@ -1,4 +1,4 @@
-import { SEASONAL_DECOR_ENABLED } from "@/lib/ui/seasonal";
+import { createClient } from "@/lib/supabase/server";
 import styles from "./seasonal.module.css";
 
 // Decoración de Navidad: Papá Noel, renos, copos de nieve y árboles cayendo por el fondo blanco a
@@ -13,8 +13,11 @@ const items = Array.from({ length: 48 }, (_, index) => ({
   restTop: (index * 23) % 95,
 }));
 
-export function SeasonalDecor() {
-  if (!SEASONAL_DECOR_ENABLED) return null;
+// Se activa o apaga para todos desde Plataforma → Configuración (platform_settings).
+export async function SeasonalDecor() {
+  const supabase = await createClient();
+  const { data: enabled } = await supabase.rpc("get_seasonal_decor");
+  if (enabled !== true) return null;
   return <div aria-hidden="true" className={styles.layer}>
     {items.map((item, index) => <span key={index} className={styles.item} style={{ left: `${item.left}%`, animationDuration: `${item.duration}s`, animationDelay: `${item.delay}s`, ["--rest-top" as string]: `${item.restTop}vh` }}>{item.figure}</span>)}
   </div>;
