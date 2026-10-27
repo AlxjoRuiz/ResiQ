@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { type ReservationAmenity } from "@/components/reservations/reservation-forms";
 import { ReservationBooking } from "@/components/reservations/reservation-booking";
 import { type AvailabilityInterval } from "@/components/reservations/availability-calendar";
@@ -21,6 +21,9 @@ export default async function NewReservationPage({ params, searchParams }: {
   const requested = await searchParams;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
   if (!membership.roles.includes("member")) notFound();
+  // Con la mora bloqueando, el formulario no se muestra: vuelve a Reservas con el aviso abierto.
+  const { data: blockedDays } = await supabase.rpc("get_reservation_debt_block", { target_property_id: propertyId });
+  if (typeof blockedDays === "number") redirect(`/panel/propiedades/${propertyId}/reservas?mora=1`);
   const [{ data: rawAmenities }, { data: links }] = await Promise.all([
     supabase.from("amenities").select("id,name,description,capacity,requires_approval,rules,slot_minutes,amenity_hours(weekday,opens_at,closes_at)").eq("property_id", propertyId).eq("status", "active").order("name"),
     supabase.from("unit_memberships").select("units(id,code,buildings(name))").eq("property_id", propertyId).eq("member_id", membership.id).is("valid_to", null),

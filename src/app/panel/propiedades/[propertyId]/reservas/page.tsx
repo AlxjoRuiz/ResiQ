@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CancelReservationForm, DecisionForm } from "@/components/reservations/reservation-forms";
+import { NewReservationButton } from "@/components/reservations/new-reservation-button";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { reservationStatusLabel } from "@/lib/reservations/constants";
 
@@ -26,15 +27,18 @@ function one<T>(value: T | T[] | null) { return Array.isArray(value) ? value[0] 
 
 export default async function ReservationsPage({ params, searchParams }: {
   params: Promise<{ propertyId: string }>;
-  searchParams: Promise<{ created?: string; status?: string; zone?: string }>;
+  searchParams: Promise<{ created?: string; status?: string; zone?: string; mora?: string }>;
 }) {
   const { propertyId } = await params;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
   await supabase.rpc("refresh_reservations", { target_property_id: propertyId });
+  const filters = await searchParams;
   const administrator = membership.roles.includes("administrator");
   const concierge = membership.roles.includes("concierge");
   const resident = membership.roles.includes("member");
   let rows: DisplayRow[] = [];
+  // Días de mora que bloquean al residente; null si puede reservar.
+  const blockedDays = resident ? ((await supabase.rpc("get_reservation_debt_block", { target_property_id: propertyId })).data as number | null) ?? null : null;
 
   if (administrator || concierge) {
     const from = new Date(); from.setDate(from.getDate() - 30);
@@ -75,7 +79,6 @@ export default async function ReservationsPage({ params, searchParams }: {
   }
 
   rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id.localeCompare(a.id));
-  const filters = await searchParams;
   const statuses = new Set(["pending", "approved", "rejected", "cancelled", "expired", "completed"]);
   const selectedStatus = filters.status && statuses.has(filters.status) ? filters.status : "all";
   const zones = [...new Set(rows.map((row) => row.amenity))].sort((a, b) => a.localeCompare(b, "es"));
@@ -96,7 +99,7 @@ export default async function ReservationsPage({ params, searchParams }: {
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Reservas</h1>
         <p className="mt-2 text-sm text-muted-foreground">{administrator ? "Aprueba solicitudes y consulta la agenda completa." : concierge ? "Consulta la agenda operativa de la propiedad." : "Consulta y administra tus propias reservas."}</p>
       </div>
-      {resident && <Button asChild><Link href={`/panel/propiedades/${propertyId}/reservas/nueva`}>Nueva reserva</Link></Button>}
+      {resident && <NewReservationButton propertyId={propertyId} blockedDays={blockedDays} initiallyOpen={filters.mora === "1"} />}
     </header>
     {created && <p role="status" className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-primary">La reserva fue creada correctamente.</p>}
     {administrator && pendingCount > 0 && <p role="status" className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">Tienes {pendingCount} {pendingCount === 1 ? "solicitud pendiente" : "solicitudes pendientes"} de respuesta.{urgentCount > 0 ? ` ${urgentCount} ${urgentCount === 1 ? "vence" : "vencen"} en menos de 2 horas.` : ""} Usa el filtro «Pendientes» para revisarlas.</p>}
