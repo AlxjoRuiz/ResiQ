@@ -75,10 +75,9 @@ export async function voidPayment(_: FinanceState, data: FormData): Promise<Fina
 }
 
 export async function updateFinancePolicy(_: FinanceState, data: FormData): Promise<FinanceState> {
-  const propertyId=field(data,"propertyId"),days=Number(field(data,"minimumOverdueDays")),restrict=data.get("restrictReservations")==="on",confirmed=data.get("balancesConfirmed")==="on";
+  const propertyId=field(data,"propertyId"),days=Number(field(data,"minimumOverdueDays"));
   if(!uuidPattern.test(propertyId)||!Number.isInteger(days)||days<0||days>3650)return{error:"Configura un número de días válido."};
-  if(restrict&&!confirmed)return{error:"Confirma que los saldos vigentes ya fueron cargados antes de activar el bloqueo."};
-  const supabase=await createClient();const result=await supabase.rpc("update_finance_policy",{target_property_id:propertyId,target_restrict:restrict,target_minimum_overdue_days:days});if(result.error)return{error:friendlyError(result.error.message)};
+  const supabase=await createClient();const result=await supabase.rpc("update_finance_policy",{target_property_id:propertyId,target_restrict:true,target_minimum_overdue_days:days});if(result.error)return{error:friendlyError(result.error.message)};
   refreshFinance(propertyId);return{success:"Política de mora actualizada."};
 }
 
