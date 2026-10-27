@@ -6,7 +6,7 @@ import styles from "./seasonal.module.css";
 // fijas para que el servidor y el navegador muestren lo mismo.
 const themes = {
   christmas: ["🎅", "🦌", "❄️", "🎄", "❄️", "🦌", "❄️", "🎄"],
-  halloween: ["🎃", "🦇", "👻", "🕸️", "🎃", "🦇", "🍬", "👻"],
+  halloween: ["🎃", "👻", "🕸️", "🍬", "🎃", "👻", "🕸️", "🎃"],
 } as const;
 type Theme = keyof typeof themes;
 const positions = Array.from({ length: 48 }, (_, index) => ({
@@ -18,8 +18,8 @@ const positions = Array.from({ length: 48 }, (_, index) => ({
 // Navidad: además, Papá Noel en su trineo con renos cruzando el cielo una y otra vez.
 const sleighs = [{ top: 10, duration: 26, delay: 0 }, { top: 46, duration: 32, delay: -16 }];
 // Halloween: además, murciélagos que cruzan la pantalla volando de lado a lado.
-const bats = Array.from({ length: 7 }, (_, index) => ({
-  top: 8 + (index * 13) % 80,
+const bats = Array.from({ length: 14 }, (_, index) => ({
+  top: 5 + (index * 13) % 85,
   duration: 16 + (index * 5) % 10,
   delay: -((index * 7) % 22),
   reverse: index % 2 === 1,
