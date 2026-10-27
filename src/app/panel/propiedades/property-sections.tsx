@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CensusDetail } from "@/components/census/census-detail";
 import { CensusImportForm } from "@/components/census/census-import-form";
@@ -139,7 +140,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
 
   return <>
     <Card className="mt-6"><CardContent className="p-3 sm:p-6">
-      <section aria-labelledby="importar-unidades"><h2 id="importar-unidades" className="text-xl font-semibold">{canImport ? "Importar unidades desde Excel" : "Actualizar censo desde Excel"}</h2><p className="mb-5 mt-1 text-sm text-muted-foreground">{canImport ? "Importa un archivo Excel para crear automáticamente las torres, apartamentos y registrar su información." : "Sube el Excel con los datos actualizados del censo."}</p>{imported && <p role="status" className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900">Importación completada. Se creó una invitación por apartamento, retenida en modo de prueba: no se envió ningún correo ni se concedió acceso.</p>}{canImport ? <CensusImportForm propertyId={propertyId} /> : <CensusUpdateForm propertyId={propertyId} />}</section>
+      <section aria-labelledby="importar-unidades"><div className="flex flex-wrap items-start justify-between gap-3"><h2 id="importar-unidades" className="text-xl font-semibold">{canImport ? "Importar unidades desde Excel" : "Actualizar censo desde Excel"}</h2>{!canImport && <Button asChild variant="outline" size="sm"><a href={`/api/census/export/${propertyId}`} download>Descargar censo</a></Button>}</div><p className="mb-5 mt-1 text-sm text-muted-foreground">{canImport ? "Importa un archivo Excel para crear automáticamente las torres, apartamentos y registrar su información." : "Sube el Excel con los datos actualizados del censo."}</p>{imported && <p role="status" className="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900">Importación completada. Se creó una invitación por apartamento, retenida en modo de prueba: no se envió ningún correo ni se concedió acceso.</p>}{canImport ? <CensusImportForm propertyId={propertyId} /> : <CensusUpdateForm propertyId={propertyId} />}</section>
       <section id="apartamentos" className="mt-8 scroll-mt-6 border-t pt-8"><h2 className="text-xl font-semibold">Torres de la propiedad</h2><p className="mt-1 text-sm text-muted-foreground">Abre una torre y después un apartamento para consultar cada respuesta importada y sus vinculaciones, sin mezclar personas.</p>
         <div className="mt-4"><PropertyUnitExplorer towers={explorerTowers} /></div>
       </section>
