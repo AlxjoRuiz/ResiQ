@@ -126,7 +126,8 @@ export async function selfCheckInAssembly(_: AssemblyActionState, data: FormData
   return { success: "Tu asistencia quedó registrada." };
 }
 
-// Votaciones en vivo: Administración abre y cierra; vota quien marcó asistencia.
+// Votaciones en vivo: Administración abre y cierra; vota quien marcó asistencia. No recargan la
+// página: la sección de votaciones vuelve a leer solo sus datos (LiveVotes).
 export async function openAssemblyVote(_: AssemblyActionState, data: FormData): Promise<AssemblyActionState> {
   const propertyId = field(data, "propertyId"), assemblyId = field(data, "assemblyId"), question = field(data, "question");
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(assemblyId)) return { error: "Asamblea inválida." };
@@ -135,7 +136,6 @@ export async function openAssemblyVote(_: AssemblyActionState, data: FormData): 
   if (!membership.roles.includes("administrator")) return { error: "Solo Administración puede abrir votaciones." };
   const { error } = await supabase.rpc("open_assembly_vote", { target_assembly_id: assemblyId, target_question: question });
   if (error) return { error: friendlyError(error.message) };
-  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`);
   return { success: "Votación abierta." };
 }
 
@@ -146,7 +146,6 @@ export async function closeAssemblyVote(_: AssemblyActionState, data: FormData):
   if (!membership.roles.includes("administrator")) return { error: "Solo Administración puede cerrar votaciones." };
   const { error } = await supabase.rpc("close_assembly_vote", { target_vote_id: voteId });
   if (error) return { error: friendlyError(error.message) };
-  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`);
   return { success: "Votación cerrada. Los convocados ya ven los totales." };
 }
 
@@ -158,7 +157,6 @@ export async function castAssemblyVote(_: AssemblyActionState, data: FormData): 
   if (!membership.roles.includes("member")) return { error: "Solo los convocados pueden votar." };
   const { error } = await supabase.rpc("cast_assembly_vote", { target_vote_id: voteId, target_choice: choice });
   if (error) return { error: friendlyError(error.message) };
-  revalidatePath(`/panel/propiedades/${propertyId}/asambleas/${assemblyId}`);
   return { success: "Tu voto quedó registrado." };
 }
 
