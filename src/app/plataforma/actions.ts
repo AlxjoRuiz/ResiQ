@@ -39,6 +39,17 @@ export async function setSeasonalDecor(_: PlatformState, data: FormData): Promis
   return { success: enabled ? "Decoración de Navidad activada para todos." : "Decoración de Navidad apagada para todos." };
 }
 
+// Propiedades: suspender o reactivar un conjunto (no borra datos).
+export async function setPropertyStatus(_: PlatformState, data: FormData): Promise<PlatformState> {
+  const propertyId = field(data, "propertyId"), status = field(data, "status");
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId) || !["active", "suspended"].includes(status)) return { error: "Datos inválidos." };
+  const { supabase } = await requirePlatformAdmin();
+  const { error } = await supabase.rpc("platform_set_property_status", { target_property_id: propertyId, target_status: status });
+  if (error) return { error: "No pudimos cambiar el estado del conjunto." };
+  revalidatePath("/", "layout");
+  return { success: status === "suspended" ? "Conjunto suspendido." : "Conjunto reactivado." };
+}
+
 // Planes: ciclo de cobro y fecha hasta la que el conjunto está pago.
 export async function setPropertyPlan(_: PlatformState, data: FormData): Promise<PlatformState> {
   const propertyId = field(data, "propertyId"), cycle = field(data, "cycle"), paidUntil = field(data, "paidUntil");
