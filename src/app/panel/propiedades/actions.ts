@@ -28,6 +28,8 @@ export async function updateProperty(_: ManagementState, formData: FormData): Pr
   const { error } = await supabase.rpc("update_property_details", { target_property_id: propertyId, target_name: name, target_address: address, target_city: city, target_timezone: timezone });
   if (error) return { error: databaseError(error.code) };
   propertyPaths(propertyId);
+  // El nombre aparece en todos los módulos del conjunto.
+  revalidatePath(`/panel/propiedades/${propertyId}`, "layout");
   return { success: "Información de la propiedad actualizada." };
 }
 

@@ -26,7 +26,7 @@ export default async function PropertyManagementPage({ params, searchParams }: {
     <section id="direccion" className="mt-10 scroll-mt-6">
       <h2 className="text-2xl font-semibold">Dirección del conjunto</h2>
       <p className="mt-1 text-sm text-muted-foreground">La dirección de {property.name}.</p>
-      <Card className="mt-4"><CardContent><PropertyAddressForm key={property.address ?? ""} property={property} /></CardContent></Card>
+      <Card className="mt-4"><CardContent><PropertyAddressForm key={`${property.name}|${property.address ?? ""}|${property.city ?? ""}`} property={property} /></CardContent></Card>
     </section>
   </main>;
 }

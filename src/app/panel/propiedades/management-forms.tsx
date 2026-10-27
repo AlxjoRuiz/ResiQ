@@ -27,13 +27,15 @@ export function PropertyForm({ property }: { property: { id: string; name: strin
   </form>;
 }
 
-// Solo la dirección del conjunto; nombre, ciudad y zona horaria se envían sin cambios.
+// Nombre, dirección y ciudad del conjunto; la zona horaria se envía sin cambios.
 export function PropertyAddressForm({ property }: { property: { id: string; name: string; address: string | null; city: string | null; timezone: string } }) {
   const [state, action, pending] = useFormActionState(updateProperty, undefined as ManagementState);
-  return <form onSubmit={action} className="grid gap-4">
-    <input type="hidden" name="propertyId" value={property.id} /><input type="hidden" name="name" value={property.name} /><input type="hidden" name="city" value={property.city ?? ""} /><input type="hidden" name="timezone" value={property.timezone} />
+  return <form onSubmit={action} className="grid gap-4 md:grid-cols-2">
+    <input type="hidden" name="propertyId" value={property.id} /><input type="hidden" name="timezone" value={property.timezone} />
+    <label className={`${labelClass} md:col-span-2`}>Nombre del conjunto<input className={inputClass} name="name" defaultValue={property.name} required minLength={2} maxLength={120} /></label>
     <label className={labelClass}>Dirección<input className={inputClass} name="address" defaultValue={property.address ?? ""} maxLength={180} placeholder="Calle 123 # 45-67" /></label>
-    <div className="flex flex-wrap items-center gap-3"><Button disabled={pending}>{pending ? "Guardando…" : "Guardar dirección"}</Button><Result state={state} /></div>
+    <label className={labelClass}>Ciudad<input className={inputClass} name="city" defaultValue={property.city ?? ""} maxLength={80} placeholder="Bogotá" /></label>
+    <div className="flex flex-wrap items-center gap-3 md:col-span-2"><Button disabled={pending}>{pending ? "Guardando…" : "Guardar datos"}</Button><Result state={state} /></div>
   </form>;
 }
 
