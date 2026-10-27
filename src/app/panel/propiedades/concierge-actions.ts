@@ -5,45 +5,11 @@ import { randomUUID } from "node:crypto";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { conciergeFullName, conciergeUsername } from "@/lib/concierge/identity";
-import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
+import { ageOn, normalizePhone, parseVehicles } from "@/lib/concierge/person";
 
 export type ConciergeState = { error?: string; success?: string } | undefined;
-type Vehicle = { type: string; brand: string; model: string; plate: string };
 
 function value(data: FormData, key: string) { return String(data.get(key) ?? "").trim(); }
-function normalizePhone(raw: string) {
-  const clean = raw.replace(/[\s()-]/gu, "");
-  const phone = /^3\d{9}$/u.test(clean) ? `+57${clean}` : clean;
-  return /^\+[1-9]\d{7,14}$/u.test(phone) ? phone : null;
-}
-function ageOn(date: string, today = new Date()) {
-  const birth = new Date(`${date}T12:00:00Z`);
-  if (Number.isNaN(birth.getTime()) || birth.toISOString().slice(0, 10) !== date) return null;
-  const localToday = dateInputValue(today, COLOMBIA_TIME_ZONE);
-  const year = Number(localToday.slice(0, 4)) - Number(date.slice(0, 4));
-  return year - (localToday.slice(5) < date.slice(5) ? 1 : 0);
-}
-function parseVehicles(raw: string): Vehicle[] | null {
-  try {
-    const vehicles: unknown = JSON.parse(raw || "[]");
-    if (!Array.isArray(vehicles) || vehicles.length > 10) return null;
-    const parsed: Vehicle[] = [];
-    for (const item of vehicles) {
-      if (!item || typeof item !== "object") return null;
-      const vehicle = item as Record<string, unknown>;
-      const fields = ["type", "brand", "model", "plate"] as const;
-      if (fields.some((key) => typeof vehicle[key] !== "string" || !(vehicle[key] as string).trim() || (vehicle[key] as string).length > 60)) return null;
-      parsed.push(Object.fromEntries(fields.map((key) => [key, (vehicle[key] as string).trim()])) as Vehicle);
-    }
-    return parsed;
-  } catch { return null; }
-}
-function imageType(bytes: Uint8Array) {
-  if (bytes.length >= 8 && [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => bytes[index] === byte)) return { mime: "image/png", ext: "png" };
-  if (bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return { mime: "image/jpeg", ext: "jpg" };
-  if (bytes.length >= 12 && new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" && new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP") return { mime: "image/webp", ext: "webp" };
-  return null;
-}
 function refresh(propertyId: string) { revalidatePath(`/panel/propiedades/${propertyId}`); }
 
 export async function registerConcierge(_: ConciergeState, data: FormData): Promise<ConciergeState> {
@@ -62,21 +28,12 @@ export async function registerConcierge(_: ConciergeState, data: FormData): Prom
   const expectedUsername = conciergeUsername(firstName, firstSurname, documentNumber);
   const username = value(data, "username");
   const vehicles = parseVehicles(value(data, "vehicles"));
-  const photo = data.get("photo");
   const age = ageOn(birthDate);
   if (!expectedUsername || username !== expectedUsername) return { error: "Escribe el usuario con primer nombre, primer apellido y los dos últimos dígitos de la cédula, en minúsculas y sin espacios ni tildes." };
   if (!firstName || !firstSurname || firstName.length > 60 || firstSurname.length > 60 || fullName.length > 120 || age === null || age < 18 || age > 100 || !phone || !vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa nombres, apellidos, cédula, fecha de nacimiento, teléfono y vehículo (máximo uno)." };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/u.test(email) || email.length > 254 || data.get("emailVerified") !== "yes") return { error: "Indica un correo real y confirma que pertenece al portero." };
   if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
   if (password.length < 12 || password.length > 128 || !/[a-z]/u.test(password) || !/[A-Z]/u.test(password) || !/\d/u.test(password) || password.includes(documentNumber)) return { error: "La contraseña debe tener de 12 a 128 caracteres, mayúscula, minúscula y número; no puede contener la cédula." };
-  let photoBytes: Uint8Array | null = null;
-  let photoFormat: ReturnType<typeof imageType> = null;
-  if (photo instanceof File && photo.size > 0) {
-    if (photo.size > 1024 * 1024) return { error: "La foto debe pesar máximo 1 MB." };
-    photoBytes = new Uint8Array(await photo.arrayBuffer());
-    photoFormat = imageType(photoBytes);
-    if (!photoFormat) return { error: "La foto debe ser PNG, JPG o WebP válido." };
-  }
   const admin = createAdminClient();
   const [existingUsername, existingEmail] = await Promise.all([
     admin.from("concierge_accounts").select("id").eq("username", username).maybeSingle(),
@@ -91,14 +48,12 @@ export async function registerConcierge(_: ConciergeState, data: FormData): Prom
   const userId = created.data.user.id;
   let memberId: string | null = null;
   const accountId = randomUUID();
-  let photoPath: string | null = null;
   async function cleanup() {
     const accountRemoval = await admin.from("concierge_accounts").delete().eq("id", accountId);
     const memberRemoval = memberId ? await admin.from("property_members").delete().eq("id", memberId) : null;
-    const photoRemoval = photoPath ? await admin.storage.from("private-documents").remove([photoPath]) : null;
     const profileRemoval = await admin.from("profiles").delete().eq("id", userId);
     const authRemoval = await admin.auth.admin.deleteUser(userId);
-    return !accountRemoval.error && !memberRemoval?.error && !photoRemoval?.error && !profileRemoval.error && !authRemoval.error;
+    return !accountRemoval.error && !memberRemoval?.error && !profileRemoval.error && !authRemoval.error;
   }
   const incomplete = "El registro quedó incompleto y no se pudo revertir totalmente. No lo repitas; revisa la cuenta antes de continuar.";
   const member = await admin.from("property_members").insert({ property_id: propertyId, user_id: userId, roles: ["concierge"], status: "suspended", created_by: user.id }).select("id").single();
@@ -106,12 +61,7 @@ export async function registerConcierge(_: ConciergeState, data: FormData): Prom
   memberId = member.data.id;
   const account = await admin.from("concierge_accounts").insert({ id: accountId, property_id: propertyId, user_id: userId, member_id: memberId, username, full_name: fullName, document_number: documentNumber, birth_date: birthDate, phone_e164: phone, email_normalized: email, address: address || null, vehicles, status: "pending", created_by: user.id });
   if (account.error) return { error: await cleanup() ? account.error.code === "23505" ? "Ese usuario o correo ya existe en ResiQ." : "No pudimos guardar la ficha del portero." : incomplete };
-  if (photoBytes && photoFormat) {
-    photoPath = `${propertyId}/concierge/${accountId}/photo.${photoFormat.ext}`;
-    const uploaded = await admin.storage.from("private-documents").upload(photoPath, photoBytes, { contentType: photoFormat.mime, upsert: false });
-    if (uploaded.error) return { error: await cleanup() ? "No pudimos guardar la foto; no se creó la cuenta." : incomplete };
-  }
-  const accountReady = await admin.from("concierge_accounts").update({ photo_path: photoPath, status: "active", updated_at: new Date().toISOString() }).eq("id", accountId).eq("status", "pending").select("id").single();
+  const accountReady = await admin.from("concierge_accounts").update({ status: "active", updated_at: new Date().toISOString() }).eq("id", accountId).eq("status", "pending").select("id").single();
   if (accountReady.error || !accountReady.data) return { error: await cleanup() ? "No pudimos activar la ficha del portero." : incomplete };
   const accessReady = await admin.from("property_members").update({ status: "active", updated_at: new Date().toISOString() }).eq("id", memberId).eq("status", "suspended").select("id").single();
   if (accessReady.error || !accessReady.data) return { error: await cleanup() ? "No pudimos activar el acceso del portero." : incomplete };

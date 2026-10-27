@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Button } from "@/components/ui/button";
-import { FilePicker } from "@/components/ui/file-picker";
 import { conciergeUsername } from "@/lib/concierge/identity";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { registerConcierge, type ConciergeState } from "./concierge-actions";
@@ -20,8 +19,6 @@ export function ConciergeRegistrationForm({ propertyId }: { propertyId: string }
   const [username, setUsername] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [vehicle, setVehicle] = useState<Vehicle>(blankVehicle);
-  const photoInput = useRef<HTMLInputElement>(null);
-  const [photo, setPhoto] = useState<File | null>(null);
   const suggestedUsername = conciergeUsername(firstName, firstSurname, documentNumber);
   const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
   const birth = birthDate ? new Date(`${birthDate}T12:00:00Z`) : null;
@@ -38,7 +35,6 @@ export function ConciergeRegistrationForm({ propertyId }: { propertyId: string }
     <label className="text-sm font-medium">Teléfono<input className={input} name="phone" type="tel" autoComplete="tel" required placeholder="3001234567" /></label>
     <label className="text-sm font-medium">Correo<input className={input} name="email" type="email" autoComplete="email" required /></label>
     <label className="text-sm font-medium sm:col-span-2">Dirección (opcional)<input className={input} name="address" maxLength={180} /></label>
-    <div className="grid gap-2 sm:col-span-2"><p className="text-sm font-medium">Fotografía (opcional)</p><FilePicker inputRef={photoInput} files={photo ? [photo] : []} onFilesChange={(files) => setPhoto(files[0] ?? null)} title="Fotografía del portero" hint="PNG, JPG o WEBP · máximo 1 MB" accept="image/png,image/jpeg,image/webp" name="photo" disabled={pending} /></div>
     <div className="sm:col-span-2 rounded-lg border p-3 sm:p-4"><h3 className="text-sm font-semibold">Vehículo (opcional, máximo uno)</h3><p className="mt-1 text-xs text-muted-foreground">Si registras un vehículo, completa sus cuatro datos. Déjalos vacíos si el portero no tiene vehículo.</p><div className="mt-3 grid gap-3 sm:grid-cols-2">{(["type", "brand", "model", "plate"] as const).map((key) => <label key={key} className="text-sm font-medium">{{ type: "Tipo", brand: "Marca", model: "Modelo", plate: "Placa" }[key]}<input className={input} value={vehicle[key]} onChange={(event) => setVehicle((current) => ({ ...current, [key]: event.target.value }))} required={vehicleStarted} maxLength={60} /></label>)}</div>{vehicleStarted && <Button type="button" size="sm" variant="ghost" className="mt-3 text-destructive" onClick={() => setVehicle(blankVehicle())}>Quitar vehículo</Button>}</div>
     <section className="grid gap-4 rounded-lg border bg-secondary/20 p-3 sm:col-span-2 sm:p-4" aria-labelledby="acceso-portero"><div><h3 id="acceso-portero" className="text-base font-semibold">Acceso al sistema</h3><p className="mt-1 text-xs text-muted-foreground">La administración escribe y entrega al portero el usuario y la contraseña que asigne.</p></div><label className="text-sm font-medium">Usuario permanente<input className={input} name="username" value={username} onChange={(event) => setUsername(event.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="off" required maxLength={122} aria-describedby="regla-usuario-portero" /><span id="regla-usuario-portero" className="mt-1 block text-xs text-muted-foreground">Escribe primer nombre + primer apellido + últimos 2 dígitos de la cédula, sin espacios ni tildes, en minúsculas. {suggestedUsername ? `Para estos datos: ${suggestedUsername}.` : "Completa nombre, apellido y cédula para ver el formato."} Si ya existe en ResiQ, no se añadirá un sufijo.</span></label>{username.trim() && suggestedUsername && username.trim() !== suggestedUsername && <p role="alert" className="text-xs text-destructive">El usuario debe coincidir con {suggestedUsername}.</p>}<label className="text-sm font-medium">Contraseña permanente asignada por administración<input className={input} name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={128} /><span className="mt-1 block text-xs text-muted-foreground">Mínimo 12 caracteres, mayúscula, minúscula y número. Entrégala en privado; no se mostrará después.</span></label><label className="text-sm font-medium">Confirmar contraseña<input className={input} name="confirmation" type="password" autoComplete="new-password" required minLength={12} maxLength={128} /></label></section>
     <label className="flex items-start gap-2 text-sm sm:col-span-2"><input className="mt-1" type="checkbox" name="emailVerified" value="yes" required />Confirmo que verifiqué que este correo real pertenece al portero.</label>
