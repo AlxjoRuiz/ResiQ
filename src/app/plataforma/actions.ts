@@ -22,7 +22,7 @@ export async function createPlatformProperty(_: CreatePropertyState, data: FormD
   const token = (result as { token?: string } | null)?.token;
   if (!token) return { error: "El conjunto se creó, pero no pudimos generar el enlace." };
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
-  revalidatePath("/plataforma");
+  revalidatePath("/plataforma", "layout");
   revalidatePath("/panel");
   return { success: `Conjunto «${name}» creado. Comparte este enlace con el administrador; debe entrar con ${email}. Vence en 7 días.`, link: `${origin}/invitacion?token=${encodeURIComponent(token)}` };
 }
