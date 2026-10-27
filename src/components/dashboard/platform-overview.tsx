@@ -1,4 +1,4 @@
-import { Building2, ChartNoAxesCombined, Settings, ShieldCheck, UsersRound, WalletCards } from "lucide-react";
+import { Building2, ChartNoAxesCombined, Settings, ShieldCheck, UsersRound } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DashboardModules, MetricCard, type DashboardModule } from "@/components/dashboard/role-dashboard";
 
@@ -7,7 +7,6 @@ const modules: DashboardModule[] = [
   { title: "Administradores", description: "Consulta los administradores de cada conjunto y las invitaciones pendientes.", icon: ShieldCheck, href: "/plataforma/administradores" },
   { title: "Usuarios", description: "Cifras de cuentas activas por conjunto, sin datos personales.", icon: UsersRound, href: "/plataforma/usuarios" },
   { title: "Configuración", description: "Activa o apaga la decoración de Navidad para todos.", icon: Settings, href: "/plataforma/configuracion" },
-  { title: "Planes", description: "Plan mensual o anual de cada conjunto y hasta cuándo está pago.", icon: WalletCards, href: "/plataforma/planes" },
   { title: "Métricas", description: "Uso por conjunto, cuentas activas y correos de los últimos 30 días.", icon: ChartNoAxesCombined, href: "/plataforma/metricas" },
 ];
 

@@ -49,15 +49,3 @@ export async function setPropertyStatus(_: PlatformState, data: FormData): Promi
   revalidatePath("/", "layout");
   return { success: status === "suspended" ? "Conjunto suspendido." : "Conjunto reactivado." };
 }
-
-// Planes: ciclo de cobro y fecha hasta la que el conjunto está pago.
-export async function setPropertyPlan(_: PlatformState, data: FormData): Promise<PlatformState> {
-  const propertyId = field(data, "propertyId"), cycle = field(data, "cycle"), paidUntil = field(data, "paidUntil");
-  if (!/^[0-9a-f-]{36}$/i.test(propertyId) || !["monthly", "annual"].includes(cycle)) return { error: "Datos del plan inválidos." };
-  if (paidUntil && !/^\d{4}-\d{2}-\d{2}$/.test(paidUntil)) return { error: "Fecha inválida." };
-  const { supabase } = await requirePlatformAdmin();
-  const { error } = await supabase.rpc("platform_set_property_plan", { target_property_id: propertyId, target_cycle: cycle, target_paid_until: paidUntil || null });
-  if (error) return { error: "No pudimos guardar el plan." };
-  revalidatePath("/plataforma", "layout");
-  return { success: "Plan guardado." };
-}
