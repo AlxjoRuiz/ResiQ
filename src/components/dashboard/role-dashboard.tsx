@@ -15,6 +15,6 @@ export function DashboardModules({ modules, glass = false }: { modules: Dashboar
   })}</div>;
 }
 
-export function MetricCard({ label, value }: { label: string; value: string | number }) {
-  return <Card><CardContent><p className="text-2xl font-semibold">{value}</p><p className="mt-1 text-sm text-muted-foreground">{label}</p></CardContent></Card>;
+export function MetricCard({ label, value, glass = false }: { label: string; value: string | number; glass?: boolean }) {
+  return <Card className={glass ? `${styles.glassCard} ${styles.glassHover}` : undefined}><CardContent><p className="text-2xl font-semibold">{value}</p><p className="mt-1 text-sm text-muted-foreground">{label}</p></CardContent></Card>;
 }

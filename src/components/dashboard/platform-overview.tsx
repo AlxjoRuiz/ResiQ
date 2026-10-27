@@ -13,5 +13,5 @@ const modules: DashboardModule[] = [
 export async function PlatformOverview({ supabase }: { supabase: SupabaseClient }) {
   const { data } = await supabase.rpc("get_platform_dashboard_metrics");
   const metrics = Array.isArray(data) ? data[0] : data;
-  return <><section className="my-7 grid gap-4 sm:grid-cols-3"><MetricCard label="Propiedades" value={metrics?.property_count ?? 0} /><MetricCard label="Usuarios" value={metrics?.user_count ?? 0} /><MetricCard label="Administradores de propiedad" value={metrics?.administrator_count ?? 0} /></section><DashboardModules modules={modules} glass /></>;
+  return <><section className="my-7 grid gap-4 sm:grid-cols-3"><MetricCard glass label="Propiedades" value={metrics?.property_count ?? 0} /><MetricCard glass label="Usuarios" value={metrics?.user_count ?? 0} /><MetricCard glass label="Administradores de propiedad" value={metrics?.administrator_count ?? 0} /></section><DashboardModules modules={modules} glass /></>;
 }
