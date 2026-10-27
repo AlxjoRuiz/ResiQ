@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAppAccessStatus } from "@/lib/auth/app-access";
+import { accessErrorCode, accessErrorMessages, getAppAccessStatus } from "@/lib/auth/app-access";
 import { safeNext } from "@/lib/auth/safe-next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuthFailure } from "@/lib/auth/log-auth-failure";
@@ -52,7 +52,7 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
     if (access !== "authorized") {
       logAuthFailure("access", { method, reason: access });
       await supabase.auth.signOut({ scope: "local" });
-      return { error: access === "unauthorized" ? "No has sido invitado o aún no has aceptado tu invitación. Si recibiste un enlace, ábrelo y acéptalo con el correo invitado." : "No pudimos verificar tu acceso. Intenta nuevamente." };
+      return { error: accessErrorMessages[accessErrorCode(access)] };
     }
   }
   redirect(next);

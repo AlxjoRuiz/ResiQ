@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getAppAccessStatus } from "../../src/lib/auth/app-access.ts";
+import { accessErrorCode, getAppAccessStatus } from "../../src/lib/auth/app-access.ts";
 
 function client(results) {
   const queries = [];
@@ -9,17 +9,23 @@ function client(results) {
     from(table) {
       const query = { table, filters: [] };
       queries.push(query);
-      return {
-        select() { return this; },
-        eq(column, value) { query.filters.push([column, value]); return this; },
+      const builder = {
+        select() { return builder; },
+        eq(column, value) { query.filters.push([column, value]); return builder; },
         limit() { return Promise.resolve(results[table]); },
+        then(resolve, reject) { return Promise.resolve(results[table]).then(resolve, reject); },
       };
+      return builder;
     },
+    rpc(name) { return Promise.resolve(results[name] ?? { data: [], error: null }); },
   };
 }
 
+const active = (id) => ({ property_id: id, property_status: "active" });
+const suspended = (id) => ({ property_id: id, property_status: "suspended" });
+
 test("only active property members or platform admins may enter ResiQ", async () => {
-  const member = client({ property_members: { data: [{ id: "member" }], error: null }, platform_admins: { data: [], error: null } });
+  const member = client({ property_members: { data: [{ property_id: "p1", roles: ["member"] }], error: null }, platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [active("p1")], error: null } });
   assert.equal(await getAppAccessStatus(member, "user-1"), "authorized");
   const platform = client({ property_members: { data: [], error: null }, platform_admins: { data: [{ id: "admin" }], error: null } });
   assert.equal(await getAppAccessStatus(platform, "user-1"), "authorized");
@@ -30,7 +36,19 @@ test("only active property members or platform admins may enter ResiQ", async ()
   }
 });
 
+test("a suspended property blocks its members; admins get the payment notice", async () => {
+  const resident = client({ property_members: { data: [{ property_id: "p1", roles: ["member"] }], error: null }, platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [suspended("p1")], error: null } });
+  assert.equal(await getAppAccessStatus(resident, "user-1"), "suspended");
+  assert.equal(accessErrorCode("suspended"), "suspended");
+  const admin = client({ property_members: { data: [{ property_id: "p1", roles: ["administrator"] }], error: null }, platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [suspended("p1")], error: null } });
+  assert.equal(await getAppAccessStatus(admin, "user-1"), "suspended_admin");
+  const mixed = client({ property_members: { data: [{ property_id: "p1", roles: ["administrator"] }, { property_id: "p2", roles: ["member"] }], error: null }, platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [suspended("p1"), active("p2")], error: null } });
+  assert.equal(await getAppAccessStatus(mixed, "user-1"), "authorized");
+});
+
 test("a failed access lookup does not turn into an authorization", async () => {
   const unavailable = client({ property_members: { data: null, error: new Error("unavailable") }, platform_admins: { data: [], error: null } });
   assert.equal(await getAppAccessStatus(unavailable, "user-1"), "error");
+  const statusUnavailable = client({ property_members: { data: [{ property_id: "p1", roles: ["member"] }], error: null }, platform_admins: { data: [], error: null }, get_my_property_statuses: { data: null, error: new Error("unavailable") } });
+  assert.equal(await getAppAccessStatus(statusUnavailable, "user-1"), "error");
 });

@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnvironment } from "./env";
-import { getAppAccessStatus } from "@/lib/auth/app-access";
+import { accessErrorCode, getAppAccessStatus } from "@/lib/auth/app-access";
 import { safeNext } from "@/lib/auth/safe-next";
 
 function redirectWithCookies(url: URL, response: NextResponse) {
@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest, extraRequestHeaders: R
     const access = await getAppAccessStatus(supabase, user.id);
     if (access !== "authorized") {
       await supabase.auth.signOut({ scope: "local" });
-      const loginUrl = new URL(`/login?error=${access === "unauthorized" ? "no_invitation" : "access_check"}`, request.url);
+      const loginUrl = new URL(`/login?error=${accessErrorCode(access)}`, request.url);
       return redirectWithCookies(loginUrl, response);
     }
   }
