@@ -67,14 +67,14 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
       </aside>
       <div className={styles.content}>
         <header className={styles.topbar}>
-          <div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{property.name}</span></div>
+          <div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{property.name}{(property.address || property.city) && <small className={styles.propertyAddress}>{[property.address, property.city].filter(Boolean).join(" · ")}</small>}</span></div>
           <div className={styles.roleSwitcher} aria-label="Seleccionar perfil">{views.map((allowedView) => <Button key={allowedView} asChild size="sm" variant={allowedView === view ? "default" : "outline"}><Link href={`/panel/propiedades/${propertyId}/dashboard?vista=${allowedView}`} aria-current={allowedView === view ? "page" : undefined}>{allowedView === "administracion" ? "Administración" : allowedView === "porteria" ? "Portería" : "Residente"}</Link></Button>)}</div>
         </header>
         <section className={styles.welcome}>
           <p className={styles.eyebrow}>Tu comunidad, conectada</p>
           <div className={styles.welcomeMain}>
             <span className={styles.welcomeIcon}><House size={29} aria-hidden="true" /></span>
-            <div><h1>Panel de {viewLabel.toLowerCase()}</h1><p>{[property.address, property.city].filter(Boolean).join(" · ") || property.name}</p></div>
+            <div><h1>Panel de {viewLabel.toLowerCase()}</h1></div>
           </div>
         </section>
         <section aria-label="Resumen del perfil" className={styles.metrics}>

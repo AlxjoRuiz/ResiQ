@@ -26,6 +26,8 @@
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid #e1e5ec; }
 .property { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; color: #485264; }
 .property span { overflow-wrap: anywhere; }
+/* Dirección y ciudad debajo del nombre del conjunto. */
+.propertyAddress { display: block; margin-top: 2px; font-size: 12px; color: #606671; }
 .roleSwitcher { display: flex; flex-wrap: wrap; gap: 7px; }
 .roleSwitcher a { border-radius: 24px; }
 .welcome { margin: 16px 0 18px; }
