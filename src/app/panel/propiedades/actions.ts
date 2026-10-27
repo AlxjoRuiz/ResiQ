@@ -157,3 +157,46 @@ export async function unlinkUnitResidents(_: ManagementState, formData: FormData
   propertyPaths(propertyId);
   return { success: "Residente desvinculado. El apartamento quedó libre para una nueva invitación." };
 }
+
+// Auxiliares de administración: el admin los invita por correo y obtiene un enlace de 7 días.
+export type AssistantLinkState = { error?: string; success?: string; link?: string } | undefined;
+async function assistantLink(token: string) {
+  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
+  return `${origin}/invitacion?token=${encodeURIComponent(token)}`;
+}
+
+export async function inviteAdminAssistant(_: AssistantLinkState, formData: FormData): Promise<AssistantLinkState> {
+  const propertyId = field(formData, "propertyId");
+  const email = field(formData, "email").toLowerCase();
+  if (!propertyId || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Escribe un correo válido." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("invite_admin_assistant", { target_property_id: propertyId, target_email: email });
+  if (error || typeof data !== "string") return { error: error?.message.includes("already_member") ? "Ese correo ya tiene acceso a este conjunto. Si es un auxiliar suspendido, reactívalo desde la lista." : "No pudimos crear la invitación." };
+  propertyPaths(propertyId);
+  return { success: `Invitación creada. Comparte el enlace; debe entrar con ${email}. Vence en 7 días.`, link: await assistantLink(data) };
+}
+
+export async function manageAdminAssistantInvitation(_: AssistantLinkState, formData: FormData): Promise<AssistantLinkState> {
+  const propertyId = field(formData, "propertyId");
+  const invitationId = field(formData, "invitationId");
+  const intent = field(formData, "intent");
+  if (!propertyId || !invitationId || !["reissue", "cancel"].includes(intent)) return { error: "No encontramos la invitación." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("manage_admin_assistant_invitation", { target_property_id: propertyId, target_invitation_id: invitationId, target_action: intent });
+  if (error) return { error: "No pudimos actualizar la invitación." };
+  propertyPaths(propertyId);
+  if (intent === "cancel") return { success: "Invitación cancelada." };
+  return typeof data === "string" ? { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días.", link: await assistantLink(data) } : { error: "No pudimos generar el enlace." };
+}
+
+export async function setAdminAssistantStatus(_: ManagementState, formData: FormData): Promise<ManagementState> {
+  const propertyId = field(formData, "propertyId");
+  const memberId = field(formData, "memberId");
+  const status = field(formData, "status");
+  if (!propertyId || !memberId || !["active", "suspended"].includes(status)) return { error: "No encontramos al auxiliar." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_admin_assistant_status", { target_property_id: propertyId, target_member_id: memberId, target_status: status });
+  if (error) return { error: error.message.includes("cannot_change_self") ? "No puedes cambiar tu propio acceso." : "No pudimos cambiar el acceso del auxiliar." };
+  propertyPaths(propertyId);
+  return { success: status === "suspended" ? "Acceso del auxiliar suspendido." : "Acceso del auxiliar reactivado." };
+}

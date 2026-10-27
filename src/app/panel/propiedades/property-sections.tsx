@@ -10,6 +10,7 @@ import { BuildingForm, EndMembershipForm, MemberForm, RevealInvitationLinkForm, 
 import { PropertyUnitExplorer } from "./property-unit-explorer";
 import { ConciergeRegistrationForm } from "./concierge-registration-form";
 import { ConciergeManagementForms } from "./concierge-management-forms";
+import { AdminAssistantInvitationForm, AdminAssistantStatusForm, InviteAdminAssistantForm } from "./admin-assistant-forms";
 import { maskDocument } from "@/lib/concierge/identity";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 
@@ -22,6 +23,8 @@ type Occupant = { member: Member; link: UnitLink };
 type CensusRecord = { id: string; unit_id: string; import_id: string; full_name: string | null; email_normalized: string | null; user_type: string | null; invitation_primary: boolean; invitation_relationship: string | null; cells: unknown };
 type CensusImport = { id: string; headers: unknown };
 type UnitInvitation = { unit_id: string; invitation_id: string; email: string; relationship: string; invitation_status: string; delivery_status: string | null; expires_at: string; link_issued_at: string | null };
+type AdminAssistant = { member_id: string | null; invitation_id: string | null; display_name: string | null; email: string; assistant_status: string; since: string };
+const assistantLabels: Record<string, string> = { active: "Activo", suspended: "Suspendido", invited: "Invitación pendiente", expired: "Invitación vencida" };
 type ConciergeAccount = { id: string; member_id: string; username: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; email_normalized: string; address: string | null; photo_path: string | null; vehicles: unknown; status: string; photoUrl?: string | null };
 function ageFor(birthDate: string) { const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE); return Number(today.slice(0, 4)) - Number(birthDate.slice(0, 4)) - (today.slice(5) < birthDate.slice(5) ? 1 : 0); }
 
@@ -82,8 +85,12 @@ export async function PropertyManagementSections({ propertyId, canImport, import
     supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,photo_path,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
   ]);
   if (buildingError || memberError || censusError || importError || conciergeError) throw new Error("No se pudieron cargar las torres y sus accesos.");
-  const { data: invitationData, error: invitationError } = await supabase.rpc("get_unit_invitations", { target_property_id: propertyId });
-  if (invitationError) throw new Error("No se pudieron cargar las invitaciones.");
+  const [{ data: invitationData, error: invitationError }, { data: assistantData, error: assistantError }] = await Promise.all([
+    supabase.rpc("get_unit_invitations", { target_property_id: propertyId }),
+    supabase.rpc("get_admin_assistants", { target_property_id: propertyId }),
+  ]);
+  if (invitationError || assistantError) throw new Error("No se pudieron cargar las invitaciones.");
+  const assistants = (assistantData ?? []) as AdminAssistant[];
   const invitationByUnit = new Map(((invitationData ?? []) as UnitInvitation[]).map((invitation) => [invitation.unit_id, invitation]));
   const buildings = (buildingData ?? []) as Building[];
   const members = (memberData ?? []) as Member[];
@@ -150,6 +157,18 @@ export async function PropertyManagementSections({ propertyId, canImport, import
         </CardContent></Card>)}
         {conciergeMembers.map((member) => <ConciergeCard key={member.id} member={member} propertyId={propertyId} />)}
         {!conciergeMembers.length && !conciergeAccounts.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay personal de portería registrado.</p></CardContent></Card>}
+      </div>
+    </section>
+    <section id="auxiliares" className="mt-10 scroll-mt-6">
+      <h2 className="text-2xl font-semibold">Auxiliares de administración</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Tienen los mismos permisos de administración. Entran con el enlace de invitación usando su correo.</p>
+      <Card className="mt-4"><CardContent><details><summary className="cursor-pointer font-semibold">Nuevo auxiliar</summary><div className="mt-5"><InviteAdminAssistantForm propertyId={propertyId} /></div></details></CardContent></Card>
+      <div className="mt-4 grid gap-4">
+        {assistants.map((assistant) => <Card key={assistant.member_id ?? assistant.invitation_id}><CardContent>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="font-semibold">{assistant.display_name ?? "Sin aceptar todavía"}</h3><p className="break-all text-sm text-muted-foreground">{assistant.email}</p></div><span className={`rounded-full px-3 py-1 text-xs ${assistant.assistant_status === "suspended" || assistant.assistant_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{assistantLabels[assistant.assistant_status] ?? assistant.assistant_status}</span></div>
+          <div className="mt-4 border-t pt-4">{assistant.invitation_id ? <AdminAssistantInvitationForm propertyId={propertyId} invitationId={assistant.invitation_id} /> : assistant.member_id && <AdminAssistantStatusForm key={assistant.assistant_status} propertyId={propertyId} memberId={assistant.member_id} suspended={assistant.assistant_status === "suspended"} />}</div>
+        </CardContent></Card>)}
+        {!assistants.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay auxiliares de administración.</p></CardContent></Card>}
       </div>
     </section>
   </>;
