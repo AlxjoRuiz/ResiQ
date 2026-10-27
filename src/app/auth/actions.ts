@@ -25,14 +25,19 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
   let email = identifier;
   let conciergeUserId: string | null = null;
   if (!identifier.includes("@")) {
-    const { data: account, error: lookupError } = await createAdminClient().from("concierge_accounts")
-      .select("user_id,email_normalized,status").eq("username", identifier).maybeSingle();
-    if (lookupError || !account || account.status !== "active") {
-      logAuthFailure("concierge_lookup", { method: "username", reason: lookupError ? "lookup_error" : !account ? "unknown_username" : `account_${account.status}` });
+    // El usuario puede ser de un portero o de un auxiliar de administración (27/10/2026). Un
+    // auxiliar suspendido sí intenta entrar, para que vea su propio aviso después de la contraseña.
+    const admin = createAdminClient();
+    const [{ data: account, error: lookupError }, { data: assistant, error: assistantError }] = await Promise.all([
+      admin.from("concierge_accounts").select("user_id,email_normalized,status").eq("username", identifier).maybeSingle(),
+      admin.from("admin_assistant_records").select("user_id,email_normalized").eq("username", identifier).maybeSingle(),
+    ]);
+    if (lookupError || assistantError || (!assistant && (!account || account.status !== "active"))) {
+      logAuthFailure("concierge_lookup", { method: "username", reason: lookupError || assistantError ? "lookup_error" : !account ? "unknown_username" : `account_${account.status}` });
       return { error: "No pudimos iniciar sesión con esos datos." };
     }
-    email = account.email_normalized;
-    conciergeUserId = account.user_id;
+    email = assistant?.email_normalized ?? account!.email_normalized;
+    conciergeUserId = assistant?.user_id ?? account!.user_id;
   }
 
   const supabase = await createClient();

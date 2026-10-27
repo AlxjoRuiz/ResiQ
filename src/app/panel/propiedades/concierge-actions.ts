@@ -145,3 +145,56 @@ export async function removeConcierge(_: ConciergeState, data: FormData): Promis
   refresh(propertyId);
   return { success: hasOtherAccess ? "Portero retirado y tarjeta quitada. La identidad Auth conserva otros accesos activos; no se bloqueó globalmente." : "Portero retirado: acceso revocado, identidad bloqueada y tarjeta retirada. Se conservan los datos aún exigidos por el esquema para revisión de retención." };
 }
+
+// Auxiliar de administración con usuario y contraseña, igual que el portero (27/10/2026). Tiene los
+// mismos permisos de administración y entra con el usuario o con su correo.
+export async function registerAdminAssistant(_: ConciergeState, data: FormData): Promise<ConciergeState> {
+  const propertyId = value(data, "propertyId");
+  const { user } = await requirePropertyAdmin(propertyId);
+  const firstName = value(data, "firstName");
+  const firstSurname = value(data, "firstSurname");
+  const fullName = conciergeFullName(firstName, firstSurname);
+  const documentNumber = value(data, "documentNumber");
+  const birthDate = value(data, "birthDate");
+  const phone = normalizePhone(value(data, "phone"));
+  const email = value(data, "email").toLowerCase();
+  const address = value(data, "address");
+  const password = String(data.get("password") ?? "");
+  const confirmation = String(data.get("confirmation") ?? "");
+  const expectedUsername = conciergeUsername(firstName, firstSurname, documentNumber);
+  const username = value(data, "username");
+  const vehicles = parseVehicles(value(data, "vehicles"));
+  const age = ageOn(birthDate);
+  if (!expectedUsername || username !== expectedUsername) return { error: "Escribe el usuario con primer nombre, primer apellido y los dos últimos dígitos de la cédula, en minúsculas y sin espacios ni tildes." };
+  if (!firstName || !firstSurname || firstName.length > 60 || firstSurname.length > 60 || fullName.length > 120 || age === null || age < 18 || age > 100 || !phone || !vehicles || vehicles.length > 1 || address.length > 180) return { error: "Revisa nombres, apellidos, cédula, fecha de nacimiento (mayor de 18 años), teléfono, dirección y vehículo." };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/u.test(email) || email.length > 254 || data.get("emailVerified") !== "yes") return { error: "Indica un correo real y confirma que pertenece al auxiliar." };
+  if (password !== confirmation) return { error: "Las contraseñas no coinciden." };
+  if (password.length < 12 || password.length > 128 || !/[a-z]/u.test(password) || !/[A-Z]/u.test(password) || !/\d/u.test(password) || password.includes(documentNumber)) return { error: "La contraseña debe tener de 12 a 128 caracteres, mayúscula, minúscula y número; no puede contener la cédula." };
+  const admin = createAdminClient();
+  const [conciergeName, assistantName] = await Promise.all([
+    admin.from("concierge_accounts").select("id").eq("username", username).maybeSingle(),
+    admin.from("admin_assistant_records").select("id").eq("username", username).maybeSingle(),
+  ]);
+  if (conciergeName.error || assistantName.error) return { error: "No pudimos comprobar la disponibilidad del usuario." };
+  if (conciergeName.data || assistantName.data) return { error: "Ese usuario ya existe en ResiQ." };
+
+  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { display_name: fullName } });
+  if (created.error || !created.data.user) return { error: "No pudimos crear la cuenta. Comprueba que el correo no esté asignado a otra cuenta de ResiQ." };
+  const userId = created.data.user.id;
+  let memberId: string | null = null;
+  async function cleanup() {
+    const recordRemoval = await admin.from("admin_assistant_records").delete().eq("user_id", userId);
+    const memberRemoval = memberId ? await admin.from("property_members").delete().eq("id", memberId) : null;
+    const profileRemoval = await admin.from("profiles").delete().eq("id", userId);
+    const authRemoval = await admin.auth.admin.deleteUser(userId);
+    return !recordRemoval.error && !memberRemoval?.error && !profileRemoval.error && !authRemoval.error;
+  }
+  const incomplete = "El registro quedó incompleto y no se pudo revertir totalmente. No lo repitas; revisa la cuenta antes de continuar.";
+  const member = await admin.from("property_members").insert({ property_id: propertyId, user_id: userId, roles: ["administrator"], status: "active", is_admin_assistant: true, created_by: user.id }).select("id").single();
+  if (member.error || !member.data) return { error: await cleanup() ? "No pudimos vincular la cuenta al conjunto." : incomplete };
+  memberId = member.data.id;
+  const record = await admin.from("admin_assistant_records").insert({ property_id: propertyId, member_id: memberId, user_id: userId, username, first_name: firstName, first_surname: firstSurname, document_number: documentNumber, birth_date: birthDate, phone_e164: phone, email_normalized: email, address: address || null, vehicles, created_by: user.id });
+  if (record.error) return { error: await cleanup() ? record.error.code === "23505" ? "Ese usuario ya existe en ResiQ." : "No pudimos guardar la ficha del auxiliar." : incomplete };
+  refresh(propertyId);
+  return { success: `Auxiliar registrado. Usuario permanente: ${username}. Entrega la contraseña asignada de forma privada; ResiQ no volverá a mostrarla.` };
+}
