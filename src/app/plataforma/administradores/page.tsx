@@ -3,7 +3,7 @@ import { PlatformPage } from "@/components/dashboard/platform-page";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 
-type AdminRow = { property_id: string; property_name: string; property_status: string; display_name: string | null; email: string; member_status: string; since: string; invitation_id: string | null };
+type AdminRow = { property_id: string; property_name: string; property_status: string; display_name: string | null; email: string; member_status: string; since: string; invitation_id: string | null; is_assistant: boolean | null };
 type PropertyRow = { property_id: string; property_name: string; property_status: string };
 const statusLabels: Record<string, string> = { active: "Activo", suspended: "Suspendido", revoked: "Retirado", invited: "Invitación pendiente", expired: "Invitación vencida" };
 
@@ -19,7 +19,7 @@ export default async function PlatformAdministratorsPage() {
     {groups.map((group) => { const active = group.property_status === "active"; return <Card key={group.property_id}><CardContent>
       <div className="flex flex-wrap items-start justify-between gap-3"><h2 className="text-lg font-semibold">{group.property_name}</h2>{!active && <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">Conjunto suspendido</span>}</div>
       <ul className="mt-4 grid gap-3">{group.admins.map((admin, index) => <li key={`${admin.email}-${index}`} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border p-4">
-        <div className="min-w-0"><p className="font-medium">{admin.display_name ?? "Sin aceptar todavía"}</p><p className="break-all text-sm text-muted-foreground">{admin.email}</p><p className="mt-1 text-xs text-muted-foreground">{admin.invitation_id ? "Invitado el" : "Desde el"} {date.format(new Date(admin.since))}</p></div>
+        <div className="min-w-0"><p className="flex flex-wrap items-center gap-2 font-medium">{admin.display_name ?? "Sin aceptar todavía"}{admin.is_assistant && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Auxiliar</span>}</p><p className="break-all text-sm text-muted-foreground">{admin.email}</p><p className="mt-1 text-xs text-muted-foreground">{admin.invitation_id ? "Invitado el" : "Desde el"} {date.format(new Date(admin.since))}</p></div>
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${admin.member_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{statusLabels[admin.member_status] ?? admin.member_status}</span>
         {admin.invitation_id && active && <ReissueAdminInvitationForm invitationId={admin.invitation_id} />}
       </li>)}{!group.admins.length && <li className="text-sm text-muted-foreground">Este conjunto no tiene administradores.</li>}</ul>
