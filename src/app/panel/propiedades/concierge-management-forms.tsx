@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Button } from "@/components/ui/button";
-import { changeConciergePassword, editConcierge, removeConcierge, type ConciergeState } from "./concierge-actions";
+import { changeConciergePassword, editConcierge, removeConcierge, setConciergeStatus, type ConciergeState } from "./concierge-actions";
 
 type Vehicle = { type: string; brand: string; model: string; plate: string };
 export type EditableConcierge = { id: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; address: string | null; vehicles: unknown; username: string; email_normalized: string };
@@ -32,4 +32,13 @@ export function ConciergeManagementForms({ propertyId, account }: { propertyId: 
     <details><summary className="cursor-pointer text-sm font-medium">Sustituir contraseña</summary><form onSubmit={passwordAction} className="mt-3 grid gap-3 sm:grid-cols-2"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="accountId" value={account.id} /><label className="text-sm">Nueva contraseña<input className={input} name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={128} /></label><label className="text-sm">Confirmar contraseña<input className={input} name="confirmation" type="password" autoComplete="new-password" required minLength={12} maxLength={128} /></label><p className="text-xs text-muted-foreground sm:col-span-2">No se muestra ni recupera la contraseña anterior. Entrega la nueva de forma privada.</p><div className="sm:col-span-2"><Button variant="outline" disabled={passwordPending}>{passwordPending ? "Cambiando…" : "Cambiar contraseña"}</Button></div>{passwordState?.error && <p role="alert" className="text-sm text-destructive sm:col-span-2">{passwordState.error}</p>}{passwordState?.success && <p role="status" className="text-sm text-primary sm:col-span-2">{passwordState.success}</p>}</form></details>
     <details><summary className="cursor-pointer text-sm font-medium text-destructive">Eliminar portero</summary><form onSubmit={removeAction} className="mt-3 space-y-3 rounded-lg border border-destructive/30 p-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="accountId" value={account.id} /><p className="text-sm">Se revoca su acceso de portería de inmediato y desaparece la tarjeta. La cuenta Auth solo se bloquea globalmente si no tiene otros roles activos. El usuario no se reutiliza. Los datos sujetos a retención se revisarán por separado.</p><label className="block text-sm">Escribe RETIRAR para confirmar<input className={input} name="confirmation" required pattern="RETIRAR" autoComplete="off" /></label><Button variant="outline" className="border-destructive text-destructive" disabled={removePending}>{removePending ? "Retirando…" : "Eliminar portero"}</Button>{removeState?.error && <p role="alert" className="text-sm text-destructive">{removeState.error}</p>}{removeState?.success && <p role="status" className="text-sm text-primary">{removeState.success}</p>}</form></details>
   </div>;
+}
+
+// Suspender o reactivar el acceso del portero, igual que el de los auxiliares.
+export function ConciergeStatusForm({ propertyId, accountId, suspended }: { propertyId: string; accountId: string; suspended: boolean }) {
+  const [state, action, pending] = useFormActionState(setConciergeStatus, undefined as ConciergeState);
+  return <form onSubmit={action} className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="accountId" value={accountId} /><input type="hidden" name="status" value={suspended ? "active" : "suspended"} />
+    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : suspended ? "Reactivar acceso" : "Suspender acceso"}</Button>
+    {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}
+  </form>;
 }

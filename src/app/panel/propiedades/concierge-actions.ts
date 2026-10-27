@@ -278,3 +278,20 @@ export async function removeAdminAssistant(_: ConciergeState, data: FormData): P
   refresh(propertyId);
   return { success: hasOtherAccess ? "Auxiliar retirado. La cuenta conserva otros accesos activos; no se bloqueó globalmente." : "Auxiliar retirado: acceso revocado, cuenta bloqueada y tarjeta retirada." };
 }
+
+// Suspender o reactivar el acceso de un portero (27/10/2026). No borra la ficha ni el usuario.
+export async function setConciergeStatus(_: ConciergeState, data: FormData): Promise<ConciergeState> {
+  const propertyId = value(data, "propertyId");
+  await requirePropertyAdmin(propertyId);
+  const status = value(data, "status");
+  if (!["active", "suspended"].includes(status)) return { error: "Estado inválido." };
+  const admin = createAdminClient();
+  const { data: account, error: findError } = await admin.from("concierge_accounts").select("id,user_id,member_id,status").eq("id", value(data, "accountId")).eq("property_id", propertyId).maybeSingle();
+  if (findError || !account || account.status !== "active") return { error: "El portero no tiene una cuenta activa." };
+  const { data: member, error: memberError } = await admin.from("property_members").select("id,roles,status").eq("id", account.member_id).eq("property_id", propertyId).maybeSingle();
+  if (memberError || !member || member.status === "revoked" || member.roles.length !== 1 || member.roles[0] !== "concierge") return { error: "El acceso cambió; revisa la cuenta." };
+  const saved = await admin.from("property_members").update({ status, updated_at: new Date().toISOString() }).eq("id", member.id).eq("property_id", propertyId).select("id").single();
+  if (saved.error || !saved.data) return { error: "No pudimos cambiar el acceso del portero." };
+  refresh(propertyId);
+  return { success: status === "suspended" ? "Acceso del portero suspendido." : "Acceso del portero reactivado." };
+}

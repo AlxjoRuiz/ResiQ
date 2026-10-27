@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BuildingForm, EndMembershipForm, MemberForm, RevealInvitationLinkForm, UnitResidentInvitationForm } from "./management-forms";
 import { PropertyUnitExplorer } from "./property-unit-explorer";
 import { ConciergeRegistrationForm } from "./concierge-registration-form";
-import { ConciergeManagementForms } from "./concierge-management-forms";
+import { ConciergeManagementForms, ConciergeStatusForm } from "./concierge-management-forms";
 import { AdminAssistantManagementForms } from "./admin-assistant-management-forms";
 import { AdminAssistantInvitationForm, AdminAssistantStatusForm, InviteAdminAssistantForm } from "./admin-assistant-forms";
 import { maskDocument } from "@/lib/concierge/identity";
@@ -152,6 +152,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
         {conciergeAccounts.map((account) => <Card key={account.id}><CardContent>
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{account.full_name}</h3><p className="text-sm text-muted-foreground">Usuario: {account.username}</p><p className="text-sm">Cédula: {maskDocument(account.document_number)} · Edad: {ageFor(account.birth_date)} · Teléfono: {account.phone_e164}</p></div><span className="rounded-full bg-secondary px-3 py-1 text-xs">{account.status === "active" && memberStatusById.get(account.member_id) === "active" ? "Activo" : "Inactivo"}</span></div>
           <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Ver detalles</summary><div className="mt-3 space-y-1 text-sm"><p>Cédula: {account.document_number}</p><p>Fecha de nacimiento: {account.birth_date}</p><p>Correo: {account.email_normalized}</p><p>Dirección: {account.address || "Sin información"}</p><p>Vehículos: {Array.isArray(account.vehicles) ? account.vehicles.length : 0}</p>{Array.isArray(account.vehicles) && account.vehicles.map((vehicle, index) => <p key={index}>{index + 1}. {String(vehicle.type ?? "")} · {String(vehicle.brand ?? "")} · {String(vehicle.model ?? "")} · {String(vehicle.plate ?? "")}</p>)}</div></details>
+          {account.status === "active" && memberStatusById.get(account.member_id) !== "revoked" && <ConciergeStatusForm key={memberStatusById.get(account.member_id)} propertyId={propertyId} accountId={account.id} suspended={memberStatusById.get(account.member_id) === "suspended"} />}
           <ConciergeManagementForms propertyId={propertyId} account={account} />
         </CardContent></Card>)}
         {conciergeMembers.map((member) => <ConciergeCard key={member.id} member={member} propertyId={propertyId} />)}

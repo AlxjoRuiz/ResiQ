@@ -56,6 +56,12 @@ test("a suspended admin assistant gets its own notice, not the uninvited one", a
   assert.equal(await getAppAccessStatus(uninvited, "user-1"), "unauthorized");
 });
 
+test("a suspended concierge gets its own notice", async () => {
+  const concierge = client({ platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [], error: null }, has_suspended_assistant_access: { data: false, error: null }, has_suspended_concierge_access: { data: true, error: null } });
+  assert.equal(await getAppAccessStatus(concierge, "user-1"), "concierge_suspended");
+  assert.equal(accessErrorCode("concierge_suspended"), "concierge_suspended");
+});
+
 test("a failed access lookup does not turn into an authorization", async () => {
   const unavailable = client({ platform_admins: { data: null, error: new Error("unavailable") } });
   assert.equal(await getAppAccessStatus(unavailable, "user-1"), "error");
