@@ -10,7 +10,7 @@ const headers = [
   "¿CUENTA CON VEHICULO?", "NUMERO DE PARQUEADERO",
   "¿AUTORIZA RECIBIR LAS FACTURAS DE ADMINISTRACION POR CORREO?",
   "¿A QUE CORREO SE LE HACE EL ENVIO DE LAS FACTURAS?", "¿CON CUANTOS VEHICULOS CUENTA?",
-  "TIPO DE VEHICULO CON EL QUE CUENTA", "PLACA DEL VEHICULO", "TIPO DE VEHICULO",
+  "MARCA DE VEHICULO", "PLACA DEL VEHICULO", "TIPO DE VEHICULO",
   "PLACA DEL VEHICULO 2", "SI ES ARRENDATARIO ¿SU CONTRATO ESTA VINCULADO CON?",
   "NOMBRE DE LA INMOBILIARIA", "¿CUANTAS MASCOTAS TIENE?", "¿HAY MENORES DE EDAD EN EL APTO?",
   "¿CUANTOS MENORES DE EDAD VIVEN EN SU APTO?",
@@ -43,9 +43,9 @@ test("bloquea un apartamento repetido aunque la torre esté escrita distinto", (
 
 test("detecta filas repetidas y preserva columnas adicionales", () => {
   const original = row("2", "201", "Persona Uno", "uno@example.invalid");
-  const result = parseCensusRows([[...headers, "Marca de vehículo"], [...original, "Marca ficticia"], [...original, "Marca ficticia"]]);
+  const result = parseCensusRows([[...headers, "Color del vehículo"], [...original, "Color ficticio"], [...original, "Color ficticio"]]);
   assert.equal(result.additionalHeaders.length, 1);
-  assert.equal(result.rows[0].cells[27], "Marca ficticia");
+  assert.equal(result.rows[0].cells[27], "Color ficticio");
   assert.deepEqual(result.duplicateRows, [3]);
   assert.ok(result.errors.some((error) => error.includes("más de una fila")));
 });
@@ -63,4 +63,11 @@ test("accepts 2,000 responses across towers and rejects one more", async () => {
   assert.equal(preview.towerCount, 3);
   const over = parseCensusRows([headers, ...data, row("Torre A", "999", "Extra", "extra@resiq.invalid")]);
   assert.ok(over.errors.some((error) => error.includes("2.000")));
+});
+
+test("la columna anterior «tipo de vehiculo con el que cuenta» se acepta como «marca de vehiculo»", () => {
+  const legacy = headers.map((header) => header === "MARCA DE VEHICULO" ? "TIPO DE VEHICULO CON EL QUE CUENTA" : header);
+  const result = parseCensusRows([legacy, row("Torre A", "101", "Persona Uno", "uno@resiq.invalid")]);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.additionalHeaders, []);
 });

@@ -42,16 +42,21 @@ const expectedHeaders = [
   "cuenta con vehiculo", "numero de parqueadero",
   "autoriza recibir las facturas de administracion por correo",
   "a que correo se le hace el envio de las facturas",
-  "con cuantos vehiculos cuenta", "tipo de vehiculo con el que cuenta",
+  "con cuantos vehiculos cuenta", "marca de vehiculo",
   "placa del vehiculo", "tipo de vehiculo", "placa del vehiculo 2",
   "si es arrendatario su contrato esta vinculado con", "nombre de la inmobiliaria",
   "cuantas mascotas tiene", "hay menores de edad en el apto",
   "cuantos menores de edad viven en su apto", "autoriacion autorizo a la administracion",
 ];
 
+// «Tipo de vehículo con el que cuenta» pasó a llamarse «Marca de vehículo» (27/10/2026); los Excel
+// con el nombre anterior se siguen aceptando como la misma columna.
+const legacyHeaders: Record<string, string> = { "tipo de vehiculo con el que cuenta": "marca de vehiculo" };
+
 export function normalizeCensusHeader(value: string) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  const key = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  return legacyHeaders[key] ?? key;
 }
 
 function cellText(value: unknown): string {
