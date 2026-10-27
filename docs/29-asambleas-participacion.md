@@ -18,6 +18,12 @@ Alejandro aprobo continuar esta ampliacion el 21 de octubre de 2026. No forma pa
 2. ~~Dudas previas publicas para convocados y aviso interno a Administracion.~~ Retirada (25/10/2026).
 3. Preguntas de participacion y votaciones en vivo, con bloqueo al cerrar, resultado inmediato, aislamiento entre propiedades y pruebas de concurrencia. El requisito de asistencia y la privacidad del voto individual quedaron confirmados por Alejandro.
 
+## Entrega 3: votaciones en vivo (26/10/2026)
+
+Alejandro decidió: solo Administración abre preguntas; únicamente votaciones Sí / No / Abstención (sin opción múltiple ni texto); vota solo quien marcó asistencia; los convocados ven los totales al cerrar y Administración ve el avance mientras está abierta.
+
+`20261026210000_assembly_live_votes.sql` crea `assembly_votes` y `assembly_vote_ballots` (sin lectura directa) y las RPC `open_assembly_vote`, `close_assembly_vote`, `cast_assembly_vote` y `get_assembly_votes`. Una votación abierta a la vez por asamblea; un voto por convocado (único por votación y convocado) que no se cambia; la auditoría registra que votó, no qué eligió. Al finalizar o cancelar la asamblea se cierran las votaciones abiertas. La página de la asamblea en curso se actualiza sola cada 5 segundos (`LiveRefresh`, sin conexiones externas). No calcula quórum, coeficientes ni mayorías: validar con asesor legal.
+
 ## Entrega 1 preparada, sin publicar
 
 `20261021210000_assembly_self_check_in.sql` crea `self_check_in_assembly`. Solo acepta una cuenta activa convocada con vinculo vigente durante una asamblea publicada y en curso. Un reintento sobre presencia registrada es idempotente. No permite cambiar una ausencia ni sustituye las correcciones administrativas existentes. Guarda actor, fecha, actividad y auditoria.
