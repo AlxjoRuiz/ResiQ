@@ -3,7 +3,7 @@ import { strToU8, zipSync } from "fflate";
 const xml=(value:string)=>strToU8(value);
 export async function GET(){
   const sheetRows=[
-    ["torre","apartamento","concepto","valor","fecha_emision","fecha_vencimiento","referencia","tipo"],
+    ["torre","apartamento","concepto","valor","fecha_emision","fecha_vencimiento","tipo"],
   ];
   const sheetData=sheetRows.map((row,rowIndex)=>`<row r="${rowIndex+1}">${row.map((cell,columnIndex)=>{let n=columnIndex+1,label="";while(n){n--;label=String.fromCharCode(65+n%26)+label;n=Math.floor(n/26);}return `<c r="${label}${rowIndex+1}" t="inlineStr"><is><t>${cell}</t></is></c>`;}).join("")}</row>`).join("");
   const archive=zipSync({

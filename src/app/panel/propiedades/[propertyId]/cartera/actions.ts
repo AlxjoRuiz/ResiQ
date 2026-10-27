@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { readSheet, type CellValue } from "read-excel-file/node";
@@ -122,6 +123,7 @@ export async function cancelPaymentAgreement(_: FinanceState, data: FormData): P
 
 function normalizeHeader(value: CellValue | null) { return String(value??"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"_"); }
 function dateValue(value: CellValue | null) { if(value instanceof Date)return value.toISOString().slice(0,10);const text=String(value??"").trim();return isoDatePattern.test(text)?text:""; }
+function autoReference(unitId:string,concept:string,issued:string,amount:number){return `AUTO-${createHash("sha256").update(`${unitId}|${concept.trim().toLowerCase()}|${issued}|${amount.toFixed(2)}`).digest("hex").slice(0,32)}`;}
 function textValue(value: CellValue | null) { return String(value??"").trim(); }
 
 export async function importReceivables(_: FinanceState, data: FormData): Promise<FinanceState> {
@@ -132,15 +134,18 @@ export async function importReceivables(_: FinanceState, data: FormData): Promis
     const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), 32, financeXlsxLimits);
     const rows=await readSheet(Buffer.from(archive));
     if(rows.length<2||rows.length>FINANCE_MAX_ROWS+1)return{error:`El archivo debe contener encabezados y entre 1 y ${FINANCE_MAX_ROWS} filas.`};
-    const headers=rows[0].map(normalizeHeader);const required=["torre","apartamento","concepto","valor","fecha_emision","fecha_vencimiento","referencia","tipo"];
+    const headers=rows[0].map(normalizeHeader);const required=["torre","apartamento","concepto","valor","fecha_emision","fecha_vencimiento","tipo"];
     if(required.some((name)=>!headers.includes(name)))return{error:`Faltan columnas. Usa la plantilla: ${required.join(", ")}.`};
     const index=Object.fromEntries(headers.map((name,position)=>[name,position]));
     const {data:units,error:unitError}=await supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active");if(unitError)return{error:friendlyError(unitError.message)};
     const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[`${String(building?.name??"").trim().toLowerCase()}|${unit.code.trim().toLowerCase()}`,unit.id];}));
     const parsed=[] as {unit_id:string;concept:string;amount:number;issued_on:string;due_on:string;external_reference:string;source:string}[];const rowErrors:string[]=[];
-    rows.slice(1).forEach((row,offset)=>{const line=offset+2,building=textValue(row[index.torre]),unitCode=textValue(row[index.apartamento]),concept=textValue(row[index.concepto]),amount=Number(row[index.valor]),issued=dateValue(row[index.fecha_emision]),due=dateValue(row[index.fecha_vencimiento]),reference=textValue(row[index.referencia]),kind=normalizeHeader(row[index.tipo]);const unitId=unitMap.get(`${building.toLowerCase()}|${unitCode.toLowerCase()}`);const source=kind==="saldo_inicial"?"opening_balance":kind==="obligacion"||kind==="import"?"import":"";if(!unitId||concept.length<2||concept.length>180||!Number.isFinite(amount)||amount<=0||!issued||!due||due<issued||!reference||reference.length>120||!source){rowErrors.push(`Fila ${line}`);return;}parsed.push({unit_id:unitId,concept,amount,issued_on:issued,due_on:due,external_reference:reference,source});});
+    rows.slice(1).forEach((row,offset)=>{const line=offset+2,building=textValue(row[index.torre]),unitCode=textValue(row[index.apartamento]),concept=textValue(row[index.concepto]),amount=Number(row[index.valor]),issued=dateValue(row[index.fecha_emision]),due=dateValue(row[index.fecha_vencimiento]),reference=index.referencia===undefined?"":textValue(row[index.referencia]),kind=normalizeHeader(row[index.tipo]);const unitId=unitMap.get(`${building.toLowerCase()}|${unitCode.toLowerCase()}`);const source=kind==="saldo_inicial"?"opening_balance":kind==="obligacion"||kind==="import"?"import":"";if(!unitId||concept.length<2||concept.length>180||!Number.isFinite(amount)||amount<=0||!issued||!due||due<issued||reference.length>120||!source){rowErrors.push(`Fila ${line}`);return;}parsed.push({unit_id:unitId,concept,amount,issued_on:issued,due_on:due,external_reference:reference||autoReference(unitId,concept,issued,amount),source});});
     if(rowErrors.length)return{error:`Corrige ${rowErrors.slice(0,8).join(", ")}${rowErrors.length>8?" y otras filas":""}.`};
+    // Sin columna «referencia», cada fila se identifica por apartamento, concepto, emisión y valor;
+    // la base de datos salta las que ya están cargadas (o repetidas en el archivo).
     const batchId=crypto.randomUUID();const result=await supabase.rpc("import_receivables",{target_property_id:propertyId,target_batch_id:batchId,target_rows:parsed});if(result.error)return{error:friendlyError(result.error.message)};
-    refreshFinance(propertyId);redirect(`${financePath(propertyId)}?imported=${result.data??parsed.length}`);
+    const imported=Number(result.data??0);if(imported===0)return{error:"Todas las obligaciones del archivo ya estaban cargadas; no se agregó nada."};
+    refreshFinance(propertyId);redirect(`${financePath(propertyId)}?imported=${imported}&skipped=${parsed.length-imported}`);
   } catch(error) { if(error && typeof error==="object" && "digest" in error)throw error;return{error:"No pudimos leer el archivo. Descarga la plantilla y verifica que sea un .xlsx válido."}; }
 }
