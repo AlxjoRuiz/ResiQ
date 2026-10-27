@@ -2,7 +2,7 @@ import Link from "next/link";
 import styles from "@/components/dashboard/dashboard.module.css";
 import { redirect } from "next/navigation";
 import { residentModules, conciergeModules, adminModules } from "@/components/dashboard/navigation";
-import { Bell, Building2, House } from "lucide-react";
+import { Bell, Building2, House, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/dashboard/role-dashboard";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
@@ -61,7 +61,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
           <Link href={`/panel/propiedades/${propertyId}/dashboard?vista=${view}`} aria-current="page" className={styles.activeLink}><House size={19} aria-hidden="true" />Inicio</Link>
           {modules.filter((module) => module.href).map(({ title, href, icon: Icon }) => <Link key={title} href={href!}><Icon size={19} aria-hidden="true" />{title}</Link>)}
           <Link href={`/panel/propiedades/${propertyId}/notificaciones`}><Bell size={19} aria-hidden="true" />Notificaciones</Link>
-          <Link href={`/panel/propiedades/${propertyId}/comunicados`}><Bell size={19} aria-hidden="true" />Comunicados</Link>
+          <Link href={`/panel/propiedades/${propertyId}/comunicados`}><Megaphone size={19} aria-hidden="true" />Comunicados</Link>
         </nav>
         <Link href="/panel" className={styles.communityLink}>← Mis comunidades</Link>
       </aside>
