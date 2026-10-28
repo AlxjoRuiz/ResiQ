@@ -44,7 +44,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   // Secciones con algo nuevo sin ver: punto en la barra lateral.
   const unseen = new Set(Array.isArray(unseenResult.data) ? unseenResult.data.map(String) : []);
   const base = `/panel/propiedades/${propertyId}`;
-  const dot = (name: string) => unseen.has(name) ? <span className={styles.unseenDot}><span className="sr-only">Hay algo nuevo</span></span> : null;
+  const dot = (name: string) => unseen.has(name) || (name === "cartera" && unseen.has("cartera_pending")) ? <span className={styles.unseenDot}><span className="sr-only">Hay algo nuevo</span></span> : null;
   const urgentReservations = (pendingResult.data ?? []).filter((reservation) => reservation.hold_expires_at && new Date(reservation.hold_expires_at).getTime() - new Date().getTime() <= 2 * 60 * 60 * 1000).length;
   const summaries = [
     { title: view === "administracion" ? "Solicitudes de visita" : "Visitas", path: "visitas", error: visitSummary.error, rows: (visitSummary.data ?? []).map((item) => ({ id: item.id, title: item.visitor_name, status: visitStatusLabel(item.status) })) },

@@ -38,10 +38,12 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles,
     });
   }, [pathname]);
   // Punto de «algo nuevo sin ver»: al abrir la sección se quita aquí y se guarda en el servidor.
-  const [unseen, setUnseen] = useState(() => new Set(unseenSections));
-  if (unseen.has(section)) { const next = new Set(unseen); next.delete(section); setUnseen(next); }
+  // «cartera_pending»: comprobantes sin registrar; ese punto de Cartera no se quita al entrar.
+  const [seenHere, setSeenHere] = useState<Set<string>>(() => new Set());
+  if (unseenSections.includes(section) && !seenHere.has(section)) setSeenHere(new Set(seenHere).add(section));
   useEffect(() => { if (unseenSections.includes(section)) void markSectionSeen(propertyId, section); }, [section, propertyId, unseenSections]);
-  const dot = (name: string) => unseen.has(name) ? <span className={styles.unseenDot}><span className="sr-only">Hay algo nuevo</span></span> : null;
+  const hasDot = (name: string) => (unseenSections.includes(name) && !seenHere.has(name)) || (name === "cartera" && unseenSections.includes("cartera_pending"));
+  const dot = (name: string) => hasDot(name) ? <span className={styles.unseenDot}><span className="sr-only">Hay algo nuevo</span></span> : null;
   // El contenido se desplaza dentro del recuadro: al cambiar de sección vuelve arriba.
   useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [pathname]);
   if (pathname === `${base}/dashboard`) return children;
