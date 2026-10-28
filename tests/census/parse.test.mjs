@@ -71,3 +71,10 @@ test("la columna anterior «tipo de vehiculo con el que cuenta» se acepta como 
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.additionalHeaders, []);
 });
+
+test("la autorización se acepta escrita como AUTORIZACION o como AUTORIACION", () => {
+  const fixed = headers.map((header) => header.startsWith("AUTORIACION") ? "AUTORIZACIÓN: Autorizo a la administración del conjunto a tratar mis datos personales" : header);
+  const result = parseCensusRows([fixed, row("Torre A", "101", "Persona Uno", "uno@resiq.invalid")]);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.additionalHeaders, []);
+});

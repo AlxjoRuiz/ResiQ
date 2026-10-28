@@ -56,7 +56,9 @@ const legacyHeaders: Record<string, string> = { "tipo de vehiculo con el que cue
 export function normalizeCensusHeader(value: string) {
   const key = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
-  return legacyHeaders[key] ?? key;
+  // «AUTORIZACION» bien escrita equivale a «AUTORIACION», como venía en el formulario original (28/10/2026).
+  const authorization = key.startsWith("autorizacion ") ? `autoriacion ${key.slice("autorizacion ".length)}` : key;
+  return legacyHeaders[authorization] ?? authorization;
 }
 
 function cellText(value: unknown): string {
