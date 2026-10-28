@@ -24,23 +24,23 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   const requested = (await searchParams).vista as View | undefined;
   const view = requested && views.includes(requested) ? requested : views.at(-1);
   if (!view) redirect("/panel");
-  if (view === "administracion") await supabase.rpc("refresh_reservations", { target_property_id: propertyId });
-  const pendingReservations = view === "administracion"
-    ? await supabase.from("reservations").select("id,hold_expires_at").eq("property_id", propertyId).eq("status", "pending").order("hold_expires_at", { ascending: true })
-    : { data: [], error: null };
-  const urgentReservations = (pendingReservations.data ?? []).filter((reservation) => reservation.hold_expires_at && new Date(reservation.hold_expires_at).getTime() - new Date().getTime() <= 2 * 60 * 60 * 1000).length;
-  const [{ count: unitCount }, { count: memberCount }, { data: ownUnits }] = await Promise.all([
-    supabase.from("units").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active"),
-    view === "administracion" ? supabase.from("property_members").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
+  // Todas las consultas en una sola tanda y solo las que esta vista usa (28/10/2026, prueba de carga).
+  const isAdmin = view === "administracion";
+  const pendingReservations = isAdmin
+    ? supabase.rpc("refresh_reservations", { target_property_id: propertyId }).then(() => supabase.from("reservations").select("id,hold_expires_at").eq("property_id", propertyId).eq("status", "pending").order("hold_expires_at", { ascending: true }))
+    : Promise.resolve({ data: [] as { id: string; hold_expires_at: string | null }[], error: null });
+  const [pendingResult, { count: unitCount }, { count: memberCount }, { data: ownUnits }, visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary] = await Promise.all([
+    pendingReservations,
+    view !== "residente" ? supabase.from("units").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
+    isAdmin ? supabase.from("property_members").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
     view === "residente" ? supabase.from("unit_memberships").select("relationship,units(code)").eq("property_id", propertyId).eq("member_id", membership.id).is("valid_to", null) : Promise.resolve({ data: [] }),
-  ]);
-  const [visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary] = await Promise.all([
     supabase.from("visitors").select("id,visitor_name,status").eq("property_id", propertyId).in("status", view === "porteria" ? ["authorized", "entered"] : ["pending", "authorized", "entered"]).order("scheduled_start", { ascending: false }).limit(3),
     supabase.from("packages").select("id,kind,utility_service,recipient_name,status").eq("property_id", propertyId).order("received_at", { ascending: false }).limit(3),
     view !== "porteria" ? supabase.from("pqrs").select("id,subject,status").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(3) : Promise.resolve({ data: [], error: null }),
     supabase.from("notifications").select("id,subject,body,read_at,occurred_at").eq("property_id", propertyId).eq("recipient_member_id", membership.id).order("occurred_at", { ascending: false }).limit(3),
     view !== "porteria" ? supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }) : Promise.resolve({ data: [], error: null }),
   ]);
+  const urgentReservations = (pendingResult.data ?? []).filter((reservation) => reservation.hold_expires_at && new Date(reservation.hold_expires_at).getTime() - new Date().getTime() <= 2 * 60 * 60 * 1000).length;
   const summaries = [
     { title: view === "administracion" ? "Solicitudes de visita" : "Visitas", path: "visitas", error: visitSummary.error, rows: (visitSummary.data ?? []).map((item) => ({ id: item.id, title: item.visitor_name, status: visitStatusLabel(item.status) })) },
     { title: view === "residente" ? "Mis paquetes" : "Paquetes recientes", path: "paquetes", error: packageSummary.error, rows: (packageSummary.data ?? []).map((item) => ({ id: item.id, title: `${receivedItemLabel(item.kind, item.utility_service)} · ${item.recipient_name}`, status: packageStatusLabel(item.status) })) },
@@ -82,7 +82,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
           <MetricCard label="Perfil actual" value={viewLabel} />
           <MetricCard label={view === "administracion" ? "Miembros activos" : "Comunidad"} value={view === "administracion" ? memberCount ?? 0 : "Activa"} />
         </section>
-        {view === "administracion" && <section aria-label="Solicitudes de reserva pendientes" className="w-fit max-w-full rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950"><h2 className="font-semibold">Reservas por responder</h2>{pendingReservations.error ? <p className="mt-2 text-sm">No pudimos consultar las reservas. Abre Reservas para revisarlas.</p> : pendingReservations.data?.length ? <p className="mt-2 text-sm">Hay {pendingReservations.data.length} {pendingReservations.data.length === 1 ? "solicitud pendiente" : "solicitudes pendientes"}.{urgentReservations > 0 ? ` ${urgentReservations} ${urgentReservations === 1 ? "vence" : "vencen"} en menos de 2 horas.` : ""}</p> : <p className="mt-2 text-sm">No hay solicitudes pendientes.</p>}<Link href={`/panel/propiedades/${propertyId}/reservas`} className="mt-3 inline-block text-sm font-semibold underline underline-offset-4">Revisar reservas →</Link></section>}
+        {view === "administracion" && <section aria-label="Solicitudes de reserva pendientes" className="w-fit max-w-full rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950"><h2 className="font-semibold">Reservas por responder</h2>{pendingResult.error ? <p className="mt-2 text-sm">No pudimos consultar las reservas. Abre Reservas para revisarlas.</p> : pendingResult.data?.length ? <p className="mt-2 text-sm">Hay {pendingResult.data.length} {pendingResult.data.length === 1 ? "solicitud pendiente" : "solicitudes pendientes"}.{urgentReservations > 0 ? ` ${urgentReservations} ${urgentReservations === 1 ? "vence" : "vencen"} en menos de 2 horas.` : ""}</p> : <p className="mt-2 text-sm">No hay solicitudes pendientes.</p>}<Link href={`/panel/propiedades/${propertyId}/reservas`} className="mt-3 inline-block text-sm font-semibold underline underline-offset-4">Revisar reservas →</Link></section>}
         {view === "residente" && units.length > 0 && <section className={styles.units}><h2>Tus apartamentos</h2><div>{units.map((unit, index) => { const related = Array.isArray(unit.units) ? unit.units[0] : unit.units as { code?: string } | null; return <span key={`${related?.code}-${index}`}>{related?.code ?? "Unidad"} · {unit.relationship === "owner" ? "Propietario" : "Residente"}</span>; })}</div></section>}
         <section className={styles.summaries} aria-label="Novedades y cartera">
           <article className={styles.summary}><header><h2>Novedades</h2><Link href={`/panel/propiedades/${propertyId}/notificaciones`} className="inline-flex min-h-10 items-center sm:min-h-0">Ver todo →</Link></header>{notificationSummary.error ? <p role="status" className={styles.empty}>No pudimos cargar tus novedades.</p> : !notificationSummary.data?.length ? <p className={styles.empty}>No tienes novedades recientes.</p> : <ul>{notificationSummary.data.map((notice) => <li key={notice.id} className={styles.notice}><div><h3>{notice.subject}</h3><span className={styles.status}>{notice.read_at ? "Leída" : "Sin leer"}</span></div><p>{notice.body}</p><time dateTime={notice.occurred_at}>{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: property.timezone }).format(new Date(notice.occurred_at))}</time></li>)}</ul>}</article>
