@@ -35,7 +35,7 @@ function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId:
   </details>;
 }
 
-export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean };
+export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar pago» llena el formulario
 // con la deuda, el valor y la fecha del comprobante; la administración revisa y pulsa «Registrar pago».
@@ -45,8 +45,8 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
   const formRef = useRef<HTMLDivElement>(null);
   // Máximo 3 tarjetas: siempre todos los pendientes y, después, los registrados más recientes. Los
   // demás registrados quedan en «Ver historial de pagos».
-  const pendingEvidences = evidences.filter((evidence) => !evidence.registered);
-  const shown = [...pendingEvidences, ...evidences.filter((evidence) => evidence.registered).slice(0, Math.max(0, 3 - pendingEvidences.length))];
+  const pendingEvidences = evidences.filter((evidence) => !evidence.registered && evidence.voidReason === null);
+  const shown = [...pendingEvidences, ...evidences.filter((evidence) => evidence.registered || evidence.voidReason !== null).slice(0, Math.max(0, 3 - pendingEvidences.length))];
   const inHistory = evidences.length - shown.length;
   function accept(evidence: EvidenceRow) {
     const outstanding = receivables.find((item) => item.id === evidence.receivableId)?.outstanding ?? 0;
@@ -63,11 +63,11 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
           <div className="flex flex-wrap items-start justify-between gap-3">
             {/* Título: lo que se paga; debajo, más pequeño, el mes, el valor y la fecha; luego el archivo. */}
             <div className="min-w-0"><p className="break-words font-semibold">{evidence.concept}</p><p className="mt-0.5 text-xs text-muted-foreground">{evidence.periodLabel ? `Pago de ${evidence.periodLabel} · ` : ""}{evidence.declaredAmount !== null ? `${formatCop(evidence.declaredAmount)} · ` : ""}cargado {evidence.uploadedAt}</p><a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block break-words text-xs font-medium text-primary underline underline-offset-2">{evidence.originalName}</a></div>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[evidence.registered ? "success" : "warning"]}`}>{evidence.registered ? "Pago registrado" : evidence.receivedAt ? "Recibido" : "Por revisar"}</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[evidence.voidReason !== null ? "danger" : evidence.registered ? "success" : "warning"]}`}>{evidence.voidReason !== null ? "Pago anulado" : evidence.registered ? "Pago registrado" : evidence.receivedAt ? "Recibido" : "Por revisar"}</span>
           </div>
           {evidence.comment && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-secondary px-3 py-2 text-sm">{evidence.comment}</p>}
           {evidence.receivedAt && <p className="mt-2 text-xs text-muted-foreground">Recibido {evidence.receivedAt}</p>}
-          {!evidence.registered && <div className="mt-3 flex flex-wrap gap-2"><Button type="button" size="sm" variant={prefill?.evidenceId === evidence.id ? "outline" : "default"} onClick={() => accept(evidence)}>{prefill?.evidenceId === evidence.id ? "En el formulario →" : "Aceptar pago"}</Button></div>}
+          {evidence.voidReason && <p className="mt-2 text-xs text-muted-foreground">Motivo de la anulación: {evidence.voidReason}</p>}{!evidence.registered && evidence.voidReason === null && <div className="mt-3 flex flex-wrap gap-2"><Button type="button" size="sm" variant={prefill?.evidenceId === evidence.id ? "outline" : "default"} onClick={() => accept(evidence)}>{prefill?.evidenceId === evidence.id ? "En el formulario →" : "Aceptar pago"}</Button></div>}
         </article>)}
         {!evidences.length && <p className="text-sm text-muted-foreground">El residente aún no ha subido comprobantes.</p>}
         {inHistory > 0 && <p className="text-xs text-muted-foreground">{inHistory === 1 ? "1 comprobante registrado más está" : `${inHistory} comprobantes registrados más están`} en «Ver historial de pagos».</p>}
