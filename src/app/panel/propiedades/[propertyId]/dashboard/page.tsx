@@ -29,7 +29,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   const pendingReservations = isAdmin
     ? supabase.rpc("refresh_reservations", { target_property_id: propertyId }).then(() => supabase.from("reservations").select("id,hold_expires_at").eq("property_id", propertyId).eq("status", "pending").order("hold_expires_at", { ascending: true }))
     : Promise.resolve({ data: [] as { id: string; hold_expires_at: string | null }[], error: null });
-  const [pendingResult, { count: unitCount }, { count: memberCount }, { data: ownUnits }, visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary] = await Promise.all([
+  const [pendingResult, { count: unitCount }, { count: memberCount }, { data: ownUnits }, visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary, unseenResult] = await Promise.all([
     pendingReservations,
     view !== "residente" ? supabase.from("units").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
     isAdmin ? supabase.from("property_members").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
@@ -39,7 +39,12 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     view !== "porteria" ? supabase.from("pqrs").select("id,subject,status").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(3) : Promise.resolve({ data: [], error: null }),
     supabase.from("notifications").select("id,subject,body,read_at,occurred_at").eq("property_id", propertyId).eq("recipient_member_id", membership.id).order("occurred_at", { ascending: false }).limit(3),
     view !== "porteria" ? supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }) : Promise.resolve({ data: [], error: null }),
+    supabase.rpc("get_unseen_sections", { target_property_id: propertyId }),
   ]);
+  // Secciones con algo nuevo sin ver: punto en la barra lateral.
+  const unseen = new Set(Array.isArray(unseenResult.data) ? unseenResult.data.map(String) : []);
+  const base = `/panel/propiedades/${propertyId}`;
+  const dot = (name: string) => unseen.has(name) ? <span className={styles.unseenDot}><span className="sr-only">Hay algo nuevo</span></span> : null;
   const urgentReservations = (pendingResult.data ?? []).filter((reservation) => reservation.hold_expires_at && new Date(reservation.hold_expires_at).getTime() - new Date().getTime() <= 2 * 60 * 60 * 1000).length;
   const summaries = [
     { title: view === "administracion" ? "Solicitudes de visita" : "Visitas", path: "visitas", error: visitSummary.error, rows: (visitSummary.data ?? []).map((item) => ({ id: item.id, title: item.visitor_name, status: visitStatusLabel(item.status) })) },
@@ -59,9 +64,9 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
         <p className={styles.sidebarLabel}>{viewLabel}</p>
         <nav aria-label={`Navegación de ${viewLabel.toLowerCase()}`} className={styles.navigation}>
           <Link href={`/panel/propiedades/${propertyId}/dashboard?vista=${view}`} aria-current="page" className={styles.activeLink}><House size={19} aria-hidden="true" />Inicio</Link>
-          {modules.filter((module) => module.href).map(({ title, href, icon: Icon }) => <Link key={title} href={href!}><Icon size={19} aria-hidden="true" />{title}</Link>)}
-          <Link href={`/panel/propiedades/${propertyId}/notificaciones`}><Bell size={19} aria-hidden="true" />Notificaciones</Link>
-          <Link href={`/panel/propiedades/${propertyId}/comunicados`}><Megaphone size={19} aria-hidden="true" />Comunicados</Link>
+          {modules.filter((module) => module.href).map(({ title, href, icon: Icon }) => <Link key={title} href={href!}><Icon size={19} aria-hidden="true" />{title}{dot(href!.slice(base.length + 1).split(/[/?]/)[0])}</Link>)}
+          <Link href={`/panel/propiedades/${propertyId}/notificaciones`}><Bell size={19} aria-hidden="true" />Notificaciones{dot("notificaciones")}</Link>
+          <Link href={`/panel/propiedades/${propertyId}/comunicados`}><Megaphone size={19} aria-hidden="true" />Comunicados{dot("comunicados")}</Link>
         </nav>
         <Link href="/panel" className={styles.communityLink}>← Mis comunidades</Link>
       </aside>
