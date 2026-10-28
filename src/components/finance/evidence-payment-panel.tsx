@@ -61,7 +61,8 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
       <div className="mt-5 grid gap-3">
         {evidences.map((evidence) => <article key={evidence.id} className="rounded-xl border p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">{evidence.periodLabel && <p className="text-xs font-semibold tracking-wider text-primary uppercase">Pago de {evidence.periodLabel}</p>}<a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="break-words font-medium text-primary underline underline-offset-2">{evidence.originalName}</a><p className="mt-1 text-xs text-muted-foreground">{evidence.concept}{evidence.declaredAmount !== null ? ` · ${formatCop(evidence.declaredAmount)}` : ""} · cargado {evidence.uploadedAt}</p></div>
+            {/* Título: lo que se paga; debajo, más pequeño, el mes, el valor y la fecha; luego el archivo. */}
+            <div className="min-w-0"><p className="break-words font-semibold">{evidence.concept}</p><p className="mt-0.5 text-xs text-muted-foreground">{evidence.periodLabel ? `Pago de ${evidence.periodLabel} · ` : ""}{evidence.declaredAmount !== null ? `${formatCop(evidence.declaredAmount)} · ` : ""}cargado {evidence.uploadedAt}</p><a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block break-words text-xs font-medium text-primary underline underline-offset-2">{evidence.originalName}</a></div>
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[evidence.registered ? "success" : "warning"]}`}>{evidence.registered ? "Pago registrado" : evidence.receivedAt ? "Recibido" : "Por revisar"}</span>
           </div>
           {evidence.comment && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-secondary px-3 py-2 text-sm">{evidence.comment}</p>}
