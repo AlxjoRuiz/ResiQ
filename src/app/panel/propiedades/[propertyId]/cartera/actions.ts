@@ -56,9 +56,13 @@ export async function recordPayment(_: FinanceState, data: FormData): Promise<Fi
   const allocations=data.getAll("receivableId").map(String).flatMap((receivableId)=>{const value=Number(field(data,`allocation_${receivableId}`));return value>0?[{receivable_id:receivableId,amount:value}]:[];});
   if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||!Number.isFinite(amount)||amount<=0||!isoDatePattern.test(paidOn)||allocations.some((item)=>!uuidPattern.test(item.receivable_id)))return{error:"Completa un pago válido."};
   const allocated=allocations.reduce((sum,item)=>sum+item.amount,0);if(allocated>amount+0.001)return{error:"La distribución supera el valor del pago."};
-  const supabase=await createClient();const result=await supabase.rpc("record_payment",{target_property_id:propertyId,target_unit_id:unitId,target_amount:amount,target_paid_on:paidOn,target_reference:reference,target_allocations:allocations,target_idempotency_key:crypto.randomUUID()});
-  if(result.error)return{error:friendlyError(result.error.message)};
-  refreshFinance(propertyId,unitId);return{success:"Pago registrado y distribuido."};
+  // Desde un comprobante: el pago queda amarrado a él y no se puede registrar dos veces.
+  const evidenceId=field(data,"evidenceId");if(evidenceId&&!uuidPattern.test(evidenceId))return{error:"Comprobante inválido."};
+  const supabase=await createClient();const result=evidenceId
+    ?await supabase.rpc("record_evidence_payment",{target_evidence_id:evidenceId,target_amount:amount,target_paid_on:paidOn,target_reference:reference,target_allocations:allocations})
+    :await supabase.rpc("record_payment",{target_property_id:propertyId,target_unit_id:unitId,target_amount:amount,target_paid_on:paidOn,target_reference:reference,target_allocations:allocations,target_idempotency_key:crypto.randomUUID()});
+  if(result.error)return{error:result.error.message.includes("evidence_already_registered")?"Ese comprobante ya tiene un pago registrado.":friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:evidenceId?"Pago del comprobante registrado y distribuido.":"Pago registrado y distribuido."};
 }
 
 export async function voidReceivable(_: FinanceState, data: FormData): Promise<FinanceState> {
