@@ -97,6 +97,12 @@
   .panelSurface:has(> main:not(.canvas)) { height: 100vh; min-height: 0; overflow: hidden; padding-block: 12px; }
   .panelSurface > main:not(.canvas) { height: calc(100vh - 24px); min-height: 0; overflow-y: auto; }
 }
+/* Al imprimir (p. ej. el informe de mantenimiento) el recuadro no tiene alto fijo ni borde, para que
+   el contenido ocupe todas las páginas que necesite (28/10/2026). */
+@media print {
+  .panelSurface, .panelSurface:has(> main:not(.canvas)) { height: auto; min-height: 0; overflow: visible; padding: 0; }
+  .panelSurface > main:not(.canvas) { height: auto; overflow: visible; border: 0; border-radius: 0; }
+}
 /* Tarjetas del panel del superadmin: vidrio azul claro con borde marcado, como la tarjeta del login;
    al pasar el cursor crecen un poco (27/10/2026). */
 .panelSurface > main [data-slot="card"].glassCard, .glassCard {

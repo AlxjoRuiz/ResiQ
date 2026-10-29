@@ -16,7 +16,7 @@ export default async function MaintenanceHomePage() {
         { title: "Asistencia", description: "Llegadas y salidas de cada trabajador, con su foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
         { title: "Tareas", description: "Asigna tareas y revisa las entregadas con sus fotos.", icon: ClipboardList, href: "/mantenimiento/tareas" },
         { title: "Llamados de atención", description: "Registra y consulta los llamados de atención.", icon: FileWarning, href: "/mantenimiento/llamados" },
-        { title: "Informe mensual", description: "Descarga el informe del mes en Excel y PDF.", icon: FileSpreadsheet },
+        { title: "Informe mensual", description: "Descarga el informe del mes en Excel y PDF.", icon: FileSpreadsheet, href: "/mantenimiento/informe" },
       ]
     : [
         { title: "Mi asistencia", description: "Marca tu llegada y tu salida con una foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
