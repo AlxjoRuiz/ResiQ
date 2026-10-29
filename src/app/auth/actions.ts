@@ -139,15 +139,20 @@ export async function acceptInvitation(_: AuthState, formData: FormData): Promis
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Inicia sesión con el correo invitado para continuar." };
-  const { error } = await supabase.rpc("accept_invitation", { invitation_token: token });
+  let { error } = await supabase.rpc("accept_invitation", { invitation_token: token });
+  let maintenance = false;
+  if (error?.message.includes("invalid_invitation")) {
+    const result = await supabase.rpc("accept_maintenance_invitation", { invitation_token: token });
+    if (!result.error || !result.error.message.includes("invalid_invitation")) { error = result.error; maintenance = !result.error; }
+  }
   if (error) {
     // Mensaje según la causa, para que quien acepta sepa qué hacer.
     if (error.message.includes("email_mismatch")) return { error: `Esta invitación es para otro correo. Ahora tienes la sesión iniciada con ${user.email ?? "otra cuenta"}: cierra sesión y entra con el correo invitado.` };
     if (error.message.includes("invalid_invitation")) return { error: "La invitación venció o ya no es válida. Si se generó un enlace nuevo, usa el último." };
-    if (error.message.includes("membership_exists") || error.message.includes("already_assigned")) return { error: "Esta cuenta ya tiene acceso a esta comunidad o a este apartamento." };
+    if (error.message.includes("membership_exists") || error.message.includes("already_assigned")) return { error: "Esta cuenta ya tiene acceso a esta comunidad, a este apartamento o al equipo de mantenimiento." };
     return { error: "No pudimos aceptar la invitación. Intenta nuevamente." };
   }
-  redirect(user.identities?.some((identity) => identity.provider === "google") && !user.identities.some((identity) => identity.provider === "email") ? "/invitacion/contrasena" : "/panel?invitation=accepted");
+  redirect(user.identities?.some((identity) => identity.provider === "google") && !user.identities.some((identity) => identity.provider === "email") ? "/invitacion/contrasena" : maintenance ? "/mantenimiento" : "/panel?invitation=accepted");
 }
 
 export async function createInvitedPassword(_: AuthState, formData: FormData): Promise<AuthState> {

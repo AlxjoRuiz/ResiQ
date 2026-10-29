@@ -76,6 +76,27 @@ export async function reissueAdminInvitation(_: CreatePropertyState, data: FormD
   return { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días.", link: await invitationLink(token) };
 }
 
+// Equipo de mantenimiento de ResiQ (28/10/2026): el superadmin invita al admin de mantenimiento.
+export async function inviteMaintenanceAdmin(_: CreatePropertyState, data: FormData): Promise<CreatePropertyState> {
+  const email = field(data, "adminEmail").toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Escribe un correo válido." };
+  const { supabase } = await requirePlatformAdmin();
+  const { data: token, error } = await supabase.rpc("platform_invite_maintenance_admin", { target_email: email });
+  if (error || typeof token !== "string") return { error: error?.message.includes("already_member") ? "Ese correo ya es parte del equipo de mantenimiento." : "No pudimos crear la invitación." };
+  revalidatePath("/plataforma", "layout");
+  return { success: `Invitación creada. Comparte el enlace; debe entrar con ${email}. Vence en 7 días.`, link: await invitationLink(token) };
+}
+
+export async function reissueMaintenanceInvitation(_: CreatePropertyState, data: FormData): Promise<CreatePropertyState> {
+  const invitationId = field(data, "invitationId");
+  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) return { error: "Invitación inválida." };
+  const { supabase } = await requirePlatformAdmin();
+  const { data: token, error } = await supabase.rpc("platform_reissue_maintenance_invitation", { target_invitation_id: invitationId });
+  if (error || typeof token !== "string") return { error: "No pudimos generar el enlace." };
+  revalidatePath("/plataforma", "layout");
+  return { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días.", link: await invitationLink(token) };
+}
+
 async function invitationLink(token: string) {
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   return `${origin}/invitacion?token=${encodeURIComponent(token)}`;

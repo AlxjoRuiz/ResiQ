@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createPlatformProperty, inviteAdministrator, reissueAdminInvitation, type CreatePropertyState } from "@/app/plataforma/actions";
+import { createPlatformProperty, inviteAdministrator, inviteMaintenanceAdmin, reissueAdminInvitation, reissueMaintenanceInvitation, type CreatePropertyState } from "@/app/plataforma/actions";
 import { Button } from "@/components/ui/button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 
@@ -47,6 +47,24 @@ export function InviteAdministratorForm({ propertyId }: { propertyId: string }) 
 // Invitación pendiente o vencida: genera un enlace nuevo de 7 días (el anterior deja de servir).
 export function ReissueAdminInvitationForm({ invitationId }: { invitationId: string }) {
   const [state, action, pending] = useFormActionState(reissueAdminInvitation, undefined as CreatePropertyState);
+  return <form onSubmit={action} className="grid w-full gap-3"><input type="hidden" name="invitationId" value={invitationId} />
+    <div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending}>{pending ? "Generando…" : "Generar enlace nuevo"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}</div>
+    <InvitationLinkResult state={state} />
+  </form>;
+}
+
+// Equipo de mantenimiento: invitar al admin de mantenimiento y generar un enlace nuevo.
+export function InviteMaintenanceAdminForm() {
+  const [state, action, pending] = useFormActionState(inviteMaintenanceAdmin, undefined as CreatePropertyState);
+  return <form onSubmit={action} className="grid gap-3">
+    <label className={labelClass}>Correo del admin de mantenimiento<input className={inputClass} name="adminEmail" type="email" required maxLength={254} placeholder="mantenimiento@correo.com" /></label>
+    <div className="flex flex-wrap items-center gap-3"><Button size="sm" disabled={pending}>{pending ? "Creando…" : "Invitar admin de mantenimiento"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}</div>
+    <InvitationLinkResult state={state} />
+  </form>;
+}
+
+export function ReissueMaintenanceInvitationForm({ invitationId }: { invitationId: string }) {
+  const [state, action, pending] = useFormActionState(reissueMaintenanceInvitation, undefined as CreatePropertyState);
   return <form onSubmit={action} className="grid w-full gap-3"><input type="hidden" name="invitationId" value={invitationId} />
     <div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending}>{pending ? "Generando…" : "Generar enlace nuevo"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}</div>
     <InvitationLinkResult state={state} />

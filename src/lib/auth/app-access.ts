@@ -10,11 +10,13 @@ type PropertyStatusRow = { property_id: string; property_status: string; roles: 
 export async function getAppAccessStatus(supabase: SupabaseClient, userId: string): Promise<AppAccessStatus> {
   // Las membresías se leen con get_my_property_statuses: la política de conjunto activo oculta las
   // filas de property_members de un conjunto suspendido, y se confundía con «no invitado».
-  const [platformAdmin, statuses] = await Promise.all([
+  const [platformAdmin, statuses, maintenance] = await Promise.all([
     supabase.from("platform_admins").select("id").eq("user_id", userId).eq("status", "active").limit(1),
     supabase.rpc("get_my_property_statuses"),
+    // Equipo de mantenimiento de ResiQ (28/10/2026): no pertenece a ningún conjunto.
+    supabase.from("maintenance_staff").select("id").eq("user_id", userId).eq("status", "active").limit(1),
   ]);
-  if (platformAdmin.data?.length) return "authorized";
+  if (platformAdmin.data?.length || maintenance?.data?.length) return "authorized";
   if (platformAdmin.error || statuses.error) return "error";
   const rows = (statuses.data ?? []) as PropertyStatusRow[];
   if (rows.some((row) => row.property_status === "active")) return "authorized";

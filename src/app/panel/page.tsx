@@ -22,6 +22,10 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   // Comunidades de la cuenta con su estado. Se leen con get_my_property_statuses porque las reglas
   // normales ocultan por completo los conjuntos suspendidos.
   const memberships = ((statusData ?? []) as { property_id: string; property_name: string; property_status: string; roles: string[] }[]).sort((a, b) => a.property_name.localeCompare(b.property_name, "es"));
+  if (!memberships.length && !platformAdmin) {
+    const { data: maintenance } = await supabase.from("maintenance_staff").select("id").eq("user_id", user.id).eq("status", "active").maybeSingle();
+    if (maintenance) redirect("/mantenimiento");
+  }
   if (!memberships.length && !platformAdmin) redirect("/login?error=no_invitation");
   // Un superadmin sin comunidades ve la plataforma en su inicio.
   const platformOnly = !memberships.length;
