@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FilePicker } from "@/components/ui/file-picker";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
@@ -49,8 +49,8 @@ export function CheckInOutForm({ open }: { open: boolean }) {
       <FilePicker inputRef={inputRef} files={photo ? [photo] : []} onFilesChange={(files) => { void choose(files[0]); }} title="Foto con la cámara" hint={open ? "Ya marcaste tu llegada. La salida no lleva foto." : "Obligatoria para marcar la llegada"} accept="image/*" capture="user" actionLabel={photo ? "Tomar otra foto" : "Tomar foto"} disabled={open || sending} />
     </section>
     <div className="grid grid-cols-2 gap-3">
-      <Button className="h-16 text-base sm:text-lg" disabled={open || !photo || sending} onClick={() => send("in")}><Camera size={22} aria-hidden="true" />{sending && !open ? "Marcando…" : "Marcar llegada"}</Button>
-      <Button variant="outline" className="h-16 text-base sm:text-lg" disabled={!open || sending} onClick={() => send("out")}><LogOut size={22} aria-hidden="true" />{sending && open ? "Marcando…" : "Marcar salida"}</Button>
+      <Button disabled={open || !photo || sending} onClick={() => send("in")}>{sending && !open ? "Marcando…" : "Marcar llegada"}</Button>
+      <Button variant="outline" disabled={!open || sending} onClick={() => send("out")}><LogOut size={18} aria-hidden="true" />{sending && open ? "Marcando…" : "Marcar salida"}</Button>
     </div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </div>;
