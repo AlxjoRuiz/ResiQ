@@ -1,39 +1,50 @@
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Clock3, FileWarning, FileSpreadsheet, LogOut, UserRound, UsersRound, Wrench } from "lucide-react";
+import { ArrowRight, ClipboardList, Clock3, FileWarning, LogOut, UserRound, Wrench } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
+import styles from "@/components/dashboard/dashboard.module.css";
+import { MetricCard } from "@/components/dashboard/role-dashboard";
+import { MaintenanceOverview, type MaintenanceDashboard } from "@/components/maintenance/maintenance-overview";
 import { Button } from "@/components/ui/button";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 
-// Inicio del módulo de mantenimiento (entrega 1, 28/10/2026). Muestra las secciones según el rol; cada
-// una se habilita en su entrega (trabajadores, asistencia, tareas, llamados e informe).
+// Inicio del módulo de mantenimiento. Admin (28/10/2026): dashboard como el del admin del conjunto,
+// dentro del marco con la barra de secciones (ver layout). Trabajador: tarjetas de sus secciones.
 export default async function MaintenanceHomePage() {
   const { supabase, userId, staff } = await requireMaintenanceStaff();
+  if (staff.role === "admin") {
+    const { data, error } = await supabase.rpc("get_maintenance_dashboard");
+    const dashboard = error ? null : (data as MaintenanceDashboard);
+    return <>
+      <section className={styles.welcome}>
+        <p className={styles.eyebrow}>Equipo de mantenimiento ResiQ</p>
+        <div className={styles.welcomeMain}><span className={styles.welcomeIcon}><Wrench size={29} aria-hidden="true" /></span><div><h1>Panel de mantenimiento</h1></div></div>
+      </section>
+      <section aria-label="Resumen del equipo" className={styles.metrics}>
+        <MetricCard label="Trabajadores activos" value={dashboard?.active_workers ?? "—"} />
+        <MetricCard label="En jornada ahora" value={dashboard?.on_shift.length ?? "—"} />
+        <MetricCard label="Tareas por revisar" value={dashboard?.to_review ?? "—"} />
+      </section>
+      {dashboard ? <MaintenanceOverview data={dashboard} /> : <p role="status" className="mb-6 rounded-xl border p-4 text-sm text-muted-foreground">No pudimos cargar el resumen. Abre cada sección para revisarla.</p>}
+    </>;
+  }
+
   const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle();
-  const isAdmin = staff.role === "admin";
-  const sections = isAdmin
-    ? [
-        { title: "Trabajadores", description: "Crea y administra a los trabajadores de mantenimiento.", icon: UsersRound, href: "/mantenimiento/trabajadores" },
-        { title: "Asistencia", description: "Llegadas y salidas de cada trabajador, con su foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
-        { title: "Tareas", description: "Asigna tareas y revisa las entregadas con sus fotos.", icon: ClipboardList, href: "/mantenimiento/tareas" },
-        { title: "Llamados de atención", description: "Registra y consulta los llamados de atención.", icon: FileWarning, href: "/mantenimiento/llamados" },
-        { title: "Informe mensual", description: "Descarga el informe del mes en Excel y PDF.", icon: FileSpreadsheet, href: "/mantenimiento/informe" },
-      ]
-    : [
-        { title: "Mi asistencia", description: "Marca tu llegada y tu salida con una foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
-        { title: "Mis tareas", description: "Consulta tus tareas y entrégalas con fotos.", icon: ClipboardList, href: "/mantenimiento/tareas" },
-        { title: "Mis llamados de atención", description: "Consulta tus llamados de atención.", icon: FileWarning, href: "/mantenimiento/llamados" },
-      ];
+  const sections = [
+    { title: "Mi asistencia", description: "Marca tu llegada y tu salida con una foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
+    { title: "Mis tareas", description: "Consulta tus tareas y entrégalas con fotos.", icon: ClipboardList, href: "/mantenimiento/tareas" },
+    { title: "Mis llamados de atención", description: "Consulta tus llamados de atención.", icon: FileWarning, href: "/mantenimiento/llamados" },
+  ];
   return <main className="mx-auto min-h-screen max-w-4xl px-5 py-7 sm:px-10">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-5">
-      <div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-primary text-white"><Wrench size={20} aria-hidden="true" /></span><div><p className="font-semibold">Mantenimiento ResiQ</p><p className="text-xs text-muted-foreground">{isAdmin ? "Administrador de mantenimiento" : "Trabajador de mantenimiento"}</p></div></div>
+      <div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-primary text-white"><Wrench size={20} aria-hidden="true" /></span><div><p className="font-semibold">Mantenimiento ResiQ</p><p className="text-xs text-muted-foreground">Trabajador de mantenimiento</p></div></div>
       <div className="flex flex-wrap gap-2"><Button asChild variant="outline" size="sm"><Link href="/perfil"><UserRound size={15} />Perfil</Link></Button><form action={signOut}><Button variant="ghost" size="sm"><LogOut size={15} />Salir</Button></form></div>
     </header>
     <section className="py-7"><p className="text-sm text-muted-foreground">Hola,</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">{profile?.display_name ?? "Equipo de mantenimiento"}</h1></section>
     <section aria-label="Secciones" className="grid gap-3 sm:grid-cols-2">
-      {sections.map((section) => { const { title, description, icon: Icon } = section; const href = "href" in section ? section.href : undefined; const content = <>
-        <div className="flex items-start justify-between gap-3"><span className="flex size-10 items-center justify-center rounded-full bg-primary/12 text-primary"><Icon size={20} aria-hidden="true" /></span>{href ? <ArrowRight size={18} className="text-muted-foreground" aria-hidden="true" /> : <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">Próximamente</span>}</div>
+      {sections.map(({ title, description, icon: Icon, href }) => <Link key={title} href={href} className="rounded-2xl border bg-white p-5 transition-colors hover:border-primary/40 hover:bg-secondary/40">
+        <div className="flex items-start justify-between gap-3"><span className="flex size-10 items-center justify-center rounded-full bg-primary/12 text-primary"><Icon size={20} aria-hidden="true" /></span><ArrowRight size={18} className="text-muted-foreground" aria-hidden="true" /></div>
         <h2 className="mt-4 font-semibold">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      </>; return href ? <Link key={title} href={href} className="rounded-2xl border bg-white p-5 transition-colors hover:border-primary/40 hover:bg-secondary/40">{content}</Link> : <article key={title} className="rounded-2xl border bg-white p-5">{content}</article>; })}
+      </Link>)}
     </section>
   </main>;
 }
