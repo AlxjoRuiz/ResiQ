@@ -20,7 +20,7 @@ function friendlyError(message?: string) {
   if (message?.includes("amenity_closed")) return "La zona está cerrada durante ese intervalo.";
   if (message?.includes("outside_amenity_hours")) return "El intervalo debe quedar dentro del horario configurado para la zona.";
   if (message?.includes("reservation_too_long")) return "La reserva debe durar más de 0 minutos y no superar el máximo de la zona.";
-  if (message?.includes("purpose_required")) return "Escribe el motivo de la reserva (entre 3 y 500 caracteres).";
+  if (message?.includes("purpose_required")) return "Escribe el motivo de la reserva (al menos 3 caracteres).";
   if (message?.includes("amenity_unavailable")) return "La zona ya no está disponible.";
   if (message?.includes("reservation_blocked_by_debt")) return "No puedes realizar reservas en este momento porque tu cuenta presenta un saldo pendiente. Comunícate con la administración para obtener información sobre tu cartera.";
   if (message?.includes("debt_policy_unavailable")) return "La política de cartera todavía no está disponible.";
@@ -81,7 +81,15 @@ export async function deleteAmenityBlackout(_: ReservationState, data: FormData)
 export async function createReservation(_: ReservationState, data: FormData): Promise<ReservationState> {
   const propertyId = field(data, "propertyId"), amenityId = field(data, "amenityId"), unitId = field(data, "unitId"), startsAt = field(data, "startsAt"), endsAt = field(data, "endsAt"), purpose = field(data, "purpose");
   const attendeeCount = Number(field(data, "attendeeCount"));
-  if (![propertyId, amenityId, unitId].every((value) => uuidPattern.test(value)) || !startsAt || !endsAt || new Date(endsAt) <= new Date(startsAt) || !Number.isInteger(attendeeCount) || attendeeCount < 1 || purpose.length < 3 || purpose.length > 500) return { error: "Completa una reserva válida e indica su motivo (3 a 500 caracteres)." };
+  // Un mensaje por dato, para que el residente sepa exactamente qué corregir. El motivo pide al menos
+  // 3 caracteres; el máximo (500) lo pone el campo de texto, que no deja escribir más.
+  if (![propertyId, amenityId].every((value) => uuidPattern.test(value))) return { error: "Selecciona la zona que quieres reservar." };
+  if (!uuidPattern.test(unitId)) return { error: "Selecciona el apartamento." };
+  if (!startsAt || !endsAt || Number.isNaN(Date.parse(startsAt)) || Number.isNaN(Date.parse(endsAt))) return { error: "Elige la fecha y la hora de inicio y de fin." };
+  if (new Date(endsAt) <= new Date(startsAt)) return { error: "La hora de fin debe ser posterior a la de inicio." };
+  if (!Number.isInteger(attendeeCount) || attendeeCount < 1) return { error: "Indica cuántos asistentes van (al menos 1)." };
+  if (purpose.length < 3) return { error: "El motivo debe tener al menos 3 caracteres." };
+  if (purpose.length > 500) return { error: "El motivo es demasiado largo. Resúmelo un poco." };
   const supabase = await createClient(); const result = await supabase.rpc("create_reservation_with_purpose", { target_property_id: propertyId, target_amenity_id: amenityId, target_unit_id: unitId, target_starts_at: startsAt, target_ends_at: endsAt, target_attendee_count: attendeeCount, target_idempotency_key: crypto.randomUUID(), target_purpose: purpose });
   if (result.error || !result.data) return { error: friendlyError(result.error?.message) };
   revalidatePath(reservationPath(propertyId)); redirect(`${reservationPath(propertyId)}?created=1`);
