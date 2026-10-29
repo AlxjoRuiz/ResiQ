@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { signedPhotoLinks } from "@/lib/maintenance/photos";
 import { addDays, COLOMBIA_TIME_ZONE, dateInputValue, dateTimeInputValue, zonedDayStart } from "@/lib/time-zone";
 import { CheckInOutForm, CloseAttendanceForm } from "./attendance-forms";
 
@@ -19,12 +19,9 @@ function workedTime(item: Attendance) {
   return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 }
 
-// Enlaces firmados (10 min) para ver las fotos privadas; solo se piden las de la lista que se muestra.
-async function photoLinks(items: Attendance[]) {
-  const paths = items.flatMap((item) => [item.check_in_photo_path, item.check_out_photo_path]).filter((path): path is string => !!path);
-  if (!paths.length) return new Map<string, string>();
-  const { data } = await createAdminClient().storage.from("private-documents").createSignedUrls(paths, 600);
-  return new Map((data ?? []).filter((link) => link.path && link.signedUrl).map((link) => [link.path as string, link.signedUrl as string]));
+// Fotos solo de las jornadas que se muestran.
+function photoLinks(items: Attendance[]) {
+  return signedPhotoLinks(items.flatMap((item) => [item.check_in_photo_path, item.check_out_photo_path]));
 }
 
 // Miniatura de la foto; al tocarla se abre completa.
