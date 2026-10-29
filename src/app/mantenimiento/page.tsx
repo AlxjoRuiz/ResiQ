@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, Clock3, FileWarning, FileSpreadsheet, LogOut, UserRound, UsersRound, Wrench } from "lucide-react";
+import { ArrowRight, ClipboardList, Clock3, FileWarning, FileSpreadsheet, LogOut, UserRound, UsersRound, Wrench } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
@@ -12,7 +12,7 @@ export default async function MaintenanceHomePage() {
   const isAdmin = staff.role === "admin";
   const sections = isAdmin
     ? [
-        { title: "Trabajadores", description: "Crea y administra a los trabajadores de mantenimiento.", icon: UsersRound },
+        { title: "Trabajadores", description: "Crea y administra a los trabajadores de mantenimiento.", icon: UsersRound, href: "/mantenimiento/trabajadores" },
         { title: "Asistencia", description: "Llegadas y salidas de cada trabajador, con su foto.", icon: Clock3 },
         { title: "Tareas", description: "Asigna tareas y revisa las entregadas con sus fotos.", icon: ClipboardList },
         { title: "Llamados de atención", description: "Registra y consulta los llamados de atención.", icon: FileWarning },
@@ -30,10 +30,10 @@ export default async function MaintenanceHomePage() {
     </header>
     <section className="py-7"><p className="text-sm text-muted-foreground">Hola,</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">{profile?.display_name ?? "Equipo de mantenimiento"}</h1></section>
     <section aria-label="Secciones" className="grid gap-3 sm:grid-cols-2">
-      {sections.map(({ title, description, icon: Icon }) => <article key={title} className="rounded-2xl border bg-white p-5">
-        <div className="flex items-start justify-between gap-3"><span className="flex size-10 items-center justify-center rounded-full bg-primary/12 text-primary"><Icon size={20} aria-hidden="true" /></span><span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">Próximamente</span></div>
+      {sections.map((section) => { const { title, description, icon: Icon } = section; const href = "href" in section ? section.href : undefined; const content = <>
+        <div className="flex items-start justify-between gap-3"><span className="flex size-10 items-center justify-center rounded-full bg-primary/12 text-primary"><Icon size={20} aria-hidden="true" /></span>{href ? <ArrowRight size={18} className="text-muted-foreground" aria-hidden="true" /> : <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground">Próximamente</span>}</div>
         <h2 className="mt-4 font-semibold">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      </article>)}
+      </>; return href ? <Link key={title} href={href} className="rounded-2xl border bg-white p-5 transition-colors hover:border-primary/40 hover:bg-secondary/40">{content}</Link> : <article key={title} className="rounded-2xl border bg-white p-5">{content}</article>; })}
     </section>
   </main>;
 }

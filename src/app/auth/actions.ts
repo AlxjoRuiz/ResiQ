@@ -28,16 +28,19 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
     // El usuario puede ser de un portero o de un auxiliar de administración (27/10/2026). Un
     // auxiliar suspendido sí intenta entrar, para que vea su propio aviso después de la contraseña.
     const admin = createAdminClient();
-    const [{ data: account, error: lookupError }, { data: assistant, error: assistantError }] = await Promise.all([
+    const [{ data: account, error: lookupError }, { data: assistant, error: assistantError }, { data: worker, error: workerError }] = await Promise.all([
       admin.from("concierge_accounts").select("user_id,email_normalized,status").eq("username", identifier).maybeSingle(),
       admin.from("admin_assistant_records").select("user_id,email_normalized").eq("username", identifier).is("removed_at", null).maybeSingle(),
+      // Trabajadores de mantenimiento (28/10/2026).
+      admin.from("maintenance_worker_records").select("user_id,email_normalized").eq("username", identifier).is("removed_at", null).maybeSingle(),
     ]);
-    if (lookupError || assistantError || (!assistant && (!account || account.status !== "active"))) {
-      logAuthFailure("concierge_lookup", { method: "username", reason: lookupError || assistantError ? "lookup_error" : !account ? "unknown_username" : `account_${account.status}` });
+    const named = assistant ?? worker;
+    if (lookupError || assistantError || workerError || (!named && (!account || account.status !== "active"))) {
+      logAuthFailure("concierge_lookup", { method: "username", reason: lookupError || assistantError || workerError ? "lookup_error" : !account ? "unknown_username" : `account_${account.status}` });
       return { error: "No pudimos iniciar sesión con esos datos." };
     }
-    email = assistant?.email_normalized ?? account!.email_normalized;
-    conciergeUserId = assistant?.user_id ?? account!.user_id;
+    email = named?.email_normalized ?? account!.email_normalized;
+    conciergeUserId = named?.user_id ?? account!.user_id;
   }
 
   const supabase = await createClient();
