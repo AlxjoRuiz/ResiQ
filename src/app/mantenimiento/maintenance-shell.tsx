@@ -13,7 +13,7 @@ const sections = [
   { title: "Asistencia", href: "/mantenimiento/asistencia", icon: Clock3 },
   { title: "Tareas", href: "/mantenimiento/tareas", icon: ClipboardList },
   { title: "Llamados de atención", href: "/mantenimiento/llamados", icon: FileWarning },
-  { title: "Informe mensual", href: "/mantenimiento/informe", icon: FileSpreadsheet },
+  { title: "Informe", href: "/mantenimiento/informe", icon: FileSpreadsheet },
 ];
 
 // Marco del admin de mantenimiento (28/10/2026): misma barra de secciones a la izquierda y mismo
