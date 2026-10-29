@@ -4,15 +4,19 @@ import { signOut } from "@/app/auth/actions";
 import styles from "@/components/dashboard/dashboard.module.css";
 import { MetricCard } from "@/components/dashboard/role-dashboard";
 import { MaintenanceOverview, type MaintenanceDashboard } from "@/components/maintenance/maintenance-overview";
+import { ReportCharts } from "@/components/maintenance/report-charts";
 import { Button } from "@/components/ui/button";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
+import { loadReport, readReportFilters } from "@/lib/maintenance/report";
 
 // Inicio del módulo de mantenimiento. Admin (28/10/2026): dashboard como el del admin del conjunto,
 // dentro del marco con la barra de secciones (ver layout). Trabajador: tarjetas de sus secciones.
 export default async function MaintenanceHomePage() {
   const { supabase, userId, staff } = await requireMaintenanceStaff();
   if (staff.role === "admin") {
-    const { data, error } = await supabase.rpc("get_maintenance_dashboard");
+    // Gráficas del mes en curso (del 1 a hoy), las mismas del informe en PDF; si fallan, el resto se muestra igual.
+    const month = readReportFilters({});
+    const [{ data, error }, report] = await Promise.all([supabase.rpc("get_maintenance_dashboard"), loadReport(month).catch(() => null)]);
     const dashboard = error ? null : (data as MaintenanceDashboard);
     return <>
       <section className={styles.welcome}>
@@ -24,7 +28,8 @@ export default async function MaintenanceHomePage() {
         <MetricCard label="En jornada ahora" value={dashboard?.on_shift.length ?? "—"} />
         <MetricCard label="Tareas por revisar" value={dashboard?.to_review ?? "—"} />
       </section>
-      {dashboard ? <MaintenanceOverview data={dashboard} /> : <p role="status" className="mb-6 rounded-xl border p-4 text-sm text-muted-foreground">No pudimos cargar el resumen. Abre cada sección para revisarla.</p>}
+      {dashboard ? <MaintenanceOverview data={dashboard} /> : <p role="status" className="rounded-xl border p-4 text-sm text-muted-foreground">No pudimos cargar el resumen. Abre cada sección para revisarla.</p>}
+      {report ? <div className="mb-6"><ReportCharts summaries={report.summaries} attendance={report.attendance} from={month.from} to={month.to} title={`Gráficas del mes · ${month.label}`} action={<Link href="/mantenimiento/informe" className="text-xs text-muted-foreground hover:text-foreground">Ver informe →</Link>} /></div> : <p role="status" className="my-6 rounded-xl border p-4 text-sm text-muted-foreground">No pudimos cargar las gráficas del mes. Ábrelas en el informe.</p>}
     </>;
   }
 
