@@ -15,13 +15,13 @@ export default async function MaintenanceHomePage() {
         { title: "Trabajadores", description: "Crea y administra a los trabajadores de mantenimiento.", icon: UsersRound, href: "/mantenimiento/trabajadores" },
         { title: "Asistencia", description: "Llegadas y salidas de cada trabajador, con su foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
         { title: "Tareas", description: "Asigna tareas y revisa las entregadas con sus fotos.", icon: ClipboardList, href: "/mantenimiento/tareas" },
-        { title: "Llamados de atención", description: "Registra y consulta los llamados de atención.", icon: FileWarning },
+        { title: "Llamados de atención", description: "Registra y consulta los llamados de atención.", icon: FileWarning, href: "/mantenimiento/llamados" },
         { title: "Informe mensual", description: "Descarga el informe del mes en Excel y PDF.", icon: FileSpreadsheet },
       ]
     : [
         { title: "Mi asistencia", description: "Marca tu llegada y tu salida con una foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
         { title: "Mis tareas", description: "Consulta tus tareas y entrégalas con fotos.", icon: ClipboardList, href: "/mantenimiento/tareas" },
-        { title: "Mis llamados de atención", description: "Consulta tus llamados de atención.", icon: FileWarning },
+        { title: "Mis llamados de atención", description: "Consulta tus llamados de atención.", icon: FileWarning, href: "/mantenimiento/llamados" },
       ];
   return <main className="mx-auto min-h-screen max-w-4xl px-5 py-7 sm:px-10">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-5">
