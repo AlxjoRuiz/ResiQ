@@ -48,7 +48,7 @@ function AttendanceRow({ item, photos, showName, admin }: { item: Attendance; ph
   </CardContent></Card>;
 }
 
-// Asistencia (entrega 3). Trabajador: marca llegada/salida con foto y ve sus últimas jornadas.
+// Asistencia (entrega 3). Trabajador: marca la llegada con foto y la salida sin foto, y ve sus últimas jornadas.
 // Admin de mantenimiento: llegadas y salidas por día y trabajador, jornadas sin salida y registro manual.
 export default async function MaintenanceAttendancePage({ searchParams }: { searchParams: Promise<{ dia?: string; trabajador?: string }> }) {
   const { supabase, staff } = await requireMaintenanceStaff();
@@ -64,10 +64,10 @@ export default async function MaintenanceAttendancePage({ searchParams }: { sear
     const photos = await photoLinks(items);
     return <main className="mx-auto min-h-screen max-w-2xl px-5 py-7 sm:px-10">
       {back}
-      <header className="mt-5 border-b pb-5"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Mantenimiento</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Mi asistencia</h1><p className="mt-2 text-sm text-muted-foreground">Toma una foto para marcar. La hora la registra el sistema (hora de Colombia).</p></header>
+      <header className="mt-5 border-b pb-5"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Mantenimiento</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Mi asistencia</h1><p className="mt-2 text-sm text-muted-foreground">La llegada se marca con una foto; la salida, sin foto. La hora la registra el sistema (hora de Colombia).</p></header>
       <Card className="mt-6"><CardContent>
         <p className="mb-4 text-sm">{open ? <>Llegaste a las <strong>{timeFormat.format(new Date(open.check_in_at))}</strong>. Cuando termines, marca tu salida.</> : "No tienes una jornada abierta. Marca tu llegada al empezar."}</p>
-        <CheckInOutForm key={open?.attendance_id ?? "in"} kind={open ? "out" : "in"} />
+        <CheckInOutForm key={open?.attendance_id ?? "in"} open={Boolean(open)} />
       </CardContent></Card>
       <h2 className="mt-8 font-semibold">Últimos 14 días</h2>
       <div className="mt-3 grid gap-3">

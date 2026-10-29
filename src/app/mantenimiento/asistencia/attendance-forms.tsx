@@ -2,22 +2,22 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera } from "lucide-react";
+import { Camera, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { compressImage } from "@/lib/images/compress";
 import { closeAttendance, type AttendanceState } from "./actions";
 
-// Botón grande para marcar llegada o salida (pensado para celular). Abre la cámara frontal; la foto es
-// obligatoria y se reduce antes de subirla. La hora la pone el servidor al recibirla.
-export function CheckInOutForm({ kind }: { kind: "in" | "out" }) {
+// Dos botones (pensados para celular): «Marcar llegada» abre la cámara frontal y la foto es obligatoria
+// (se reduce antes de subirla); «Marcar salida» marca sin foto. Solo está activo el que corresponde:
+// llegada si no hay jornada abierta, salida si la hay. La hora la pone el servidor al recibirla.
+export function CheckInOutForm({ open }: { open: boolean }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
-  const label = kind === "in" ? "Marcar llegada" : "Marcar salida";
 
   async function choose(file?: File) {
     setError(undefined);
@@ -29,11 +29,12 @@ export function CheckInOutForm({ kind }: { kind: "in" | "out" }) {
     } catch { setError("No pudimos leer la foto. Tómala de nuevo."); }
   }
 
-  async function send() {
-    if (!photo) { setError("Toma la foto para marcar."); return; }
+  async function send(kind: "in" | "out") {
+    if (kind === "in" && !photo) { setError("Toma la foto para marcar la llegada."); return; }
     setSending(true); setError(undefined);
     const body = new FormData();
-    body.set("kind", kind); body.set("photo", photo);
+    body.set("kind", kind);
+    if (kind === "in" && photo) body.set("photo", photo);
     try {
       const response = await fetch("/api/maintenance/attendance", { method: "POST", body });
       const result = await response.json().catch(() => ({}));
@@ -47,12 +48,15 @@ export function CheckInOutForm({ kind }: { kind: "in" | "out" }) {
 
   return <div className="grid gap-3">
     {/* capture="user": en el celular abre directamente la cámara frontal. */}
-    <input ref={inputRef} type="file" accept="image/*" capture="user" className="sr-only" tabIndex={-1} aria-label={`Foto para ${label.toLowerCase()}`} onChange={(event) => { void choose(event.target.files?.[0]); event.target.value = ""; }} />
+    <input ref={inputRef} type="file" accept="image/*" capture="user" className="sr-only" tabIndex={-1} aria-label="Foto para marcar la llegada" onChange={(event) => { void choose(event.target.files?.[0]); event.target.value = ""; }} />
     {preview ? <>
       {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local de la foto recién tomada */}
       <img src={preview} alt="Foto tomada" className="mx-auto max-h-72 rounded-2xl border object-contain" />
-      <div className="grid gap-2 sm:grid-cols-2"><Button className="h-14 text-base" disabled={sending} onClick={send}>{sending ? "Marcando…" : label}</Button><Button variant="outline" className="h-14 text-base" disabled={sending} onClick={() => inputRef.current?.click()}>Tomar otra foto</Button></div>
-    </> : <Button className="h-16 text-lg" onClick={() => inputRef.current?.click()}><Camera size={22} aria-hidden="true" />{label} con foto</Button>}
+      <div className="grid gap-2 sm:grid-cols-2"><Button className="h-14 text-base" disabled={sending} onClick={() => send("in")}>{sending ? "Marcando…" : "Confirmar llegada"}</Button><Button variant="outline" className="h-14 text-base" disabled={sending} onClick={() => inputRef.current?.click()}>Tomar otra foto</Button></div>
+    </> : <div className="grid grid-cols-2 gap-3">
+      <Button className="h-16 text-base sm:text-lg" disabled={open || sending} onClick={() => inputRef.current?.click()}><Camera size={22} aria-hidden="true" />Marcar llegada</Button>
+      <Button variant="outline" className="h-16 text-base sm:text-lg" disabled={!open || sending} onClick={() => send("out")}><LogOut size={22} aria-hidden="true" />{sending ? "Marcando…" : "Marcar salida"}</Button>
+    </div>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </div>;
 }

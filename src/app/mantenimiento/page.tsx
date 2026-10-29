@@ -30,7 +30,7 @@ export default async function MaintenanceHomePage() {
 
   const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle();
   const sections = [
-    { title: "Mi asistencia", description: "Marca tu llegada y tu salida con una foto.", icon: Clock3, href: "/mantenimiento/asistencia" },
+    { title: "Mi asistencia", description: "Marca tu llegada con una foto y tu salida con un botón.", icon: Clock3, href: "/mantenimiento/asistencia" },
     { title: "Mis tareas", description: "Consulta tus tareas y entrégalas con fotos.", icon: ClipboardList, href: "/mantenimiento/tareas" },
     { title: "Mis llamados de atención", description: "Consulta tus llamados de atención.", icon: FileWarning, href: "/mantenimiento/llamados" },
   ];
