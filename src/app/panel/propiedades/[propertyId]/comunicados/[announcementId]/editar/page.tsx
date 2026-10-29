@@ -7,7 +7,7 @@ type MemberRow = { id: string; roles: string[]; profiles: { display_name: string
 
 export default async function EditAnnouncementPage({ params }: { params: Promise<{ propertyId: string; announcementId: string }> }) {
   const { propertyId, announcementId } = await params;
-  const { supabase, property } = await requirePropertyAdmin(propertyId);
+  const { supabase } = await requirePropertyAdmin(propertyId);
   const [{ data: draft }, { data: audience }, { data: memberData, error }] = await Promise.all([
     supabase.from("announcements").select("id,subject,body,status").eq("property_id", propertyId).eq("id", announcementId).maybeSingle(),
     supabase.from("announcement_recipients").select("member_id").eq("property_id", propertyId).eq("announcement_id", announcementId),

@@ -9,7 +9,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAuthFailure } from "@/lib/auth/log-auth-failure";
 
 export type AuthState = { error?: string; success?: string } | undefined;
-export type InvitationState = { error?: string; invitationUrl?: string } | undefined;
 
 function field(formData: FormData, name: string) {
   return String(formData.get(name) ?? "").trim();
@@ -231,25 +230,4 @@ export async function completePasswordReset(_: AuthState, formData: FormData): P
   if (error) return { error: "No pudimos guardar la contraseña. Solicita otro enlace e intenta nuevamente." };
   await supabase.auth.signOut({ scope: "local" });
   redirect("/login?reset=success");
-}
-
-export async function createInvitation(_: InvitationState, formData: FormData): Promise<InvitationState> {
-  const propertyId = field(formData, "propertyId");
-  const email = field(formData, "email").toLowerCase();
-  const role = field(formData, "role");
-  const buildingId = field(formData, "buildingId");
-  const unitId = field(formData, "unitId");
-  const relationship = field(formData, "relationship");
-  if (!propertyId || !email.includes("@") || role !== "member") return { error: "Esta invitación es solo para residentes. Registra porteros desde Propiedad." };
-  if (!buildingId || !unitId || !["owner", "resident"].includes(relationship)) return { error: "Selecciona torre, apartamento y tipo de residente." };
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_resident_invitation", { target_property_id: propertyId, target_building_id: buildingId, target_unit_id: unitId, target_email: email, target_relationship: relationship });
-  if (error || typeof data !== "string") {
-    if (error?.message.includes("already_assigned")) return { error: "Ese residente ya está vinculado a este apartamento." };
-    if (error?.message.includes("not_a_resident")) return { error: "Ese correo tiene otro rol en esta propiedad. Revisa su acceso antes de invitarlo como residente." };
-    return { error: "No pudimos crear la invitación. Comprueba que la torre y el apartamento sigan activos y pertenezcan a esta propiedad." };
-  }
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
-  return { invitationUrl: `${origin}/invitacion?token=${encodeURIComponent(data)}` };
 }

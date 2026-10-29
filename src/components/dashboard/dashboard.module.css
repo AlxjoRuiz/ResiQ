@@ -45,10 +45,6 @@
 .units h2 { font-size: 14px; font-weight: 600; }
 .units > div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .units span { background: #e8ecf4; padding: 6px 12px; border-radius: 30px; font-size: 13px; color: #455165; }
-.sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
-.sectionHeading p { font-size: 12px; color: #606671; margin-bottom: 4px; }
-.sectionHeading h2 { font-size: 21px; font-weight: 600; letter-spacing: -.02em; }
-.sectionHeading > span { font-size: 12px; padding: 6px 12px; background: #d8dfea; color: #434f65; border-radius: 20px; }
 .content a:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 4px; }
 .sidebar a:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
 .summaries { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
@@ -73,7 +69,7 @@
 .accountBalance { display: block; font-size: 12px; color: #606671; margin-top: 4px; }
 @media (min-width: 1300px) { .activitySummaries { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; } .sidebar { top: 0; z-index: 1; height: auto; overflow-y: visible; padding: 16px 18px 12px; border-bottom: 1px solid #e1e5ec; } .brand { padding: 0; } .sidebarLabel { margin: 10px 0 6px; } .navigation { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 5px; } .navigation a { flex-shrink: 0; padding: 9px 11px; } .communityLink { margin-top: 0; padding: 8px 0 0; } .content { padding: 18px; } }
-@media (max-width: 560px) { .canvas { padding: 6px; } .shell { min-height: calc(100vh - 12px); border-radius: 18px; } .content { padding: 16px; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; } .welcomeMain { align-items: flex-start; gap: 12px; } .welcomeIcon { width: 44px; height: 44px; } .metrics, .summaries { grid-template-columns: minmax(0, 1fr); } .metrics > div > div { flex-direction: row; align-items: center; justify-content: space-between; padding: 16px; } .metrics p:last-child { max-width: 55%; } .sectionHeading > span { display: none; } }
+@media (max-width: 560px) { .canvas { padding: 6px; } .shell { min-height: calc(100vh - 12px); border-radius: 18px; } .content { padding: 16px; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; } .welcomeMain { align-items: flex-start; gap: 12px; } .welcomeIcon { width: 44px; height: 44px; } .metrics, .summaries { grid-template-columns: minmax(0, 1fr); } .metrics > div > div { flex-direction: row; align-items: center; justify-content: space-between; padding: 16px; } .metrics p:last-child { max-width: 55%; } }
 .profileLink { display: flex; align-items: center; gap: 8px; padding: 9px 15px; background: white; color: #3e495d; border-radius: 24px; font-size: 13px; }
 .moduleContent { min-width: 0; overflow-wrap: anywhere; }
 .moduleContent > main { padding: 0; margin: 0; max-width: none; min-height: 0; width: 100%; }

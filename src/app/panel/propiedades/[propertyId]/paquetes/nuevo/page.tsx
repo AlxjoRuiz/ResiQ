@@ -5,7 +5,7 @@ import { requirePropertyMember } from "@/lib/auth/require-property-member";
 
 export default async function NewPackagePage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params;
-  const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const { supabase, membership } = await requirePropertyMember(propertyId);
   if (!membership.roles.includes("concierge")) notFound();
   const { data, error } = await supabase.rpc("get_package_registration_directory", { target_property_id: propertyId });
   if (error) throw new Error("No se pudo cargar el directorio de apartamentos.");

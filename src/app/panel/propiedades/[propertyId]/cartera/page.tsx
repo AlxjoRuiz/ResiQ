@@ -10,7 +10,7 @@ import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
 type Summary={unit_id:string;building_name:string;unit_code:string;total_amount:number|string;applied_amount:number|string;outstanding_balance:number|string;overdue_balance:number|string;oldest_due_on:string|null;overdue_days:number;account_status:string;unapplied_payments:number|string};
 
 export default async function FinancePage({params,searchParams}:{params:Promise<{propertyId:string}>;searchParams:Promise<{imported?:string;skipped?:string}>}){
-  const{propertyId}=await params;const{supabase,membership,property}=await requirePropertyMember(propertyId);const admin=membership.roles.includes("administrator"),member=membership.roles.includes("member");if(!admin&&!member)notFound();
+  const{propertyId}=await params;const{supabase,membership}=await requirePropertyMember(propertyId);const admin=membership.roles.includes("administrator"),member=membership.roles.includes("member");if(!admin&&!member)notFound();
   if(admin)await supabase.rpc("process_delinquency_notifications",{target_property_id:propertyId});
   const[{data:summaryData,error:summaryError},{data:agreementData},{data:policy},{data:conceptData},{data:pendingEvidenceData}]=await Promise.all([
     supabase.rpc("list_finance_account_summaries",{target_property_id:propertyId}),

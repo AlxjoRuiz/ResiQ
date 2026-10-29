@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
-import { endUnitMembership, manageMember, queueResidentInvitation, revealInvitationLink, saveBuilding, saveUnit, updateProperty, type InvitationLinkState, type ManagementState } from "./actions";
+import { endUnitMembership, manageMember, queueResidentInvitation, revealInvitationLink, saveBuilding, updateProperty, type InvitationLinkState, type ManagementState } from "./actions";
 
 const inputClass = "mt-2 h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass = "block text-sm font-medium";
@@ -12,19 +12,6 @@ function Result({ state }: { state: ManagementState }) {
   if (state?.error) return <p role="alert" className="text-sm text-destructive">{state.error}</p>;
   if (state?.success) return <p role="status" className="text-sm text-primary">{state.success}</p>;
   return null;
-}
-
-export function PropertyForm({ property }: { property: { id: string; name: string; address: string | null; city: string | null; timezone: string } }) {
-  const [state, action, pending] = useFormActionState(updateProperty, undefined as ManagementState);
-  return <form onSubmit={action} className="grid gap-4 md:grid-cols-2">
-    <input type="hidden" name="propertyId" value={property.id} />
-    <label className={labelClass}>Nombre<input className={inputClass} name="name" defaultValue={property.name} required minLength={2} maxLength={120} /></label>
-    <label className={labelClass}>Ciudad<input className={inputClass} name="city" defaultValue={property.city ?? ""} maxLength={80} /></label>
-    <label className={`${labelClass} md:col-span-2`}>Dirección<input className={inputClass} name="address" defaultValue={property.address ?? ""} maxLength={180} /></label>
-    <label className={labelClass}>Zona horaria<input className={inputClass} name="timezone" defaultValue={property.timezone} required /></label>
-    <div className="flex items-end"><Button disabled={pending}>{pending ? "Guardando…" : "Guardar propiedad"}</Button></div>
-    <div className="md:col-span-2"><Result state={state} /></div>
-  </form>;
 }
 
 // Nombre, dirección y ciudad del conjunto; la zona horaria se envía sin cambios.
@@ -49,24 +36,6 @@ export function BuildingForm({ propertyId, building }: { propertyId: string; bui
     <label className={labelClass}>Estado<select className={inputClass} name="active" defaultValue={building.active ? "true" : "false"}><option value="true">Activa</option><option value="false">Inactiva</option></select></label>
     <Button variant="outline" disabled={pending}>{pending ? "Guardando…" : "Actualizar"}</Button>
     <div className="sm:col-span-2 lg:col-span-4"><Result state={state} /></div>
-  </form>;
-}
-
-export function UnitForm({ propertyId, buildings, unit }: {
-  propertyId: string;
-  buildings: { id: string; name: string; active: boolean }[];
-  unit: { id: string; building_id: string; code: string; floor: string | null; status: string };
-}) {
-  const [state, action, pending] = useFormActionState(saveUnit, undefined as ManagementState);
-  return <form onSubmit={action} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
-    <input type="hidden" name="propertyId" value={propertyId} />
-    <input type="hidden" name="unitId" value={unit.id} />
-    <label className={labelClass}>Torre<select className={inputClass} name="buildingId" defaultValue={unit.building_id} required><option value="" disabled>Selecciona</option>{buildings.filter((item) => item.active || item.id === unit.building_id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-    <label className={labelClass}>Apartamento<input className={inputClass} name="code" defaultValue={unit.code} required maxLength={30} placeholder="301" /></label>
-    <label className={labelClass}>Piso<input className={inputClass} name="floor" defaultValue={unit.floor ?? ""} maxLength={20} placeholder="3" /></label>
-    <label className={labelClass}>Estado<select className={inputClass} name="status" defaultValue={unit.status}><option value="active">Activo</option><option value="inactive">Inactivo</option></select></label>
-    <Button variant="outline" disabled={pending}>{pending ? "Guardando…" : "Actualizar"}</Button>
-    <div className="sm:col-span-2 lg:col-span-5"><Result state={state} /></div>
   </form>;
 }
 
