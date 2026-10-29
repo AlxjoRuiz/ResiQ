@@ -6,6 +6,7 @@ import { Bell, Building2, House, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/dashboard/role-dashboard";
 import { AdminOverview, type AdminDashboard } from "@/components/dashboard/admin-overview";
+import { ResidentOverview, type ResidentDashboard } from "@/components/dashboard/resident-overview";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 
 import { visitStatusLabel } from "@/lib/visitors/constants";
@@ -29,7 +30,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   const isAdmin = view === "administracion";
   // Antes de contar reservas por aprobar se marcan las vencidas (máximo una vez por minuto).
   const refreshReservations = isAdmin ? supabase.rpc("refresh_reservations", { target_property_id: propertyId }) : Promise.resolve(null);
-  const [, { count: unitCount }, { count: memberCount }, { data: ownUnits }, visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary, unseenResult, adminDashboard] = await Promise.all([
+  const [, { count: unitCount }, { count: memberCount }, { data: ownUnits }, visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary, unseenResult, adminDashboard, residentDashboard] = await Promise.all([
     refreshReservations,
     view !== "residente" ? supabase.from("units").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
     isAdmin ? supabase.from("property_members").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
@@ -41,6 +42,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     view !== "porteria" ? supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }) : Promise.resolve({ data: [], error: null }),
     supabase.rpc("get_unseen_sections", { target_property_id: propertyId }),
     isAdmin ? supabase.rpc("get_admin_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
+    view === "residente" ? supabase.rpc("get_resident_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
   ]);
   // Secciones con algo nuevo sin ver: punto en la barra lateral.
   const unseen = new Set(Array.isArray(unseenResult.data) ? unseenResult.data.map(String) : []);
@@ -88,6 +90,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
           <MetricCard label={view === "administracion" ? "Miembros activos" : "Comunidad"} value={view === "administracion" ? memberCount ?? 0 : "Activa"} />
         </section>
         {view === "administracion" && (adminDashboard.data ? <AdminOverview propertyId={propertyId} data={adminDashboard.data as AdminDashboard} /> : <p role="status" className="mb-6 rounded-xl border p-4 text-sm text-muted-foreground">No pudimos cargar el resumen de administración. Abre cada módulo para revisarlo.</p>)}
+        {view === "residente" && residentDashboard.data && <ResidentOverview propertyId={propertyId} timeZone={property.timezone} data={residentDashboard.data as ResidentDashboard} />}
         {view === "residente" && units.length > 0 && <section className={styles.units}><h2>Tus apartamentos</h2><div>{units.map((unit, index) => { const related = Array.isArray(unit.units) ? unit.units[0] : unit.units as { code?: string } | null; return <span key={`${related?.code}-${index}`}>{related?.code ?? "Unidad"} · {unit.relationship === "owner" ? "Propietario" : "Residente"}</span>; })}</div></section>}
         <section className={styles.summaries} aria-label="Novedades y cartera">
           <article className={styles.summary}><header><h2>Novedades</h2><Link href={`/panel/propiedades/${propertyId}/notificaciones`} className="inline-flex min-h-10 items-center sm:min-h-0">Ver todo →</Link></header>{notificationSummary.error ? <p role="status" className={styles.empty}>No pudimos cargar tus novedades.</p> : !notificationSummary.data?.length ? <p className={styles.empty}>No tienes novedades recientes.</p> : <ul>{notificationSummary.data.map((notice) => <li key={notice.id} className={styles.notice}><div><h3>{notice.subject}</h3><span className={styles.status}>{notice.read_at ? "Leída" : "Sin leer"}</span></div><p>{notice.body}</p><time dateTime={notice.occurred_at}>{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: property.timezone }).format(new Date(notice.occurred_at))}</time></li>)}</ul>}</article>
