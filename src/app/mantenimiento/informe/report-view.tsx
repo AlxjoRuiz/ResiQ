@@ -6,7 +6,9 @@ type Report = Awaited<ReturnType<typeof loadReport>>;
 const dateTime = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: COLOMBIA_TIME_ZONE });
 const time = new Intl.DateTimeFormat("es-CO", { hour: "numeric", minute: "2-digit", timeZone: COLOMBIA_TIME_ZONE });
 const dateOnly = (day: string) => new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${day}T12:00:00Z`));
-const table = "w-full border-collapse text-sm [&_td]:border-b [&_td]:px-2 [&_td]:py-2 [&_th]:border-b [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium [&_th]:text-muted-foreground";
+// En pantalla los títulos no se parten a mitad de palabra: si la tabla no cabe (celular, tableta) se
+// desliza de lado. Al imprimir vuelven a ajustarse para caber en la hoja.
+const table = "w-full border-collapse text-sm [&_td]:border-b [&_td]:px-2 [&_td]:py-2 [&_th]:border-b [&_th]:px-2 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium [&_th]:text-muted-foreground [&_th]:whitespace-nowrap print:[&_th]:whitespace-normal";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="mt-8 break-inside-avoid-page"><h2 className="font-semibold">{title}</h2><div className="mt-3 overflow-x-auto print:overflow-visible">{children}</div></section>;

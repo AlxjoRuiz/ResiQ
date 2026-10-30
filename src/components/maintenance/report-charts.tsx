@@ -25,7 +25,7 @@ const shortDay = (day: string) => `${Number(day.slice(8, 10))} ${shortMonths[Num
 const monthName = (month: string) => new Intl.DateTimeFormat("es-CO", { month: "short", year: "2-digit", timeZone: "UTC" }).format(dayDate(`${month}-01`));
 
 function Chart({ title, note, children, wide = false }: { title: string; note?: string; children: ReactNode; wide?: boolean }) {
-  return <figure className={`break-inside-avoid rounded-xl border bg-white p-4 [print-color-adjust:exact] ${wide ? "sm:col-span-2 print:col-span-2" : ""}`}>
+  return <figure className={`min-w-0 break-inside-avoid rounded-xl border bg-white p-4 [print-color-adjust:exact] ${wide ? "sm:col-span-2 print:col-span-2" : ""}`}>
     <figcaption><h3 className="text-sm font-semibold">{title}</h3>{note && <p className="mt-0.5 text-xs text-muted-foreground">{note}</p>}</figcaption>
     <div className="mt-3">{children}</div>
   </figure>;
@@ -66,7 +66,11 @@ function ColumnBars({ points, label }: { points: { key: string; label: string; v
   const y = (value: number) => top + plotHeight - (value / niceMax) * plotHeight;
   // Con muchos días no caben todas las fechas: se escribe una de cada «every».
   const every = Math.ceil(points.length / 16);
-  return <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label={label}>
+  // En celular no se encoge por debajo de 640 px (el texto quedaría ilegible): se desliza de lado dentro
+  // de su tarjeta. Al imprimir ocupa el ancho de la hoja.
+  return <div className="overflow-x-auto print:overflow-visible">
+    <p className="mb-2 text-xs text-muted-foreground sm:hidden print:hidden">Desliza para ver todos los días.</p>
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full min-w-[640px] print:min-w-0" role="img" aria-label={label}>
     {ticks.map((tick) => <g key={tick}><line x1={left} x2={width - right} y1={y(tick)} y2={y(tick)} stroke="#e5e7eb" strokeWidth="1" /><text x={left - 6} y={y(tick)} dy="0.32em" textAnchor="end" fontSize="11" fill="#6b7280">{tick}</text></g>)}
     {points.map((point, index) => {
       const x = left + index * slot + (slot - barWidth) / 2, barTop = y(point.value), barHeight = top + plotHeight - barTop;
@@ -77,7 +81,8 @@ function ColumnBars({ points, label }: { points: { key: string; label: string; v
       </g>;
     })}
     <line x1={left} x2={width - right} y1={top + plotHeight} y2={top + plotHeight} stroke="#d1d5db" strokeWidth="1" />
-  </svg>;
+  </svg>
+  </div>;
 }
 
 // Dona del estado de las tareas, con 2 px de separación entre segmentos y leyenda con cantidad y %.
