@@ -30,9 +30,10 @@ function DeliveryView({ delivery, dueDate, photos }: { delivery: Delivery; dueDa
   const late = dateInputValue(new Date(delivery.submitted_at), COLOMBIA_TIME_ZONE) > dueDate;
   return <div className="grid gap-2">
     <p className="text-sm"><span className="text-muted-foreground">Entregada:</span> {dateTime.format(new Date(delivery.submitted_at))}{late && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">Fuera de plazo</span>}</p>
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">{delivery.photo_paths.map((path, index) => { const url = photos.get(path); return url ? <a key={path} href={url} target="_blank" rel="noreferrer">
+    {/* Miniaturas de tamaño fijo (80 px en celular, 96 px en computador); al tocarlas se abre la foto completa. */}
+    <div className="flex flex-wrap gap-2">{delivery.photo_paths.map((path, index) => { const url = photos.get(path); return url ? <a key={path} href={url} target="_blank" rel="noreferrer">
       {/* eslint-disable-next-line @next/next/no-img-element -- foto privada con enlace firmado, no pasa por el optimizador */}
-      <img src={url} alt={`Foto ${index + 1} de la entrega`} loading="lazy" className="aspect-square w-full rounded-xl border object-cover" />
+      <img src={url} alt={`Foto ${index + 1} de la entrega`} loading="lazy" className="size-20 rounded-xl border object-cover sm:size-24" />
     </a> : null; })}</div>
     {delivery.note && <p className="text-sm whitespace-pre-line"><span className="text-muted-foreground">Nota:</span> {delivery.note}</p>}
     {delivery.review && <p className={`rounded-lg px-3 py-2 text-sm ${delivery.review === "approved" ? "bg-green-50 text-green-900" : "bg-red-50 text-red-900"}`}><strong>{delivery.review === "approved" ? "Aprobada" : "Rechazada"}</strong>{delivery.review_comment && <>: {delivery.review_comment}</>}</p>}
