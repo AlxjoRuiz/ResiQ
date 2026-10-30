@@ -13,7 +13,8 @@ import {
   type ReservationState,
 } from "@/app/panel/propiedades/[propertyId]/reservas/actions";
 import { Button } from "@/components/ui/button";
-import { DateTimeField } from "@/components/ui/date-time-field";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DateTimeField, TimeField } from "@/components/ui/date-time-field";
 import { slotDurationHoursLabel, weekdayLabels } from "@/lib/reservations/constants";
 
 const inputClass = "mt-2 block box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -27,15 +28,12 @@ function TimeChoice({ name, value, disabled }: { name: string; value: string; di
   </select>;
 }
 
+// Fecha u hora de un cierre de zona con el aspecto del calendario de ResiQ (29/10/2026); mismo nombre,
+// valor (AAAA-MM-DD o HH:MM) y obligatorio, como el campo del sistema que reemplaza.
 function ClosurePicker({ name, type, label }: { name: string; type: "date" | "time"; label: string }) {
-  const [value, setValue] = useState("");
-  const display = type === "date" && value ? value.split("-").reverse().join("/") : value;
-  return <label className="block min-w-0 text-xs text-muted-foreground">{label}
-    <span className="relative mt-2 flex h-11 min-w-0 items-center overflow-hidden rounded-lg border bg-white px-3 text-base text-foreground focus-within:ring-2 focus-within:ring-ring">
-      <span className="block min-w-0 truncate">{display || (type === "date" ? "Selecciona la fecha" : "Selecciona la hora")}</span>
-      <input className="absolute inset-0 h-full w-full min-w-0 cursor-pointer opacity-0" name={name} type={type} value={value} onChange={(event) => setValue(event.target.value)} onClick={(event) => { try { event.currentTarget.showPicker?.(); } catch { /* Safari opens its native picker on focus. */ } }} required aria-label={label}/>
-    </span>
-  </label>;
+  return <div className="block min-w-0 text-xs text-muted-foreground">{label}
+    {type === "date" ? <DatePicker name={name} required label={label} className="mt-2 text-base sm:text-sm" /> : <TimeField name={name} label={label} />}
+  </div>;
 }
 
 function Result({ state }: { state: ReservationState }) {

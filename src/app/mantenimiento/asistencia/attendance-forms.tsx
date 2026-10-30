@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DateTimeField } from "@/components/ui/date-time-field";
 import { FilePicker } from "@/components/ui/file-picker";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { compressImage } from "@/lib/images/compress";
@@ -61,7 +62,7 @@ export function CloseAttendanceForm({ attendanceId, defaultTime }: { attendanceI
   const [state, action, pending] = useFormActionState(closeAttendance, undefined as AttendanceState);
   return <details className="mt-2"><summary className="cursor-pointer text-sm font-medium text-primary">Registrar salida a mano</summary>
     <form onSubmit={action} className="mt-3 grid gap-3 sm:grid-cols-2"><input type="hidden" name="attendanceId" value={attendanceId} />
-      <label className="text-sm font-medium">Hora de salida<input name="checkOutAt" type="datetime-local" defaultValue={defaultTime} required className="mt-1 h-11 w-full rounded-lg border bg-white px-3 text-sm" /></label>
+      <DateTimeField name="checkOutAt" label="Hora de salida" defaultValue={defaultTime} />
       <label className="text-sm font-medium">Motivo<input name="reason" required minLength={3} maxLength={300} placeholder="Olvidó marcar la salida" className="mt-1 h-11 w-full rounded-lg border bg-white px-3 text-sm" /></label>
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2"><Button size="sm" disabled={pending}>{pending ? "Guardando…" : "Registrar salida"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}</div>
     </form>

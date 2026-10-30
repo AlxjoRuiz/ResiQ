@@ -35,10 +35,10 @@ export function useCloseOnOutside(open: boolean, boxRef: RefObject<HTMLElement |
 
 // Botón que abre el calendario: ícono a la izquierda y la fecha elegida (o el texto de ayuda).
 // className ajusta el espaciado o la altura para alinearse con los demás campos de cada formulario.
-export function CalendarTrigger({ open, onClick, children, placeholder, invalid, disabled, id, className }: { open: boolean; onClick: () => void; children?: ReactNode; placeholder?: string; invalid?: boolean; disabled?: boolean; id?: string; className?: string }) {
+export function CalendarTrigger({ open, onClick, children, placeholder, invalid, disabled, id, className, icon: Icon = CalendarDays }: { open: boolean; onClick: () => void; children?: ReactNode; placeholder?: string; invalid?: boolean; disabled?: boolean; id?: string; className?: string; icon?: typeof CalendarDays }) {
   return <button id={id} type="button" onClick={onClick} disabled={disabled} aria-expanded={open} aria-haspopup="dialog"
     className={cn("mt-1 flex h-11 w-full min-w-0 items-center gap-2 rounded-lg border bg-white px-3 text-left text-sm font-normal text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60", invalid && "border-destructive", className)}>
-    <CalendarDays size={18} aria-hidden="true" className="shrink-0 text-primary" />
+    <Icon size={18} aria-hidden="true" className="shrink-0 text-primary" />
     <span className={`min-w-0 truncate ${children ? "" : "text-muted-foreground"}`}>{children ?? placeholder}</span>
   </button>;
 }
