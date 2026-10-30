@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { MonthPicker } from "@/components/ui/date-picker";
 import { FilePicker } from "@/components/ui/file-picker";
 import { formatCop } from "@/lib/finance/constants";
 
@@ -50,7 +51,7 @@ export function PaymentEvidenceUpload({ debts }: { debts: EvidenceDebt[] }) {
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block text-sm font-medium">Deuda<select className={fieldClass} value={debtId} onChange={(event) => { setDebtId(event.target.value); const next = debts.find((item) => item.id === event.target.value); if (next) setAmount(String(Math.round(next.outstanding))); }} disabled={busy}><option value="">Selecciona</option>{debts.map((item) => <option key={item.id} value={item.id}>{item.label} · saldo {formatCop(item.outstanding)}</option>)}</select></label>
       <label className="block text-sm font-medium">Valor pagado (COP)<input type="number" min={1} step={1} className={fieldClass} value={amount} onChange={(event) => setAmount(event.target.value)} disabled={busy} /></label>
-      <label className="block text-sm font-medium">Mes que pagas<input type="month" className={fieldClass} value={paidMonth} onChange={(event) => setPaidMonth(event.target.value)} disabled={busy} /></label>
+      <label className="block text-sm font-medium">Mes que pagas<MonthPicker className="mt-2" value={paidMonth} onChange={setPaidMonth} disabled={busy} label="Elegir el mes que pagas" /></label>
       <label className="block text-sm font-medium">Comentario para la administración (opcional)<textarea className="mt-2 block min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={500} rows={2} disabled={busy} placeholder="Ej.: abono de octubre por transferencia" /></label>
     </div>
     {debt && Number(amount) > 0 && Number(amount) < debt.outstanding && <p className="text-xs text-muted-foreground">Es un abono: quedarán {formatCop(debt.outstanding - Number(amount))} por pagar en esta deuda.</p>}

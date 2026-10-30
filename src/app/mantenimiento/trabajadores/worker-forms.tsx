@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { conciergeUsername } from "@/lib/concierge/identity";
 import type { Vehicle } from "@/lib/concierge/person";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
@@ -30,7 +31,7 @@ export function MaintenanceWorkerForm() {
     <label className="text-sm font-medium">Nombres<input className={inputClass} name="firstName" value={firstName} onChange={(event) => setFirstName(event.target.value)} required maxLength={60} autoComplete="given-name" placeholder="Uno o dos nombres" /></label>
     <label className="text-sm font-medium">Apellidos<input className={inputClass} name="firstSurname" value={firstSurname} onChange={(event) => setFirstSurname(event.target.value)} required maxLength={60} autoComplete="family-name" placeholder="Uno o dos apellidos" /></label>
     <label className="text-sm font-medium">Cédula<input className={inputClass} name="documentNumber" value={documentNumber} onChange={(event) => setDocumentNumber(event.target.value)} inputMode="numeric" pattern="[0-9]{5,20}" required /></label>
-    <label className="text-sm font-medium">Fecha de nacimiento<input className={inputClass} name="birthDate" type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} required /></label>
+    <label className="text-sm font-medium">Fecha de nacimiento<DatePicker name="birthDate" value={birthDate} onChange={setBirthDate} required yearSelect initialMonth="1990-01" label="Elegir fecha de nacimiento" /></label>
     <p className="text-sm sm:col-span-2">Edad: <strong>{age === null ? "—" : `${age} años`}</strong></p>
     <label className="text-sm font-medium">Teléfono<input className={inputClass} name="phone" type="tel" autoComplete="tel" required placeholder="3001234567" /></label>
     <label className="text-sm font-medium">Correo<input className={inputClass} name="email" type="email" autoComplete="email" required maxLength={254} /></label>

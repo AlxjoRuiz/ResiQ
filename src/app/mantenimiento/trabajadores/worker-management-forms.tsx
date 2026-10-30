@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { changeMaintenanceWorkerPassword, editMaintenanceWorker, removeMaintenanceWorker, type WorkerState } from "./actions";
 
 type Vehicle = { type: string; brand: string; model: string; plate: string };
@@ -24,7 +25,7 @@ export function MaintenanceWorkerManagementForms({ account }: { account: Editabl
       <label className="text-sm">Nombres<input className={input} name="firstName" defaultValue={account.first_name} required maxLength={60} /></label>
       <label className="text-sm">Apellidos<input className={input} name="firstSurname" defaultValue={account.first_surname} required maxLength={60} /></label>
       <label className="text-sm">Cédula<input className={input} name="documentNumber" defaultValue={account.document_number} inputMode="numeric" pattern="[0-9]{5,20}" required /></label>
-      <label className="text-sm">Fecha de nacimiento<input className={input} name="birthDate" type="date" defaultValue={account.birth_date} required /></label>
+      <label className="text-sm">Fecha de nacimiento<DatePicker className="h-10" name="birthDate" defaultValue={account.birth_date} required yearSelect initialMonth="1990-01" label="Elegir fecha de nacimiento" /></label>
       <label className="text-sm">Teléfono<input className={input} name="phone" type="tel" defaultValue={account.phone_e164} required /></label>
       <label className="text-sm sm:col-span-2">Dirección<input className={input} name="address" defaultValue={account.address ?? ""} maxLength={180} /></label>
       <div className="sm:col-span-2"><p className="text-sm font-medium">Vehículo (máximo uno)</p>{vehicles.map((vehicle, index) => <div key={index} className="mt-2 grid gap-2 sm:grid-cols-4">{(["type", "brand", "model", "plate"] as const).map((key) => <label key={key} className="text-xs">{{ type: "Tipo", brand: "Marca", model: "Modelo", plate: "Placa" }[key]}<input className={input} value={vehicle[key]} onChange={(event) => changeVehicle(index, key, event.target.value)} required maxLength={60} /></label>)}<button type="button" className="text-left text-sm text-destructive sm:col-span-4" onClick={() => setVehicles((current) => current.filter((_, item) => item !== index))}>Quitar vehículo</button></div>)}<Button type="button" variant="outline" className="mt-2" disabled={vehicles.length >= 1} onClick={() => setVehicles((current) => [...current, { type: "", brand: "", model: "", plate: "" }])}>Agregar vehículo</Button></div>
