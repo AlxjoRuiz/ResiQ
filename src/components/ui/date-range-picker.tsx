@@ -11,9 +11,10 @@ type Shortcut = { label: string; range: DateRange | null };
 // Calendario pequeño de rango (28/10/2026 en el informe; compartido con Tareas el 29/10/2026): botón con
 // ícono que abre el calendario. El primer clic marca «desde» y el segundo «hasta» (un solo día = dos
 // clics en el mismo día). maxDate limita los días que se pueden elegir; los atajos con range null quitan
-// el filtro de fechas (solo si allowEmpty).
-export function DateRangePicker({ value, onChange, today, maxDate, shortcuts, allowEmpty = false, emptyLabel = "Todas las fechas", dialogLabel = "Elegir fechas" }: {
-  value: DateRange | null; onChange: (range: DateRange | null) => void; today: string; maxDate?: string;
+// el filtro de fechas (solo si allowEmpty). onCommit avisa cuando el rango quedó completo (segundo día
+// o un atajo), para filtros que se aplican solos.
+export function DateRangePicker({ value, onChange, onCommit, today, maxDate, shortcuts, allowEmpty = false, emptyLabel = "Todas las fechas", dialogLabel = "Elegir fechas" }: {
+  value: DateRange | null; onChange: (range: DateRange | null) => void; onCommit?: (range: DateRange | null) => void; today: string; maxDate?: string;
   shortcuts: Shortcut[]; allowEmpty?: boolean; emptyLabel?: string; dialogLabel?: string;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -26,9 +27,9 @@ export function DateRangePicker({ value, onChange, today, maxDate, shortcuts, al
 
   function pick(day: string) {
     if (!draft || draft.to !== null || day < draft.from) { setDraft({ from: day, to: null }); onChange({ from: day, to: day }); }
-    else { setDraft({ from: draft.from, to: day }); onChange({ from: draft.from, to: day }); setOpen(false); }
+    else { setDraft({ from: draft.from, to: day }); onChange({ from: draft.from, to: day }); onCommit?.({ from: draft.from, to: day }); setOpen(false); }
   }
-  function shortcut(range: DateRange | null) { setDraft(range); onChange(range); if (range) setMonth(range.to.slice(0, 7)); setOpen(false); }
+  function shortcut(range: DateRange | null) { setDraft(range); onChange(range); onCommit?.(range); if (range) setMonth(range.to.slice(0, 7)); setOpen(false); }
 
   const end = draft ? draft.to ?? (hover && hover >= draft.from ? hover : draft.from) : null;
   const label = !draft ? emptyLabel : draft.to === null ? `${shortDate(draft.from)} – elige el final` : draft.from === draft.to ? shortDate(draft.from) : `${shortDate(draft.from)} – ${shortDate(draft.to)}`;

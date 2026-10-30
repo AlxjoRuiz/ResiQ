@@ -2,6 +2,9 @@ import Link from "next/link";
 import { statusCard, statusPill } from "@/lib/ui/status-tones";
 import { Button } from "@/components/ui/button";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
+import { dateInputValue } from "@/lib/time-zone";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { readDateFilter } from "@/lib/date-range";
 import { noticeCategories, noticeCategoryLabel } from "@/lib/notifications/constants";
 import { markNotificationRead } from "./actions";
 
@@ -9,10 +12,10 @@ const pageSize = 20;
 
 export default async function NotificationsPage({ params, searchParams }: {
   params: Promise<{ propertyId: string }>;
-  searchParams: Promise<{ estado?: string; tipo?: string; pagina?: string }>;
+  searchParams: Promise<{ estado?: string; tipo?: string; pagina?: string; desde?: string; hasta?: string }>;
 }) {
   const { propertyId } = await params;
-  const { estado, tipo, pagina } = await searchParams;
+  const { estado, tipo, pagina, desde, hasta } = await searchParams;
   const { supabase, membership, property } = await requirePropertyMember(propertyId);
   const stateFilter = estado === "sin-leer" || estado === "leidas" ? estado : "todas";
   const typeFilter = noticeCategories.some(([value]) => value === tipo) ? tipo : null;
@@ -24,12 +27,16 @@ export default async function NotificationsPage({ params, searchParams }: {
   if (stateFilter === "sin-leer") query = query.is("read_at", null);
   if (stateFilter === "leidas") query = query.not("read_at", "is", null);
   if (typeFilter) query = query.eq("target_type", typeFilter);
+  // Filtro de fechas (29/10/2026): fecha del aviso, en la hora del conjunto.
+  const dateFilter = readDateFilter({ desde, hasta }, property.timezone); const today = dateInputValue(new Date(), property.timezone);
+  if (dateFilter) query = query.gte("occurred_at", dateFilter.start).lt("occurred_at", dateFilter.end);
   const { data, count, error } = await query.order("occurred_at", { ascending: false }).order("id", { ascending: false }).range((pageNumber - 1) * pageSize, pageNumber * pageSize - 1);
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / pageSize));
   const makeHref = (page: number) => {
     const query = new URLSearchParams();
     if (stateFilter !== "todas") query.set("estado", stateFilter);
     if (typeFilter) query.set("tipo", typeFilter);
+    if (dateFilter) { query.set("desde", dateFilter.from); query.set("hasta", dateFilter.to); }
     if (page > 1) query.set("pagina", String(page));
     const suffix = query.toString();
     return `/panel/propiedades/${propertyId}/notificaciones${suffix ? `?${suffix}` : ""}`;
@@ -38,7 +45,7 @@ export default async function NotificationsPage({ params, searchParams }: {
 
   return <main className="mx-auto min-h-screen max-w-5xl px-5 py-8 sm:px-10">
     <header className="border-b pb-6"><Link href={`/panel/propiedades/${propertyId}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Volver al inicio</Link><p className="mt-5 text-xs font-semibold tracking-wider text-primary uppercase">Tu actividad</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Notificaciones</h1><p className="mt-2 text-sm text-muted-foreground">Avisos asociados a tu cuenta en esta comunidad.</p></header>
-    <form method="get" className="mt-6 flex flex-wrap items-end gap-3"><label className="grid gap-1 text-sm font-medium">Estado<select name="estado" defaultValue={stateFilter} className="h-11 rounded-lg border bg-background px-3"><option value="todas">Todas</option><option value="sin-leer">Sin leer</option><option value="leidas">Leídas</option></select></label><label className="grid gap-1 text-sm font-medium">Tipo<select name="tipo" defaultValue={typeFilter ?? ""} className="h-11 rounded-lg border bg-background px-3"><option value="">Todos</option>{noticeCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><Button type="submit" variant="outline">Filtrar</Button></form>
+    <form method="get" className="mt-6 flex flex-wrap items-end gap-3">{dateFilter && <><input type="hidden" name="desde" value={dateFilter.from} /><input type="hidden" name="hasta" value={dateFilter.to} /></>}<DateRangeFilter from={dateFilter?.from} to={dateFilter?.to} today={today} /><label className="grid gap-1 text-sm font-medium">Estado<select name="estado" defaultValue={stateFilter} className="h-11 rounded-lg border bg-background px-3"><option value="todas">Todas</option><option value="sin-leer">Sin leer</option><option value="leidas">Leídas</option></select></label><label className="grid gap-1 text-sm font-medium">Tipo<select name="tipo" defaultValue={typeFilter ?? ""} className="h-11 rounded-lg border bg-background px-3"><option value="">Todos</option>{noticeCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><Button type="submit" variant="outline">Filtrar</Button></form>
     <section aria-label="Lista de notificaciones" className="mt-6 grid gap-3">{error ? <p role="alert" className="rounded-xl border bg-card p-5 text-sm">No pudimos cargar los avisos. Inténtalo de nuevo.</p> : !data?.length ? <p className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">No hay avisos con estos filtros.</p> : data.map((notice) => {
       const detailPath = `/panel/propiedades/${propertyId}/notificaciones/${notice.id}`;
       const expired = notice.type === "reservation_expired";
