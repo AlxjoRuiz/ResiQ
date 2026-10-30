@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { addReceivableToAgreement, cancelPaymentAgreement, createPaymentAgreement, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { formatCop } from "@/lib/finance/constants";
 
 const inputClass = "mt-2 block box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -52,7 +53,7 @@ export function PaymentAgreementForm({ propertyId, unitId, suggestedTotal }: { p
     <div className="grid gap-4 sm:grid-cols-3">
       <label className={labelClass}>Total a financiar<input className={inputClass} type="number" min={1} step={1} value={total} onChange={(event) => setTotal(event.target.value)} /></label>
       <label className={labelClass}>Número de cuotas<input className={inputClass} type="number" min={1} max={120} step={1} value={count} onChange={(event) => setCount(event.target.value)} /></label>
-      <label className={labelClass}>Primera cuota<input className={inputClass} type="date" value={firstDue} onChange={(event) => setFirstDue(event.target.value)} /></label>
+      <label className={labelClass}>Primera cuota<DatePicker className="mt-2" value={firstDue} onChange={setFirstDue} /></label>
     </div>
     <div><Button type="button" size="sm" variant="outline" onClick={generate}>Generar cuotas mensuales</Button></div>
     {installments.length > 0 && <div className="grid gap-2">
@@ -60,7 +61,7 @@ export function PaymentAgreementForm({ propertyId, unitId, suggestedTotal }: { p
       <ol className="grid max-h-80 gap-2 overflow-y-auto">{installments.map((item, index) => <li key={index} className="grid grid-cols-[2.5rem_1fr_1fr] items-center gap-2 text-sm">
         <span className="font-semibold text-primary">{index + 1}.</span>
         <label className="sr-only" htmlFor={`cuota-valor-${index}`}>Valor de la cuota {index + 1}</label><input id={`cuota-valor-${index}`} className="h-10 rounded-lg border bg-white px-3" type="number" min={1} step={1} value={item.amount} onChange={(event) => change(index, "amount", event.target.value)} required />
-        <label className="sr-only" htmlFor={`cuota-fecha-${index}`}>Fecha de la cuota {index + 1}</label><input id={`cuota-fecha-${index}`} className="h-10 rounded-lg border bg-white px-3" type="date" value={item.due_on} onChange={(event) => change(index, "due_on", event.target.value)} required />
+        <label className="sr-only" htmlFor={`cuota-fecha-${index}`}>Fecha de la cuota {index + 1}</label><DatePicker id={`cuota-fecha-${index}`} className="mt-0 h-10" label={`Fecha de la cuota ${index + 1}`} floating value={item.due_on} onChange={(value) => change(index, "due_on", value)} required />
       </li>)}</ol>
     </div>}
     <label className={labelClass}>Nota para el residente (opcional)<textarea className="mt-2 block min-h-20 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" name="notes" maxLength={1000} placeholder="Condiciones del acuerdo" /></label>

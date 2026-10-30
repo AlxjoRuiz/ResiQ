@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { compressImage } from "@/lib/images/compress";
 import { createTask, deleteTask, reviewTask, type TaskState } from "./actions";
@@ -22,7 +23,7 @@ export function NewTaskForm({ workers, today }: { workers: { staffId: string; na
     <label className="text-sm font-medium sm:col-span-2">Título<input name="title" required minLength={3} maxLength={120} className={field} /></label>
     <label className="text-sm font-medium sm:col-span-2">Descripción<textarea name="description" required minLength={3} maxLength={2000} rows={4} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm" /></label>
     <label className="text-sm font-medium">Conjunto<input name="propertyName" required minLength={2} maxLength={120} placeholder="Nombre del conjunto" className={field} /></label>
-    <label className="text-sm font-medium">Fecha límite<input name="dueDate" type="date" required min={today} className={field} /></label>
+    <label className="text-sm font-medium">Fecha límite<DatePicker name="dueDate" required min={today} /></label>
     <fieldset className="sm:col-span-2"><legend className="text-sm font-medium">Trabajadores</legend><p className="text-xs text-muted-foreground">Cada uno recibe su propia copia de la tarea.</p>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">{workers.map((worker) => <label key={worker.staffId} className="flex min-h-11 items-center gap-3 rounded-lg border bg-white px-3 text-sm"><input type="checkbox" name="staffIds" value={worker.staffId} className="size-4" />{worker.name}</label>)}</div>
     </fieldset>

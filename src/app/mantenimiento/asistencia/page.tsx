@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { signedPhotoLinks } from "@/lib/maintenance/photos";
 import { addDays, COLOMBIA_TIME_ZONE, dateInputValue, dateTimeInputValue, zonedDayStart } from "@/lib/time-zone";
@@ -95,7 +96,7 @@ export default async function MaintenanceAttendancePage({ searchParams }: { sear
     {back}
     <header className="mt-5 border-b pb-5"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Mantenimiento</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Asistencia</h1><p className="mt-2 text-sm text-muted-foreground">Llegadas y salidas de cada trabajador con su foto, en hora de Colombia.</p></header>
     <form className="mt-6 flex flex-wrap items-end gap-3">
-      <label className="text-sm font-medium">Día<input name="dia" type="date" defaultValue={day} max={today} className="mt-1 block h-11 rounded-lg border bg-white px-3 text-sm" /></label>
+      <label className="text-sm font-medium">Día<span className="block w-52"><DatePicker name="dia" defaultValue={day} max={today} /></span></label>
       <label className="text-sm font-medium">Trabajador<select name="trabajador" defaultValue={workerId ?? ""} className="mt-1 block h-11 rounded-lg border bg-white px-3 text-sm"><option value="">Todos</option>{workers.map((worker) => <option key={worker.staff_id} value={worker.staff_id}>{worker.first_name} {worker.first_surname}</option>)}</select></label>
       <button className="h-11 rounded-lg border bg-white px-4 text-sm font-medium hover:bg-secondary">Ver</button>
     </form>
