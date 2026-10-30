@@ -1,27 +1,32 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { CreatePropertyForm } from "@/components/dashboard/create-property-form";
-import { PropertyStatusForm } from "@/components/dashboard/platform-forms";
+import { PlatformPage } from "@/components/dashboard/platform-page";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
+import { propertyStatusLabel, propertyStatusTone } from "../property-status";
 
-type PropertyRow = { property_id: string; property_name: string; city: string | null; property_status: string; unit_count: number; administrator_count: number };
+type PropertyRow = { property_id: string; property_name: string; city: string | null; property_status: string; unit_count: number; resident_count: number; administrator_count: number };
 
-// Superadmin: crear conjuntos y suspenderlos o reactivarlos.
+// Conjuntos (30/10/2026): crear uno nuevo y la lista; cada conjunto abre su ficha con administración,
+// usuarios, uso del mes y su estado (suspender o reactivar).
 export default async function PlatformPropertiesPage() {
   const { supabase } = await requirePlatformAdmin();
   const { data, error } = await supabase.rpc("platform_list_properties");
   if (error) throw new Error("No se pudieron cargar los conjuntos.");
   const rows = (data ?? []) as PropertyRow[];
-  return <main className="mx-auto min-h-screen max-w-4xl px-5 py-7 sm:px-10">
-    <Link href="/plataforma" className="text-sm text-muted-foreground hover:text-foreground">← Volver a la plataforma</Link>
-    <header className="mt-5 border-b pb-6"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Plataforma</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Propiedades</h1></header>
-    <Card className="mt-7"><CardContent><h2 className="text-xl font-semibold">Nuevo conjunto</h2><p className="mt-1 mb-5 text-sm text-muted-foreground">Crea el conjunto y la invitación de su administrador. El administrador entra con el enlace usando ese correo y después importa el censo.</p><CreatePropertyForm /></CardContent></Card>
-    <section className="mt-8"><h2 className="text-xl font-semibold">Conjuntos</h2><p className="mt-1 text-sm text-muted-foreground">Suspender bloquea el acceso de todo el conjunto sin borrar datos; reactivar lo devuelve como estaba.</p>
-      <div className="mt-4 grid gap-4">{rows.map((row) => { const suspended = row.property_status === "suspended"; return <Card key={row.property_id}><CardContent>
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-semibold">{row.property_name}</h3><p className="text-sm text-muted-foreground">{row.city ?? "Sin ciudad"} · {row.unit_count} apartamentos · {row.administrator_count} {row.administrator_count === 1 ? "administrador" : "administradores"}</p></div><span className={`rounded-full px-3 py-1 text-xs font-medium ${suspended ? "bg-amber-100 text-amber-900" : "bg-primary/12 text-primary"}`}>{suspended ? "Suspendido" : row.property_status === "active" ? "Activo" : "Archivado"}</span></div>
-        {row.property_status !== "archived" && <div className="mt-4 border-t pt-4"><PropertyStatusForm key={row.property_status} propertyId={row.property_id} propertyName={row.property_name} suspended={suspended} /></div>}
-      </CardContent></Card>; })}
-      {!rows.length && <Card><CardContent><p className="text-sm text-muted-foreground">Todavía no hay conjuntos.</p></CardContent></Card>}</div>
+  return <PlatformPage title="Conjuntos" description="Crea conjuntos y abre cada uno para ver su administración, usuarios, uso y estado.">
+    <Card id="nuevo" className="scroll-mt-6"><CardContent><details>
+      <summary className="cursor-pointer text-lg font-semibold">Nuevo conjunto</summary>
+      <p className="mt-1 mb-5 text-sm text-muted-foreground">Crea el conjunto y la invitación de su administrador. El administrador entra con el enlace usando ese correo y después importa el censo.</p>
+      <CreatePropertyForm />
+    </details></CardContent></Card>
+    <section aria-label="Lista de conjuntos" className="grid gap-3">
+      {rows.map((row) => <Link key={row.property_id} href={`/plataforma/propiedades/${row.property_id}`} className="flex items-center justify-between gap-3 rounded-2xl border bg-white p-5 transition-colors hover:border-primary/40 hover:bg-secondary/40">
+        <span className="min-w-0"><span className="block text-lg font-semibold">{row.property_name}</span><span className="block text-sm text-muted-foreground">{row.city ?? "Sin ciudad"} · {row.unit_count} apartamentos · {row.resident_count} residentes · {row.administrator_count} {row.administrator_count === 1 ? "administrador" : "administradores"}</span></span>
+        <span className="flex shrink-0 items-center gap-2"><span className={`rounded-full px-3 py-1 text-xs font-medium ${propertyStatusTone(row.property_status)}`}>{propertyStatusLabel(row.property_status)}</span><ChevronRight size={18} aria-hidden="true" className="text-muted-foreground" /></span>
+      </Link>)}
+      {!rows.length && <Card><CardContent><p className="text-sm text-muted-foreground">Todavía no hay conjuntos.</p></CardContent></Card>}
     </section>
-  </main>;
+  </PlatformPage>;
 }
