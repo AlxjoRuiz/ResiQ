@@ -34,7 +34,7 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   return <PlatformPage eyebrow="Cobro jurídico" title={property.property_name} description={`${property.city ?? "Sin ciudad"} · en mora desde ${property.overdue_days} días de vencida la deuda más antigua sin pagar`}
     back={<Link href="/juridica" className="text-sm text-muted-foreground hover:text-foreground">← Tus conjuntos</Link>}>
     <nav aria-label="Secciones de la cartera" className="flex flex-wrap gap-2">{tabs.map((item) => <Link key={item.id} href={`/juridica/${propertyId}?tab=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
-      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
+      className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
 
     {tab === "novedades" ? <section aria-label="Novedades" className="rounded-2xl border bg-white p-5">
       <MarkPropertySeen propertyId={propertyId} />
