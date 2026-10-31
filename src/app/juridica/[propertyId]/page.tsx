@@ -9,7 +9,7 @@ import { MarkPropertySeen } from "../mark-seen";
 const tabs = [{ id: "mora", label: "En mora" }, { id: "aldia", label: "Al día" }, { id: "novedades", label: "Novedades" }] as const;
 type Tab = (typeof tabs)[number]["id"];
 
-// Cartera de un conjunto para la abogada (31/10/2026): En mora (supera el umbral del conjunto), Al día (el
+// Cartera de un conjunto para la abogada (31/10/2026): En mora (supera los días de mora que el admin del conjunto define en Cartera), Al día (el
 // resto) y Novedades (lo que el administrador cargó, registró o anuló en los últimos 60 días). Solo lectura.
 export default async function LegalPropertyPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ tab?: string }> }) {
   const [{ propertyId }, { tab: rawTab }] = await Promise.all([params, searchParams]);
@@ -50,7 +50,7 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
           <span className="block text-xs text-muted-foreground">Último pago: {formatDay(row.last_payment_on)}</span></span>
         <span className="sm:text-right"><span className={`block font-semibold ${row.in_arrears ? "text-red-700" : ""}`}>{formatCop(row.in_arrears ? row.overdue : row.outstanding)}</span>
           <span className="block text-xs text-muted-foreground">{row.days_overdue > 0 ? `${row.days_overdue} días de mora` : row.outstanding > 0 ? "Saldo sin vencer" : "Sin saldo"}</span></span>
-      </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">{tab === "mora" ? "Ningún apartamento supera el umbral de mora." : "No hay apartamentos al día."}</p>}
+      </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">{tab === "mora" ? "Ningún apartamento supera los días de mora del conjunto." : "No hay apartamentos al día."}</p>}
     </section>}
   </PlatformPage>;
 }

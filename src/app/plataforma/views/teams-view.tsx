@@ -54,9 +54,9 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
       {!legalTeam.some((person) => person.staff_id) && <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Invitar abogada</summary><div className="mt-4"><InviteLegalForm test={test} /></div></details>}
       <div className="mt-6 border-t pt-5">
         <h3 className="font-semibold">Conjuntos asignados</h3>
-        <p className="mt-1 text-sm text-muted-foreground">Marca los conjuntos cuya cartera le llega a la abogada y el umbral de mora de cada uno (días desde el vencimiento más antiguo sin pagar). Si quitas un conjunto, deja de verlo al instante.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Marca los conjuntos cuya cartera le llega a la abogada. Los días de mora de cada conjunto los define su admin en Cartera; la abogada ve en mora a quien los supera. Si quitas un conjunto, deja de verlo al instante.</p>
         <ul className="mt-4 grid gap-3">{assignments.map((row) => <li key={row.property_id} className="grid gap-3 rounded-xl border p-4">
-          <p className="flex flex-wrap items-center gap-2 font-medium"><Link href={`/plataforma/propiedades/${row.property_id}`} className="hover:underline">{row.property_name}</Link>{row.property_status === "suspended" && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">Suspendido</span>}{row.assigned && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs text-primary">En jurídica · {row.overdue_days} días</span>}</p>
+          <p className="flex flex-wrap items-center gap-2 font-medium"><Link href={`/plataforma/propiedades/${row.property_id}`} className="hover:underline">{row.property_name}</Link>{row.property_status === "suspended" && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">Suspendido</span>}{row.assigned && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs text-primary">En jurídica</span>}</p>
           <LegalAssignmentForm key={`${row.assigned}-${row.overdue_days}`} propertyId={row.property_id} assigned={row.assigned} overdueDays={row.overdue_days} />
         </li>)}{!assignments.length && <li className="text-sm text-muted-foreground">Todavía no hay conjuntos.</li>}</ul>
       </div>

@@ -148,17 +148,17 @@ export async function reissueLegalInvitation(_: CreatePropertyState, data: FormD
   return { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días.", link: await invitationLink(token) };
 }
 
-// Asignar o quitar un conjunto a jurídica, con su umbral de mora en días (queda en auditoría).
+// Asignar o quitar un conjunto a jurídica (queda en auditoría). Los días de mora los define su admin en Cartera.
 export async function setLegalAssignment(_: PlatformState, data: FormData): Promise<PlatformState> {
-  const propertyId = field(data, "propertyId"), assigned = data.get("assigned") === "on", days = Number(field(data, "overdueDays"));
+  const propertyId = field(data, "propertyId"), assigned = data.get("assigned") === "on";
   if (!/^[0-9a-f-]{36}$/i.test(propertyId)) return { error: "Conjunto inválido." };
-  if (assigned && (!Number.isInteger(days) || days < 1 || days > 3650)) return { error: "El umbral debe ser un número de días entre 1 y 3650." };
   const { supabase } = await requirePlatformAdmin();
-  const { error } = await supabase.rpc("platform_set_legal_assignment", { target_property_id: propertyId, target_assigned: assigned, target_overdue_days: assigned ? days : null });
+  // Los días de mora salen de la política del admin en Cartera (31/10/2026); el valor que pide la función ya no se usa.
+  const { error } = await supabase.rpc("platform_set_legal_assignment", { target_property_id: propertyId, target_assigned: assigned, target_overdue_days: assigned ? 60 : null });
   if (error) return { error: "No pudimos guardar la asignación." };
   revalidatePath("/plataforma", "layout");
   revalidatePath("/juridica", "layout");
-  return { success: assigned ? `Asignado a jurídica con umbral de ${days} días.` : "Ya no está asignado a jurídica." };
+  return { success: assigned ? "Asignado a jurídica." : "Ya no está asignado a jurídica." };
 }
 
 // Pruebas ResiQ (31/10/2026): marcar un conjunto como de prueba o devolverlo a producción.

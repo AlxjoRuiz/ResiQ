@@ -82,8 +82,8 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
     </details></CardContent></Card>
 
     {legal && <Card><CardContent>
-      <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">Jurídica{legal.assigned && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Asignado · {legal.overdue_days} días</span>}</h2>
-      <p className="mt-1 mb-4 text-sm text-muted-foreground">Si lo asignas, la abogada de cobros ve la cartera de este conjunto en solo lectura y quiénes superan el umbral de mora.</p>
+      <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">Jurídica{legal.assigned && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Asignado</span>}</h2>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">Si lo asignas, la abogada de cobros ve la cartera de este conjunto en solo lectura y quiénes superan los días de mora que su admin define en Cartera.</p>
       <LegalAssignmentForm key={`${legal.assigned}-${legal.overdue_days}`} propertyId={property.property_id} assigned={legal.assigned} overdueDays={legal.overdue_days} />
     </CardContent></Card>}
 

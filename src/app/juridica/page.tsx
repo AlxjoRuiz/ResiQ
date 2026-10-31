@@ -5,7 +5,7 @@ import { formatCop } from "@/lib/finance/constants";
 import type { LegalProperty } from "./legal-data";
 
 // Inicio de la abogada (31/10/2026): los conjuntos que le asignó el superadmin, con la cartera en mora
-// según el umbral de cada uno y las novedades desde su última visita.
+// según los días de mora que define el admin de cada uno en Cartera y las novedades desde su última visita.
 export default async function LegalHomePage() {
   const { supabase } = await requireLegalStaff();
   const { data, error } = await supabase.rpc("legal_list_properties");
