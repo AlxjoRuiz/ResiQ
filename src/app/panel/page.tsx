@@ -24,6 +24,8 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   if (!memberships.length && !platformAdmin) {
     const { data: maintenance } = await supabase.from("maintenance_staff").select("id").eq("user_id", user.id).eq("status", "active").maybeSingle();
     if (maintenance) redirect("/mantenimiento");
+    const { data: legal } = await supabase.from("legal_staff").select("id").eq("user_id", user.id).eq("status", "active").maybeSingle();
+    if (legal) redirect("/juridica");
   }
   if (!memberships.length && !platformAdmin) redirect("/login?error=no_invitation");
   // Un superadmin sin comunidades va directo a la plataforma (30/10/2026: con su barra de secciones).

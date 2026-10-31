@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { setPropertyStatus, setSeasonalDecor, setSeasonalTheme, type PlatformState } from "@/app/plataforma/actions";
+import { setLegalAssignment, setPropertyStatus, setSeasonalDecor, setSeasonalTheme, type PlatformState } from "@/app/plataforma/actions";
 import { Button } from "@/components/ui/button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 
@@ -34,4 +34,15 @@ export function PropertyStatusForm({ propertyId, propertyName, suspended }: { pr
       </div>
     </div>}
   </div>;
+}
+
+// Módulo jurídico (31/10/2026): asignar o quitar el conjunto a la abogada, con su umbral de mora en días.
+export function LegalAssignmentForm({ propertyId, assigned, overdueDays }: { propertyId: string; assigned: boolean; overdueDays: number }) {
+  const [state, action, pending] = useFormActionState(setLegalAssignment, undefined as PlatformState);
+  const [checked, setChecked] = useState(assigned);
+  return <form onSubmit={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId} />
+    <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" name="assigned" checked={checked} onChange={(event) => setChecked(event.target.checked)} className="size-4 accent-primary" />Asignado a jurídica</label>
+    <label className="flex items-center gap-2 text-sm">Umbral de mora<input name="overdueDays" type="number" min={1} max={3650} defaultValue={overdueDays} required={checked} disabled={!checked} className="h-9 w-20 rounded-lg border bg-white px-2 text-sm disabled:opacity-50" />días</label>
+    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : "Guardar"}</Button><Result state={state} />
+  </form>;
 }

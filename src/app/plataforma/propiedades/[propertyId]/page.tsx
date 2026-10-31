@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { InviteAdministratorForm, ReissueAdminInvitationForm } from "@/components/dashboard/create-property-form";
 import { PlatformPage } from "@/components/dashboard/platform-page";
-import { PropertyStatusForm } from "@/components/dashboard/platform-forms";
+import { LegalAssignmentForm, PropertyStatusForm } from "@/components/dashboard/platform-forms";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { dateInputValue } from "@/lib/time-zone";
@@ -11,6 +11,7 @@ import { propertyStatusLabel, propertyStatusTone } from "../../property-status";
 type PropertyRow = { property_id: string; property_name: string; city: string | null; property_status: string; unit_count: number; resident_count: number; concierge_count: number; administrator_count: number };
 type AdminRow = { property_id: string; display_name: string | null; email: string; member_status: string; since: string; invitation_id: string | null; is_assistant: boolean | null };
 type UserRow = { property_id: string; user_name: string | null; email: string; user_role: string; unit_label: string | null; user_status: string; since: string; invitation_id: string | null };
+type AssignmentRow = { property_id: string; assigned: boolean; overdue_days: number };
 type UsageRow = { property_id: string; pqrs_count: number; package_count: number; visitor_count: number; reservation_count: number };
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const roleLabels: Record<string, string> = { resident: "Residente", concierge: "Portería", administrator: "Administrador", assistant: "Auxiliar" };
@@ -28,18 +29,20 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
   if (!uuidPattern.test(propertyId)) notFound();
   const { supabase } = await requirePlatformAdmin();
   const month = dateInputValue(new Date(), "America/Bogota").slice(0, 7);
-  const [{ data: propertyData, error: propertyError }, { data: adminData, error: adminError }, { data: userData, error: userError }, { data: usageData, error: usageError }] = await Promise.all([
+  const [{ data: propertyData, error: propertyError }, { data: adminData, error: adminError }, { data: userData, error: userError }, { data: usageData, error: usageError }, { data: assignmentData, error: assignmentError }] = await Promise.all([
     supabase.rpc("platform_list_properties"),
     supabase.rpc("platform_list_administrators"),
     supabase.rpc("platform_list_users"),
     supabase.rpc("platform_usage_by_month", { target_month: `${month}-01` }),
+    supabase.rpc("platform_list_legal_assignments"),
   ]);
-  if (propertyError || adminError || userError || usageError) throw new Error("No se pudo cargar el conjunto.");
+  if (propertyError || adminError || userError || usageError || assignmentError) throw new Error("No se pudo cargar el conjunto.");
   const property = ((propertyData ?? []) as PropertyRow[]).find((row) => row.property_id === propertyId);
   if (!property) notFound();
   const admins = ((adminData ?? []) as AdminRow[]).filter((row) => row.property_id === propertyId);
   const people = ((userData ?? []) as UserRow[]).filter((row) => row.property_id === propertyId);
   const usage = ((usageData ?? []) as UsageRow[]).find((row) => row.property_id === propertyId);
+  const legal = ((assignmentData ?? []) as AssignmentRow[]).find((row) => row.property_id === propertyId);
   const active = property.property_status === "active";
   const date = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" });
   const monthLabel = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T12:00:00Z`));
@@ -74,6 +77,12 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
         <span className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${statusTones[person.user_status] ?? "bg-secondary"}`}>{statusLabels[person.user_status] ?? person.user_status}</span>
       </li>)}{!people.length && <li className="text-sm text-muted-foreground">Este conjunto no tiene usuarios ni invitaciones pendientes.</li>}</ul>
     </details></CardContent></Card>
+
+    {legal && <Card><CardContent>
+      <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">Jurídica{legal.assigned && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Asignado · {legal.overdue_days} días</span>}</h2>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">Si lo asignas, la abogada de cobros ve la cartera de este conjunto en solo lectura y quiénes superan el umbral de mora.</p>
+      <LegalAssignmentForm key={`${legal.assigned}-${legal.overdue_days}`} propertyId={property.property_id} assigned={legal.assigned} overdueDays={legal.overdue_days} />
+    </CardContent></Card>}
 
     {property.property_status !== "archived" && <Card><CardContent>
       <h2 className="text-lg font-semibold">Estado del conjunto</h2>

@@ -56,7 +56,7 @@ export async function updateSession(request: NextRequest, extraRequestHeaders: R
   const { data: claimsData } = await supabase.auth.getClaims();
   const user = typeof claimsData?.claims?.sub === "string" ? { id: claimsData.claims.sub } : null;
   const pathname = request.nextUrl.pathname;
-  const isProtected = pathname.startsWith("/panel") || pathname.startsWith("/perfil") || pathname.startsWith("/invitacion") || pathname.startsWith("/plataforma") || pathname.startsWith("/mantenimiento");
+  const isProtected = pathname.startsWith("/panel") || pathname.startsWith("/perfil") || pathname.startsWith("/invitacion") || pathname.startsWith("/plataforma") || pathname.startsWith("/mantenimiento") || pathname.startsWith("/juridica");
 
   if (!user && isProtected) {
     const loginUrl = request.nextUrl.clone();
@@ -66,7 +66,7 @@ export async function updateSession(request: NextRequest, extraRequestHeaders: R
     return redirectWithCookies(loginUrl, response);
   }
 
-  if (user && (pathname.startsWith("/panel") || pathname.startsWith("/perfil") || pathname.startsWith("/plataforma") || pathname.startsWith("/mantenimiento"))) {
+  if (user && (pathname.startsWith("/panel") || pathname.startsWith("/perfil") || pathname.startsWith("/plataforma") || pathname.startsWith("/mantenimiento") || pathname.startsWith("/juridica"))) {
     if (!(await hasRecentAccess(request, user.id))) {
       const access = await getAppAccessStatus(supabase, user.id);
       if (access !== "authorized") {

@@ -31,11 +31,14 @@ test("only active property members or platform admins may enter ResiQ", async ()
   assert.equal(await getAppAccessStatus(platform, "user-1"), "authorized");
   const uninvited = client({ property_members: { data: [], error: null }, platform_admins: { data: [], error: null } });
   assert.equal(await getAppAccessStatus(uninvited, "user-1"), "unauthorized");
-  // Toda consulta filtra por la cuenta y por estado activo; la única excepción es la que busca un
-  // trabajador de mantenimiento suspendido, para mostrarle su propio aviso.
+  // La abogada de cobros (equipo jurídico, sin conjuntos) también entra.
+  const legal = client({ property_members: { data: [], error: null }, platform_admins: { data: [], error: null }, legal_staff: { data: [{ id: "legal" }], error: null } });
+  assert.equal(await getAppAccessStatus(legal, "user-1"), "authorized");
+  // Toda consulta filtra por la cuenta y por estado activo; las únicas excepciones son las que buscan un
+  // trabajador de mantenimiento o una abogada suspendidos, para mostrarles su propio aviso.
   for (const query of uninvited.queries) {
-    const suspendedMaintenance = query.table === "maintenance_staff" && query.filters.some(([column, value]) => column === "status" && value === "suspended");
-    assert.deepEqual(query.filters, [["user_id", "user-1"], ["status", suspendedMaintenance ? "suspended" : "active"]]);
+    const suspendedStaff = (query.table === "maintenance_staff" || query.table === "legal_staff") && query.filters.some(([column, value]) => column === "status" && value === "suspended");
+    assert.deepEqual(query.filters, [["user_id", "user-1"], ["status", suspendedStaff ? "suspended" : "active"]]);
   }
   const suspendedOnly = client({ platform_admins: { data: [], error: null }, get_my_property_statuses: { data: [suspended("p1")], error: null } });
   assert.notEqual(await getAppAccessStatus(suspendedOnly, "user-1"), "unauthorized");

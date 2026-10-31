@@ -112,3 +112,37 @@ export async function setPropertyStatus(_: PlatformState, data: FormData): Promi
   revalidatePath("/", "layout");
   return { success: status === "suspended" ? "Conjunto suspendido." : "Conjunto reactivado." };
 }
+
+// Módulo jurídico (31/10/2026): el superadmin invita a la abogada de cobros con un enlace a su correo.
+export async function inviteLegal(_: CreatePropertyState, data: FormData): Promise<CreatePropertyState> {
+  const email = field(data, "email").toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Escribe un correo válido." };
+  const { supabase } = await requirePlatformAdmin();
+  const { data: token, error } = await supabase.rpc("platform_invite_legal", { target_email: email });
+  if (error || typeof token !== "string") return { error: error?.message.includes("already_member") ? "Ese correo ya tiene acceso al módulo jurídico." : "No pudimos crear la invitación." };
+  revalidatePath("/plataforma", "layout");
+  return { success: `Invitación creada. Comparte el enlace; debe entrar con ${email}. Vence en 7 días.`, link: await invitationLink(token) };
+}
+
+export async function reissueLegalInvitation(_: CreatePropertyState, data: FormData): Promise<CreatePropertyState> {
+  const invitationId = field(data, "invitationId");
+  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) return { error: "Invitación inválida." };
+  const { supabase } = await requirePlatformAdmin();
+  const { data: token, error } = await supabase.rpc("platform_reissue_legal_invitation", { target_invitation_id: invitationId });
+  if (error || typeof token !== "string") return { error: "No pudimos generar el enlace." };
+  revalidatePath("/plataforma", "layout");
+  return { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días.", link: await invitationLink(token) };
+}
+
+// Asignar o quitar un conjunto a jurídica, con su umbral de mora en días (queda en auditoría).
+export async function setLegalAssignment(_: PlatformState, data: FormData): Promise<PlatformState> {
+  const propertyId = field(data, "propertyId"), assigned = data.get("assigned") === "on", days = Number(field(data, "overdueDays"));
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId)) return { error: "Conjunto inválido." };
+  if (assigned && (!Number.isInteger(days) || days < 1 || days > 3650)) return { error: "El umbral debe ser un número de días entre 1 y 3650." };
+  const { supabase } = await requirePlatformAdmin();
+  const { error } = await supabase.rpc("platform_set_legal_assignment", { target_property_id: propertyId, target_assigned: assigned, target_overdue_days: assigned ? days : null });
+  if (error) return { error: "No pudimos guardar la asignación." };
+  revalidatePath("/plataforma", "layout");
+  revalidatePath("/juridica", "layout");
+  return { success: assigned ? `Asignado a jurídica con umbral de ${days} días.` : "Ya no está asignado a jurídica." };
+}
