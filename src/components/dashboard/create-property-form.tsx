@@ -22,9 +22,9 @@ function InvitationLinkResult({ state }: { state: CreatePropertyState }) {
 }
 
 // Superadmin: nuevo conjunto con su administrador inicial.
-export function CreatePropertyForm() {
+export function CreatePropertyForm({ test = false }: { test?: boolean }) {
   const [state, action, pending] = useFormActionState(createPlatformProperty, undefined as CreatePropertyState);
-  return <form onSubmit={action} className="grid gap-4 md:grid-cols-2">
+  return <form onSubmit={action} className="grid gap-4 md:grid-cols-2">{test && <input type="hidden" name="test" value="true" />}
     <label className={`${labelClass} md:col-span-2`}>Nombre del conjunto<input className={inputClass} name="name" required minLength={2} maxLength={120} placeholder="Conjunto Los Bosques" /></label>
     <label className={labelClass}>Dirección<input className={inputClass} name="address" maxLength={180} placeholder="Calle 123 # 45-67" /></label>
     <label className={labelClass}>Ciudad<input className={inputClass} name="city" maxLength={80} placeholder="Bogotá" /></label>
@@ -54,9 +54,9 @@ export function ReissueAdminInvitationForm({ invitationId }: { invitationId: str
 }
 
 // Equipo de mantenimiento: invitar al admin de mantenimiento y generar un enlace nuevo.
-export function InviteMaintenanceAdminForm() {
+export function InviteMaintenanceAdminForm({ test = false }: { test?: boolean }) {
   const [state, action, pending] = useFormActionState(inviteMaintenanceAdmin, undefined as CreatePropertyState);
-  return <form onSubmit={action} className="grid gap-3">
+  return <form onSubmit={action} className="grid gap-3">{test && <input type="hidden" name="test" value="true" />}
     <label className={labelClass}>Correo del admin de mantenimiento<input className={inputClass} name="adminEmail" type="email" required maxLength={254} placeholder="mantenimiento@correo.com" /></label>
     <div className="flex flex-wrap items-center gap-3"><Button size="sm" disabled={pending}>{pending ? "Creando…" : "Invitar admin de mantenimiento"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}</div>
     <InvitationLinkResult state={state} />
@@ -72,9 +72,9 @@ export function ReissueMaintenanceInvitationForm({ invitationId }: { invitationI
 }
 
 // Módulo jurídico (31/10/2026): invitar a la abogada de cobros y generar un enlace nuevo.
-export function InviteLegalForm() {
+export function InviteLegalForm({ test = false }: { test?: boolean }) {
   const [state, action, pending] = useFormActionState(inviteLegal, undefined as CreatePropertyState);
-  return <form onSubmit={action} className="grid gap-3">
+  return <form onSubmit={action} className="grid gap-3">{test && <input type="hidden" name="test" value="true" />}
     <label className={labelClass}>Correo de la abogada<input className={inputClass} name="email" type="email" required maxLength={254} placeholder="abogada@correo.com" /></label>
     <div className="flex flex-wrap items-center gap-3"><Button size="sm" disabled={pending}>{pending ? "Creando…" : "Invitar abogada"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}</div>
     <InvitationLinkResult state={state} />

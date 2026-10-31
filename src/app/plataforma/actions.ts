@@ -19,8 +19,13 @@ export async function createPlatformProperty(_: CreatePropertyState, data: FormD
     if (error.message.includes("invalid_email")) return { error: "Escribe un correo válido para el administrador." };
     return { error: "No pudimos crear el conjunto. Revisa los datos e inténtalo nuevamente." };
   }
-  const token = (result as { token?: string } | null)?.token;
+  const { token, property_id: propertyId } = (result ?? {}) as { token?: string; property_id?: string };
   if (!token) return { error: "El conjunto se creó, pero no pudimos generar el enlace." };
+  // Creado desde Pruebas ResiQ (31/10/2026): nace como conjunto de prueba.
+  if (field(data, "test") === "true" && propertyId) {
+    const { error: testError } = await supabase.rpc("platform_set_property_test", { target_property_id: propertyId, target_is_test: true });
+    if (testError) return { error: "El conjunto se creó, pero quedó en producción. Pásalo a Pruebas desde su ficha." };
+  }
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   revalidatePath("/plataforma", "layout");
   revalidatePath("/panel");
@@ -81,6 +86,7 @@ export async function inviteMaintenanceAdmin(_: CreatePropertyState, data: FormD
   const email = field(data, "adminEmail").toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Escribe un correo válido." };
   const { supabase } = await requirePlatformAdmin();
+  if (!(await markTestEmail(supabase, data, email))) return { error: "No pudimos marcar el correo como de prueba." };
   const { data: token, error } = await supabase.rpc("platform_invite_maintenance_admin", { target_email: email });
   if (error || typeof token !== "string") return { error: error?.message.includes("already_member") ? "Ese correo ya es parte del equipo de mantenimiento." : "No pudimos crear la invitación." };
   revalidatePath("/plataforma", "layout");
@@ -95,6 +101,13 @@ export async function reissueMaintenanceInvitation(_: CreatePropertyState, data:
   if (error || typeof token !== "string") return { error: "No pudimos generar el enlace." };
   revalidatePath("/plataforma", "layout");
   return { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días.", link: await invitationLink(token) };
+}
+
+// Invitación hecha desde Pruebas ResiQ (31/10/2026): el correo queda marcado como de prueba antes de invitar.
+async function markTestEmail(supabase: Awaited<ReturnType<typeof requirePlatformAdmin>>["supabase"], data: FormData, email: string) {
+  if (field(data, "test") !== "true" || email.endsWith("@resiq.invalid")) return true;
+  const { error } = await supabase.rpc("platform_set_test_email", { target_email: email, target_is_test: true });
+  return !error;
 }
 
 async function invitationLink(token: string) {
@@ -118,6 +131,7 @@ export async function inviteLegal(_: CreatePropertyState, data: FormData): Promi
   const email = field(data, "email").toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "Escribe un correo válido." };
   const { supabase } = await requirePlatformAdmin();
+  if (!(await markTestEmail(supabase, data, email))) return { error: "No pudimos marcar el correo como de prueba." };
   const { data: token, error } = await supabase.rpc("platform_invite_legal", { target_email: email });
   if (error || typeof token !== "string") return { error: error?.message.includes("already_member") ? "Ese correo ya tiene acceso al módulo jurídico." : "No pudimos crear la invitación." };
   revalidatePath("/plataforma", "layout");
