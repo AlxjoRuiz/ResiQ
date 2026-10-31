@@ -6,7 +6,8 @@ import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { loadTestScope } from "../test-scope";
 
 type MaintenanceRow = { staff_id: string | null; invitation_id: string | null; display_name: string | null; email: string; member_status: string; since: string };
-type AssignmentRow = { property_id: string; property_name: string; property_status: string; assigned: boolean; overdue_days: number };
+type TestAccountRow = { email: string; display_name: string | null; access: string | null; last_sign_in_at: string | null; automatic: boolean; marked: boolean };
+type AssignmentRow ={ property_id: string; property_name: string; property_status: string; assigned: boolean; overdue_days: number };
 const statusLabels: Record<string, string> = { active: "Activo", suspended: "Suspendido", revoked: "Retirado", invited: "Invitación pendiente", expired: "Invitación vencida" };
 
 // Equipos ResiQ (30/10/2026): el personal propio de ResiQ, que no pertenece a ningún conjunto. Desde el
@@ -23,6 +24,13 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
   const legalTeam = ((legalData ?? []) as MaintenanceRow[]).filter((row) => scope.isTestEmail(row.email) === test);
   const assignments = ((assignmentData ?? []) as AssignmentRow[]).filter((row) => scope.isTestProperty(row.property_id) === test);
   const date = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" });
+  // Correos de prueba (31/10/2026): las cuentas @resiq.invalid y las marcadas a mano, con su acceso.
+  let testAccounts: TestAccountRow[] = [];
+  if (test) {
+    const { data: accountData, error: accountError } = await supabase.rpc("platform_list_test_accounts");
+    if (accountError) throw new Error("No se pudieron cargar las cuentas de prueba.");
+    testAccounts = (accountData ?? []) as TestAccountRow[];
+  }
   return <>
     <Card><CardContent>
       <h2 className="text-lg font-semibold">Equipo de mantenimiento</h2>
@@ -56,10 +64,14 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
 
     {test && <Card><CardContent>
       <h2 className="text-lg font-semibold">Correos de prueba</h2>
-      <p className="mt-1 mb-4 text-sm text-muted-foreground">El personal de ResiQ con estos correos sale aquí y no en producción. Lo que invitas desde Pruebas ResiQ se agrega solo; los correos que terminan en @resiq.invalid cuentan siempre como de prueba.</p>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">Todas las cuentas de prueba con lo que tienen acceso. Las @resiq.invalid cuentan siempre como de prueba; las demás se marcan aquí (lo que invitas desde Pruebas ResiQ se marca solo).</p>
       <TestEmailForm />
-      <ul className="mt-4 grid gap-2">{scope.emails.map((email) => <li key={email} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 text-sm"><span className="break-all">{email}</span><RemoveTestEmailForm email={email} /></li>)}
-        {!scope.emails.length && <li className="text-sm text-muted-foreground">Todavía no hay correos marcados.</li>}</ul>
+      <ul className="mt-4 grid gap-2">{testAccounts.map((account) => <li key={account.email} className="grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start">
+        <div className="min-w-0"><p className="font-medium">{account.display_name ?? "Sin cuenta todavía"}</p><p className="break-all text-muted-foreground">{account.email}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{account.access ?? "Sin acceso"} · {account.last_sign_in_at ? `última entrada ${date.format(new Date(account.last_sign_in_at))}` : "nunca ha entrado"}</p></div>
+        {account.marked ? <RemoveTestEmailForm email={account.email} /> : <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs font-medium">Automático · @resiq.invalid</span>}
+      </li>)}
+        {!testAccounts.length && <li className="text-sm text-muted-foreground">Todavía no hay cuentas de prueba.</li>}</ul>
     </CardContent></Card>}
   </>;
 }
