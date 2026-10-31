@@ -5,6 +5,7 @@ import { PlatformPage } from "@/components/dashboard/platform-page";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { propertyStatusLabel, propertyStatusTone } from "../property-status";
+import { loadTestScope } from "../test-scope";
 
 type PropertyRow = { property_id: string; property_name: string; city: string | null; property_status: string; unit_count: number; resident_count: number; concierge_count: number; administrator_count: number };
 type UserRow = { property_id: string; property_name: string; property_status: string; user_name: string | null; email: string; user_role: string; unit_label: string | null; user_status: string; since: string; invitation_id: string | null };
@@ -22,9 +23,10 @@ const field = "mt-1 block h-11 rounded-lg border bg-white px-3 text-sm";
 export default async function PlatformUsersPage({ searchParams }: { searchParams: Promise<{ q?: string; rol?: string; estado?: string }> }) {
   const { supabase } = await requirePlatformAdmin();
   const params = await searchParams;
-  const [{ data, error }, { data: userData, error: userError }] = await Promise.all([supabase.rpc("platform_list_properties"), supabase.rpc("platform_list_users")]);
+  const [scope, { data, error }, { data: userData, error: userError }] = await Promise.all([loadTestScope(supabase), supabase.rpc("platform_list_properties"), supabase.rpc("platform_list_users")]);
   if (error || userError) throw new Error("No se pudieron cargar los usuarios.");
-  const properties = (data ?? []) as PropertyRow[];
+  // Los conjuntos de prueba, con su gente, están en Pruebas ResiQ (31/10/2026).
+  const properties = ((data ?? []) as PropertyRow[]).filter((row) => !scope.isTestProperty(row.property_id));
   const users = (userData ?? []) as UserRow[];
   const total = (key: CountKey) => properties.reduce((sum, row) => sum + row[key], 0);
 

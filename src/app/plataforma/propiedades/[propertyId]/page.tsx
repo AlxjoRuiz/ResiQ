@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { InviteAdministratorForm, ReissueAdminInvitationForm } from "@/components/dashboard/create-property-form";
 import { PlatformPage } from "@/components/dashboard/platform-page";
-import { LegalAssignmentForm, PropertyStatusForm } from "@/components/dashboard/platform-forms";
+import { LegalAssignmentForm, PropertyStatusForm, PropertyTestForm } from "@/components/dashboard/platform-forms";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { dateInputValue } from "@/lib/time-zone";
 import { propertyStatusLabel, propertyStatusTone } from "../../property-status";
+import { loadTestScope } from "../../test-scope";
 
 type PropertyRow = { property_id: string; property_name: string; city: string | null; property_status: string; unit_count: number; resident_count: number; concierge_count: number; administrator_count: number };
 type AdminRow = { property_id: string; display_name: string | null; email: string; member_status: string; since: string; invitation_id: string | null; is_assistant: boolean | null };
@@ -29,7 +30,8 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
   if (!uuidPattern.test(propertyId)) notFound();
   const { supabase } = await requirePlatformAdmin();
   const month = dateInputValue(new Date(), "America/Bogota").slice(0, 7);
-  const [{ data: propertyData, error: propertyError }, { data: adminData, error: adminError }, { data: userData, error: userError }, { data: usageData, error: usageError }, { data: assignmentData, error: assignmentError }] = await Promise.all([
+  const [scope, { data: propertyData, error: propertyError }, { data: adminData, error: adminError }, { data: userData, error: userError }, { data: usageData, error: usageError }, { data: assignmentData, error: assignmentError }] = await Promise.all([
+    loadTestScope(supabase),
     supabase.rpc("platform_list_properties"),
     supabase.rpc("platform_list_administrators"),
     supabase.rpc("platform_list_users"),
@@ -44,13 +46,14 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
   const usage = ((usageData ?? []) as UsageRow[]).find((row) => row.property_id === propertyId);
   const legal = ((assignmentData ?? []) as AssignmentRow[]).find((row) => row.property_id === propertyId);
   const active = property.property_status === "active";
+  const isTest = scope.isTestProperty(propertyId);
   const date = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" });
   const monthLabel = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T12:00:00Z`));
   const count = (status: string) => people.filter((person) => person.user_status === status).length;
 
   return <PlatformPage eyebrow="Conjunto" title={property.property_name} description={property.city ?? "Sin ciudad"}
-    back={<Link href="/plataforma/propiedades" className="text-sm text-muted-foreground hover:text-foreground">← Conjuntos</Link>}
-    actions={<span className={`rounded-full px-3 py-1 text-xs font-medium ${propertyStatusTone(property.property_status)}`}>{propertyStatusLabel(property.property_status)}</span>}>
+    back={<Link href={isTest ? "/plataforma/pruebas" : "/plataforma/propiedades"} className="text-sm text-muted-foreground hover:text-foreground">{isTest ? "← Pruebas ResiQ" : "← Conjuntos"}</Link>}
+    actions={<span className="flex flex-wrap gap-2">{isTest && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">De prueba</span>}<span className={`rounded-full px-3 py-1 text-xs font-medium ${propertyStatusTone(property.property_status)}`}>{propertyStatusLabel(property.property_status)}</span></span>}>
     <section aria-label="Cifras del conjunto" className="grid gap-4 sm:grid-cols-4">
       <Figure value={property.unit_count} label="Apartamentos" /><Figure value={property.resident_count} label="Residentes" /><Figure value={property.concierge_count} label="Portería" /><Figure value={property.administrator_count} label="Administradores" />
     </section>
@@ -89,5 +92,11 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
       <p className="mt-1 mb-4 text-sm text-muted-foreground">Suspender bloquea el acceso de todo el conjunto sin borrar datos; reactivar lo devuelve como estaba.</p>
       <PropertyStatusForm key={property.property_status} propertyId={property.property_id} propertyName={property.property_name} suspended={property.property_status === "suspended"} />
     </CardContent></Card>}
+
+    <Card><CardContent>
+      <h2 className="text-lg font-semibold">{isTest ? "Conjunto de prueba" : "Producción"}</h2>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">{isTest ? "Sale solo en Pruebas ResiQ, con toda su gente, y no cuenta en Inicio, Usuarios ni Métricas." : "Si es un conjunto para pruebas, pásalo a Pruebas ResiQ para que no se mezcle con producción."} Funciona igual en ambos casos.</p>
+      <PropertyTestForm key={String(isTest)} propertyId={property.property_id} isTest={isTest} />
+    </CardContent></Card>
   </PlatformPage>;
 }

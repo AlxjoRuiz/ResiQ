@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BriefcaseBusiness, Building2, ChartNoAxesCombined, House, LogOut, Settings, ShieldCheck, UserRound, UsersRound } from "lucide-react";
+import { BriefcaseBusiness, Building2, ChartNoAxesCombined, FlaskConical, House, LogOut, Settings, ShieldCheck, UserRound, UsersRound } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import styles from "@/components/dashboard/dashboard.module.css";
 
@@ -13,6 +13,7 @@ const sections = [
   { title: "Usuarios", href: "/plataforma/usuarios", icon: UsersRound },
   { title: "Equipos ResiQ", href: "/plataforma/equipos", icon: BriefcaseBusiness },
   { title: "Métricas", href: "/plataforma/metricas", icon: ChartNoAxesCombined },
+  { title: "Pruebas ResiQ", href: "/plataforma/pruebas", icon: FlaskConical },
   { title: "Configuración", href: "/plataforma/configuracion", icon: Settings },
 ];
 

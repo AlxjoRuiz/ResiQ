@@ -146,3 +146,25 @@ export async function setLegalAssignment(_: PlatformState, data: FormData): Prom
   revalidatePath("/juridica", "layout");
   return { success: assigned ? `Asignado a jurídica con umbral de ${days} días.` : "Ya no está asignado a jurídica." };
 }
+
+// Pruebas ResiQ (31/10/2026): marcar un conjunto como de prueba o devolverlo a producción.
+export async function setPropertyTest(_: PlatformState, data: FormData): Promise<PlatformState> {
+  const propertyId = field(data, "propertyId"), isTest = field(data, "isTest") === "true";
+  if (!/^[0-9a-f-]{36}$/i.test(propertyId)) return { error: "Conjunto inválido." };
+  const { supabase } = await requirePlatformAdmin();
+  const { error } = await supabase.rpc("platform_set_property_test", { target_property_id: propertyId, target_is_test: isTest });
+  if (error) return { error: "No pudimos cambiar el conjunto." };
+  revalidatePath("/plataforma", "layout");
+  return { success: isTest ? "Ahora está en Pruebas ResiQ." : "Ahora está en producción." };
+}
+
+// Pruebas ResiQ: marcar o desmarcar un correo del personal de ResiQ (mantenimiento o jurídica) como de prueba.
+export async function setTestEmail(_: PlatformState, data: FormData): Promise<PlatformState> {
+  const email = field(data, "email").toLowerCase(), isTest = field(data, "isTest") !== "false";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) return { error: "Escribe un correo válido." };
+  const { supabase } = await requirePlatformAdmin();
+  const { error } = await supabase.rpc("platform_set_test_email", { target_email: email, target_is_test: isTest });
+  if (error) return { error: "No pudimos guardar el correo." };
+  revalidatePath("/plataforma", "layout");
+  return { success: isTest ? "Correo marcado como de prueba." : "Correo devuelto a producción." };
+}

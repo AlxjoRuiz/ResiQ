@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { dateInputValue } from "@/lib/time-zone";
+import { loadTestScope } from "../test-scope";
 
 type UsageRow = { property_id: string; property_name: string; pqrs_count: number; package_count: number; visitor_count: number; reservation_count: number };
 type Activity = { active_7_days: number; active_30_days: number };
@@ -24,13 +25,15 @@ export default async function PlatformMetricsPage({ searchParams }: { searchPara
   const months = recentMonths();
   const requested = (await searchParams).mes;
   const month = requested && months.includes(requested) ? requested : months[0];
-  const [{ data: usageData, error: usageError }, { data: activityData, error: activityError }, { data: emailData, error: emailError }] = await Promise.all([
+  const [scope, { data: usageData, error: usageError }, { data: activityData, error: activityError }, { data: emailData, error: emailError }] = await Promise.all([
+    loadTestScope(supabase),
     supabase.rpc("platform_usage_by_month", { target_month: `${month}-01` }),
     supabase.rpc("platform_activity_metrics"),
     supabase.rpc("platform_email_metrics_by_month", { target_month: `${month}-01` }),
   ]);
   if (usageError || activityError || emailError) throw new Error("No se pudieron cargar las métricas.");
-  const usage = (usageData ?? []) as UsageRow[];
+  // Uso por conjunto sin los conjuntos de prueba (31/10/2026).
+  const usage = ((usageData ?? []) as UsageRow[]).filter((row) => !scope.isTestProperty(row.property_id));
   const activity = (Array.isArray(activityData) ? activityData[0] : activityData) as Activity | null;
   const emails = (Array.isArray(emailData) ? emailData[0] : emailData) as Emails | null;
   return <PlatformPage title="Métricas" description="Uso por conjunto y correos del mes elegido. Solo cantidades.">

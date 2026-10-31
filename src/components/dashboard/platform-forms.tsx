@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { setLegalAssignment, setPropertyStatus, setSeasonalDecor, setSeasonalTheme, type PlatformState } from "@/app/plataforma/actions";
+import { setLegalAssignment, setPropertyStatus, setPropertyTest, setSeasonalDecor, setSeasonalTheme, setTestEmail, type PlatformState } from "@/app/plataforma/actions";
 import { Button } from "@/components/ui/button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 
@@ -44,5 +44,27 @@ export function LegalAssignmentForm({ propertyId, assigned, overdueDays }: { pro
     <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" name="assigned" checked={checked} onChange={(event) => setChecked(event.target.checked)} className="size-4 accent-primary" />Asignado a jurídica</label>
     <label className="flex items-center gap-2 text-sm">Umbral de mora<input name="overdueDays" type="number" min={1} max={3650} defaultValue={overdueDays} required={checked} disabled={!checked} className="h-9 w-20 rounded-lg border bg-white px-2 text-sm disabled:opacity-50" />días</label>
     <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : "Guardar"}</Button><Result state={state} />
+  </form>;
+}
+
+// Pruebas ResiQ (31/10/2026): pasar un conjunto a Pruebas o devolverlo a producción.
+export function PropertyTestForm({ propertyId, isTest }: { propertyId: string; isTest: boolean }) {
+  const [state, action, pending] = useFormActionState(setPropertyTest, undefined as PlatformState);
+  return <form onSubmit={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="isTest" value={isTest ? "false" : "true"} />
+    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : isTest ? "Pasar a producción" : "Pasar a Pruebas ResiQ"}</Button><Result state={state} />
+  </form>;
+}
+
+export function TestEmailForm() {
+  const [state, action, pending] = useFormActionState(setTestEmail, undefined as PlatformState);
+  return <form onSubmit={action} className="flex flex-wrap items-end gap-3"><label className="grid gap-1 text-sm font-medium">Correo<input name="email" type="email" required maxLength={254} className="h-10 min-w-64 rounded-lg border bg-white px-3 text-sm" /></label>
+    <Button size="sm" disabled={pending}>{pending ? "Guardando…" : "Marcar como de prueba"}</Button><Result state={state} />
+  </form>;
+}
+
+export function RemoveTestEmailForm({ email }: { email: string }) {
+  const [state, action, pending] = useFormActionState(setTestEmail, undefined as PlatformState);
+  return <form onSubmit={action} className="flex flex-wrap items-center gap-2"><input type="hidden" name="email" value={email} /><input type="hidden" name="isTest" value="false" />
+    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Quitando…" : "Quitar"}</Button><Result state={state} />
   </form>;
 }

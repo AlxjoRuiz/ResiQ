@@ -4,6 +4,7 @@ import { PlatformPage } from "@/components/dashboard/platform-page";
 import { LegalAssignmentForm } from "@/components/dashboard/platform-forms";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
+import { loadTestScope } from "../test-scope";
 
 type MaintenanceRow = { staff_id: string | null; invitation_id: string | null; display_name: string | null; email: string; member_status: string; since: string };
 type AssignmentRow = { property_id: string; property_name: string; property_status: string; assigned: boolean; overdue_days: number };
@@ -13,19 +14,20 @@ const statusLabels: Record<string, string> = { active: "Activo", suspended: "Sus
 // equipo de mantenimiento estaba dentro de «Administradores», mezclado con los administradores de conjuntos.
 export default async function PlatformTeamsPage() {
   const { supabase } = await requirePlatformAdmin();
-  const [{ data, error }, { data: legalData, error: legalError }, { data: assignmentData, error: assignmentError }] = await Promise.all([
-    supabase.rpc("platform_list_maintenance_admins"), supabase.rpc("platform_list_legal"), supabase.rpc("platform_list_legal_assignments"),
+  const [scope, { data, error }, { data: legalData, error: legalError }, { data: assignmentData, error: assignmentError }] = await Promise.all([
+    loadTestScope(supabase), supabase.rpc("platform_list_maintenance_admins"), supabase.rpc("platform_list_legal"), supabase.rpc("platform_list_legal_assignments"),
   ]);
   if (error || legalError || assignmentError) throw new Error("No se pudieron cargar los equipos.");
-  const maintenanceAdmins = (data ?? []) as MaintenanceRow[];
+  // Lo de prueba (correos y conjuntos) está en Pruebas ResiQ (31/10/2026).
+  const maintenanceAdmins = ((data ?? []) as MaintenanceRow[]).filter((row) => !scope.isTestEmail(row.email));
   // Módulo jurídico (31/10/2026): una sola abogada, con los mismos campos que el equipo de mantenimiento.
-  const legalTeam = (legalData ?? []) as MaintenanceRow[];
-  const assignments = (assignmentData ?? []) as AssignmentRow[];
+  const legalTeam = ((legalData ?? []) as MaintenanceRow[]).filter((row) => !scope.isTestEmail(row.email));
+  const assignments = ((assignmentData ?? []) as AssignmentRow[]).filter((row) => !scope.isTestProperty(row.property_id));
   const date = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" });
   return <PlatformPage title="Equipos ResiQ" description="Tu personal, que no pertenece a ningún conjunto.">
     <Card><CardContent>
       <h2 className="text-lg font-semibold">Equipo de mantenimiento</h2>
-      <p className="mt-1 text-sm text-muted-foreground">El admin de mantenimiento entra con el enlace a su correo y solo ve el módulo de mantenimiento. Él crea a sus trabajadores.</p>
+      <p className="mt-1 text-sm text-muted-foreground">El admin de mantenimiento entra con el enlace a su correo y solo ve el módulo de mantenimiento. Él crea a sus trabajadores. Si invitas un correo de prueba, aparece en Pruebas ResiQ.</p>
       <ul className="mt-4 grid gap-3">{maintenanceAdmins.map((admin, index) => <li key={`${admin.email}-${index}`} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border p-4">
         <div className="min-w-0"><p className="font-medium">{admin.display_name ?? "Sin aceptar todavía"}</p><p className="break-all text-sm text-muted-foreground">{admin.email}</p><p className="mt-1 text-xs text-muted-foreground">{admin.invitation_id ? "Invitado el" : "Desde el"} {date.format(new Date(admin.since))}</p></div>
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${admin.member_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{statusLabels[admin.member_status] ?? admin.member_status}</span>
@@ -36,7 +38,7 @@ export default async function PlatformTeamsPage() {
 
     <Card id="juridica" className="scroll-mt-6"><CardContent>
       <h2 className="text-lg font-semibold">Jurídica</h2>
-      <p className="mt-1 text-sm text-muted-foreground">La abogada de cobros entra con el enlace a su correo y solo ve la cartera, en solo lectura, de los conjuntos que le asignes.</p>
+      <p className="mt-1 text-sm text-muted-foreground">La abogada de cobros entra con el enlace a su correo y solo ve la cartera, en solo lectura, de los conjuntos que le asignes. Si invitas un correo de prueba, aparece en Pruebas ResiQ, donde también asignas los conjuntos de prueba.</p>
       <ul className="mt-4 grid gap-3">{legalTeam.map((person, index) => <li key={`${person.email}-${index}`} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border p-4">
         <div className="min-w-0"><p className="font-medium">{person.display_name ?? "Sin aceptar todavía"}</p><p className="break-all text-sm text-muted-foreground">{person.email}</p><p className="mt-1 text-xs text-muted-foreground">{person.invitation_id ? "Invitada el" : "Desde el"} {date.format(new Date(person.since))}</p></div>
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${person.member_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{statusLabels[person.member_status] ?? person.member_status}</span>

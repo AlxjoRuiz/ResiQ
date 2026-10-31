@@ -5,6 +5,7 @@ import { PlatformPage } from "@/components/dashboard/platform-page";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { propertyStatusLabel, propertyStatusTone } from "../property-status";
+import { loadTestScope } from "../test-scope";
 
 type PropertyRow = { property_id: string; property_name: string; city: string | null; property_status: string; unit_count: number; resident_count: number; administrator_count: number };
 
@@ -12,9 +13,10 @@ type PropertyRow = { property_id: string; property_name: string; city: string | 
 // usuarios, uso del mes y su estado (suspender o reactivar).
 export default async function PlatformPropertiesPage() {
   const { supabase } = await requirePlatformAdmin();
-  const { data, error } = await supabase.rpc("platform_list_properties");
+  const [scope, { data, error }] = await Promise.all([loadTestScope(supabase), supabase.rpc("platform_list_properties")]);
   if (error) throw new Error("No se pudieron cargar los conjuntos.");
-  const rows = (data ?? []) as PropertyRow[];
+  // Los conjuntos de prueba están en Pruebas ResiQ (31/10/2026).
+  const rows = ((data ?? []) as PropertyRow[]).filter((row) => !scope.isTestProperty(row.property_id));
   return <PlatformPage title="Conjuntos" description="Crea conjuntos y abre cada uno para ver su administración, usuarios, uso y estado.">
     <Card id="nuevo" className="scroll-mt-6"><CardContent><details>
       <summary className="cursor-pointer text-lg font-semibold">Nuevo conjunto</summary>
