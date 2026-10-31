@@ -24,7 +24,7 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
   const legalTeam = ((legalData ?? []) as MaintenanceRow[]).filter((row) => scope.isTestEmail(row.email) === test);
   const assignments = ((assignmentData ?? []) as AssignmentRow[]).filter((row) => scope.isTestProperty(row.property_id) === test);
   const date = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" });
-  // Correos de prueba (31/10/2026): las cuentas @resiq.invalid y las marcadas a mano, con su acceso.
+  // Correos de prueba (31/10/2026): toda cuenta de prueba (conjuntos de prueba, @resiq.invalid, marcadas a mano), con su acceso.
   let testAccounts: TestAccountRow[] = [];
   if (test) {
     const { data: accountData, error: accountError } = await supabase.rpc("platform_list_test_accounts");
@@ -64,12 +64,12 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
 
     {test && <Card><CardContent>
       <h2 className="text-lg font-semibold">Correos de prueba</h2>
-      <p className="mt-1 mb-4 text-sm text-muted-foreground">Todas las cuentas de prueba con lo que tienen acceso. Las @resiq.invalid cuentan siempre como de prueba; las demás se marcan aquí (lo que invitas desde Pruebas ResiQ se marca solo).</p>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">Todas las cuentas de prueba con lo que tienen acceso: la gente de los conjuntos de prueba (administradores, auxiliares, portería y residentes), los trabajadores de un admin de mantenimiento de prueba, las @resiq.invalid y los correos marcados aquí (lo que invitas desde Pruebas ResiQ se marca solo).</p>
       <TestEmailForm />
       <ul className="mt-4 grid gap-2">{testAccounts.map((account) => <li key={account.email} className="grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start">
         <div className="min-w-0"><p className="font-medium">{account.display_name ?? "Sin cuenta todavía"}</p><p className="break-all text-muted-foreground">{account.email}</p>
           <p className="mt-1 text-xs text-muted-foreground">{account.access ?? "Sin acceso"} · {account.last_sign_in_at ? `última entrada ${date.format(new Date(account.last_sign_in_at))}` : "nunca ha entrado"}</p></div>
-        {account.marked ? <RemoveTestEmailForm email={account.email} /> : <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs font-medium">Automático · @resiq.invalid</span>}
+        {account.marked ? <RemoveTestEmailForm email={account.email} /> : <span className="w-fit rounded-full bg-secondary px-3 py-1 text-xs font-medium">{account.automatic ? "Automático · @resiq.invalid" : "Por su conjunto o equipo de prueba"}</span>}
       </li>)}
         {!testAccounts.length && <li className="text-sm text-muted-foreground">Todavía no hay cuentas de prueba.</li>}</ul>
     </CardContent></Card>}
