@@ -39,3 +39,16 @@ export async function sendCollectionNotice(_: CollectionNoticeState, data: FormD
   revalidatePath(`/juridica/${propertyId}/${unitId}`);
   return { success: `Requerimiento registrado para ${recipient}.` };
 }
+
+// La abogada contesta en la conversación del requerimiento: queda guardado y le llega al residente por correo.
+export async function postLegalMessage(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
+  const noticeId = String(data.get("noticeId") ?? ""), message = String(data.get("message") ?? "").trim();
+  if (!uuidPattern.test(noticeId)) return { error: "Conversación inválida." };
+  if (message.length < 2 || message.length > 5000) return { error: "Escribe un mensaje de 2 a 5000 caracteres." };
+  const { supabase } = await requireLegalStaff();
+  const { error } = await supabase.rpc("legal_post_message", { target_notice_id: noticeId, message_body: message });
+  if (error) return { error: "No pudimos enviar el mensaje." };
+  revalidatePath(`/juridica/respuestas/${noticeId}`);
+  revalidatePath("/juridica/respuestas");
+  return { success: "Mensaje enviado." };
+}

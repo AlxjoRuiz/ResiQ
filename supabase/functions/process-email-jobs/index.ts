@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { cleanupRejectedDocuments } from "./cleanup-documents.ts";
 
-type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number; message?: string; items?: LegalNoticeItem[]; total?: number; signer_name?: string; signer_email?: string; property_name?: string }; dedupe_key: string; attempt_count: number; census_record_id?: string | null; legal_notice_id?: string | null };
+type EmailJob = { id: string; recipient_email: string; template_key: string; template_data: { subject?: string; pqrs_id?: string; package_id?: string; visitor_id?: string; reservation_id?: string; attention_call_id?: string; assembly_id?: string; property_id?: string; recipient_name?: string; visitor_name?: string; carrier?: string; amenity_name?: string; scheduled_start?: string; starts_at?: string; ends_at?: string; status?: string; timezone?: string; unit_id?: string; unit_label?: string; concept?: string; reason?: string; category?: string; issued_on?: string; location?: string; title?: string; reminder?: string; amount?: number; currency?: string; due_on?: string; paid_on?: string; overdue_days?: number; message?: string; items?: LegalNoticeItem[]; total?: number; signer_name?: string; property_name?: string; reply_token?: string }; dedupe_key: string; attempt_count: number; census_record_id?: string | null; legal_notice_id?: string | null };
 type LegalNoticeItem = { concept: string; due_on: string; outstanding: number };
 const jsonHeaders = { "content-type": "application/json" };
 type InvitationDetails = { token: string; property_name: string; building_name: string; unit_code: string; relationship: string; expires_at: string };
@@ -30,7 +30,11 @@ export function legalNoticeContent(job: EmailJob) {
   const lines = items.map((item) => `${item.concept} · vence ${item.due_on} · ${money(Number(item.outstanding))}`);
   const signature = [data.signer_name ?? "Abogada de cobros", "Abogada · Cobro de cartera", data.property_name ? `En representación de ${data.property_name}` : ""].filter(Boolean);
   const subject = data.subject ?? "Requerimiento de pago";
-  const text = [data.message ?? "", `Apartamento: ${data.unit_label ?? ""}`, "Obligaciones pendientes:", ...lines, `Total: ${money(Number(data.total ?? 0))}`, signature.join("\n")].join("\n\n");
+  // Lo que la abogada contesta después en la conversación: solo su mensaje y su firma.
+  if (job.template_key === "legal_notice_reply") {
+    return { subject, text: [data.message ?? "", signature.join("\n")].join("\n\n"), html: `<p>${escapeHtml(data.message ?? "").replace(/\n/g, "<br>")}</p><p>${signature.map(escapeHtml).join("<br>")}</p>` };
+  }
+  const text =[data.message ?? "", `Apartamento: ${data.unit_label ?? ""}`, "Obligaciones pendientes:", ...lines, `Total: ${money(Number(data.total ?? 0))}`, signature.join("\n")].join("\n\n");
   const rows = items.map((item) => `<tr><td>${escapeHtml(item.concept)}</td><td>${escapeHtml(item.due_on)}</td><td style="text-align:right">${escapeHtml(money(Number(item.outstanding)))}</td></tr>`).join("");
   const html = `<p>${escapeHtml(data.message ?? "").replace(/\n/g, "<br>")}</p><p><strong>Apartamento:</strong> ${escapeHtml(data.unit_label ?? "")}</p><table cellpadding="6" style="border-collapse:collapse"><thead><tr><th align="left">Concepto</th><th align="left">Vencimiento</th><th align="right">Saldo</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="2"><strong>Total</strong></td><td style="text-align:right"><strong>${escapeHtml(money(Number(data.total ?? 0)))}</strong></td></tr></tfoot></table><p>${signature.map(escapeHtml).join("<br>")}</p>`;
   return { subject, text, html };
@@ -103,6 +107,8 @@ export default {
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("RESEND_FROM_EMAIL");
   const appUrl = (Deno.env.get("APP_URL") ?? "http://localhost:3000").replace(/\/$/, "");
+  // Dominio que recibe en Resend las respuestas a la abogada (respuesta+código@dominio); sin él, no se pone dirección de respuesta.
+  const legalReplyDomain = Deno.env.get("LEGAL_REPLY_DOMAIN");
   if (!supabaseUrl || !serviceKey || !resendKey || !from) return new Response(JSON.stringify({ error: "missing_configuration" }), { status: 500, headers: jsonHeaders });
   const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const cleanedDocuments = await cleanupRejectedDocuments(supabase);
@@ -139,7 +145,7 @@ export default {
         content = job.legal_notice_id ? legalNoticeContent(job) : emailContent(job, appUrl);
         logged = { subject: content.subject, text: content.text };
       }
-      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text, ...(job.legal_notice_id && job.template_data.signer_email ? { reply_to: job.template_data.signer_email } : {}) }) });
+      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text, ...(job.legal_notice_id && job.template_data.reply_token && legalReplyDomain ? { reply_to: `respuesta+${job.template_data.reply_token}@${legalReplyDomain}` } : {}) }) });
       const responseBody = await response.json() as { id?: string; message?: string; name?: string };
       if (!response.ok || !responseBody.id) throw new Error(responseBody.message ?? responseBody.name ?? `http_${response.status}`);
       await supabase.rpc("complete_email_job", { target_job_id: job.id, provider_id: responseBody.id, target_subject: logged.subject, target_body: logged.text });
