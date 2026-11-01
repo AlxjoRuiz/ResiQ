@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { Bell, Building2, House, Megaphone, UserRound } from "lucide-react";
 import { adminModules, conciergeModules, residentModules } from "./navigation";
 import styles from "./dashboard.module.css";
-import { markSectionSeen } from "@/app/panel/propiedades/[propertyId]/section-seen-actions";
+import { getUnseenSections, markSectionSeen } from "@/app/panel/propiedades/[propertyId]/section-seen-actions";
 
 export function PropertyModuleShell({ children, propertyId, propertyName, roles, unseenSections = [] }: { children: ReactNode; propertyId: string; propertyName: string; roles: string[]; unseenSections?: string[] }) {
   const pathname = usePathname();
@@ -39,10 +39,24 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles,
   }, [pathname]);
   // Punto de «algo nuevo sin ver»: al abrir la sección se quita aquí y se guarda en el servidor.
   // «cartera_pending»: comprobantes sin registrar; ese punto de Cartera no se quita al entrar.
+  // Desde el 01/11/2026 la lista se vuelve a pedir al cambiar de sección o al volver a la pestaña: el marco
+  // no se recarga al navegar, y así el punto aparece o se quita sin recargar la página.
+  const [unseen, setUnseen] = useState(unseenSections);
+  const [serverUnseen, setServerUnseen] = useState(unseenSections);
+  if (serverUnseen !== unseenSections) { setServerUnseen(unseenSections); setUnseen(unseenSections); }
   const [seenHere, setSeenHere] = useState<Set<string>>(() => new Set());
-  if (unseenSections.includes(section) && !seenHere.has(section)) setSeenHere(new Set(seenHere).add(section));
-  useEffect(() => { if (unseenSections.includes(section)) void markSectionSeen(propertyId, section); }, [section, propertyId, unseenSections]);
-  const hasDot = (name: string) => (unseenSections.includes(name) && !seenHere.has(name)) || (name === "cartera" && unseenSections.includes("cartera_pending"));
+  if (unseen.includes(section) && !seenHere.has(section)) setSeenHere(new Set(seenHere).add(section));
+  useEffect(() => { if (unseen.includes(section)) void markSectionSeen(propertyId, section); }, [section, propertyId, unseen]);
+  useEffect(() => {
+    let cancelled = false;
+    // Lo ya visto quedó guardado en el servidor; solo la sección abierta sigue marcada como vista aquí.
+    const refresh = () => { void getUnseenSections(propertyId).then((next) => { if (!cancelled && next) { setUnseen(next); setSeenHere(new Set(section ? [section] : [])); } }); };
+    refresh();
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { cancelled = true; document.removeEventListener("visibilitychange", onVisible); };
+  }, [pathname, propertyId, section]);
+  const hasDot = (name: string) => (unseen.includes(name) && !seenHere.has(name)) || (name === "cartera" && unseen.includes("cartera_pending"));
   const dot = (name: string) => hasDot(name) ? <span className={styles.unseenDot}><span className="sr-only">Hay algo nuevo</span></span> : null;
   // El contenido se desplaza dentro del recuadro: al cambiar de sección vuelve arriba.
   useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [pathname]);
