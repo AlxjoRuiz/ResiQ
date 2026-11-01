@@ -36,6 +36,11 @@ export async function POST(request: Request) {
   if (!receivable || receivable.status !== "active") return NextResponse.json({ error: "Obligación no disponible." }, { status: 404 });
 
   const admin = createAdminClient();
+  // Un solo comprobante en revisión por deuda (31/10/2026): evita enviar dos veces el mismo pago. Si la
+  // administración lo registra o anula ese pago, se puede enviar otro.
+  const { count: inReview } = await admin.from("finance_payment_evidence").select("id", { count: "exact", head: true })
+    .eq("receivable_id", receivable.id).is("payment_id", null).is("payment_voided_at", null);
+  if (inReview) return NextResponse.json({ error: "Ya enviaste un comprobante para esta deuda y está en revisión. Espera a que la administración lo registre." }, { status: 409 });
   const id = crypto.randomUUID();
   const extension = file.type === "application/pdf" ? "pdf" : file.type === "image/jpeg" ? "jpg" : "png";
   const objectPath = `${receivable.property_id}/finance/${receivable.id}/${id}.${extension}`;
