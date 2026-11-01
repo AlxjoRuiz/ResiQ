@@ -83,8 +83,8 @@ export default async function LegalUnitPage({ params }: { params: Promise<{ prop
     </CardContent></Card>
 
     <Card><CardContent><h2 className="text-lg font-semibold">Pagos</h2>
-      {detail.payments.length ? <ul className="mt-3 grid gap-2">{detail.payments.map((row, index) => <li key={index} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${row.status === "void" ? "text-muted-foreground" : ""}`}>
-        <span>{formatDay(row.paid_on)}{row.reference && <span className="text-muted-foreground"> · {row.reference}</span>}{row.status === "void" && " · anulado"}</span><span className={`font-semibold ${row.status === "void" ? "line-through" : ""}`}>{formatCop(row.amount)}</span>
+      {detail.payments.length ? <ul className="mt-3 grid gap-2">{detail.payments.map((row, index) => <li key={index} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${row.status === "void" ? "border-red-300 bg-red-50 text-red-800" : "border-primary/40 bg-primary/5"}`}>
+        <span>{formatDay(row.paid_on)}{row.reference && <span className="text-muted-foreground"> · {row.reference}</span>}{row.status === "void" && " · anulado"}</span><span className={`font-semibold ${row.status === "void" ? "text-red-700 line-through" : ""}`}>{formatCop(row.amount)}</span>
       </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin pagos registrados.</p>}
     </CardContent></Card>
 
