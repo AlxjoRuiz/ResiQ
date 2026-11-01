@@ -7,12 +7,15 @@ import { formatDay, formatMoment, newsLabels, uuidPattern, type LegalAccount, ty
 import { MarkPropertySeen } from "../mark-seen";
 
 const tabs = [{ id: "mora", label: "En mora" }, { id: "aldia", label: "Al día" }, { id: "novedades", label: "Novedades" }] as const;
+// Filtro de En mora: desde cuántos días de vencida la deuda más antigua sin pagar (01/11/2026).
+const dayFilters = [1, 30, 60, 90, 180, 360] as const;
 type Tab = (typeof tabs)[number]["id"];
 
-// Cartera de un conjunto para la abogada (31/10/2026): En mora (supera los días de mora que el admin del conjunto define en Cartera), Al día (el
-// resto) y Novedades (lo que el administrador cargó, registró o anuló en los últimos 60 días). Solo lectura.
-export default async function LegalPropertyPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ tab?: string }> }) {
-  const [{ propertyId }, { tab: rawTab }] = await Promise.all([params, searchParams]);
+// Cartera de un conjunto para la abogada (31/10/2026): En mora (desde el primer día de vencida cualquier deuda,
+// con filtro de días), Al día (sin nada vencido) y Novedades (lo que el administrador cargó, registró o anuló en los últimos 60 días). Solo lectura.
+export default async function LegalPropertyPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ tab?: string; dias?: string }> }) {
+  const [{ propertyId }, { tab: rawTab, dias: rawDays }] = await Promise.all([params, searchParams]);
+  const minDays = dayFilters.find((value) => String(value) === rawDays) ?? 1;
   if (!uuidPattern.test(propertyId)) notFound();
   const tab: Tab = tabs.find((item) => item.id === rawTab)?.id ?? "mora";
   const { supabase } = await requireLegalStaff();
@@ -29,9 +32,9 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   const news = (newsData ?? []) as LegalNews[];
   const arrears = accounts.filter((row) => row.in_arrears), current = accounts.filter((row) => !row.in_arrears);
   const counts: Record<Tab, number> = { mora: arrears.length, aldia: current.length, novedades: news.filter((row) => row.is_new).length };
-  const rows = tab === "mora" ? arrears : current;
+  const rows = tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays) : current;
 
-  return <PlatformPage eyebrow="Cobro jurídico" title={property.property_name} description={`${property.city ?? "Sin ciudad"} · en mora desde ${property.overdue_days} días de vencida la deuda más antigua sin pagar`}
+  return <PlatformPage eyebrow="Cobro jurídico" title={property.property_name} description={`${property.city ?? "Sin ciudad"} · en mora desde el primer día de vencida una deuda sin pagar`}
     back={<Link href="/juridica" className="text-sm text-muted-foreground hover:text-foreground">← Tus conjuntos</Link>}>
     <nav aria-label="Secciones de la cartera" className="flex flex-wrap gap-2">{tabs.map((item) => <Link key={item.id} href={`/juridica/${propertyId}?tab=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
       className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
@@ -44,13 +47,14 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
         <span className={`font-semibold ${voided ? "text-red-700 line-through" : ""}`}>{formatCop(item.amount)}</span>
       </li>; })}</ul> : <p className="mt-4 text-sm text-muted-foreground">Sin movimientos de cartera en los últimos 60 días.</p>}
     </section> : <section aria-label={tab === "mora" ? "Apartamentos en mora" : "Apartamentos al día"} className="rounded-2xl border bg-white p-5">
+      {tab === "mora" && arrears.length > 0 && <nav aria-label="Filtrar por días de mora" className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span className="text-muted-foreground">Días en mora:</span>{dayFilters.map((value) => <Link key={value} href={`/juridica/${propertyId}?tab=mora${value > 1 ? `&dias=${value}` : ""}`} aria-current={minDays === value ? "page" : undefined} className={`rounded-full border px-3 py-1 text-xs font-medium transition hover:scale-105 motion-reduce:hover:scale-100 ${minDays === value ? "border-red-300 bg-red-50 text-red-800" : "bg-white hover:bg-secondary"}`}>{value === 1 ? "Todos" : `${value}+`}</Link>)}<span className="ml-auto text-xs text-muted-foreground">{rows.length} de {arrears.length}</span></nav>}
       {rows.length ? <ul className="grid gap-2">{rows.map((row) => <li key={row.unit_id}><Link href={`/juridica/${propertyId}/${row.unit_id}`} className="grid gap-2 rounded-xl border p-3 text-sm transition-colors hover:bg-secondary sm:grid-cols-[1fr_auto] sm:items-center">
         <span className="min-w-0"><span className="flex flex-wrap items-center gap-2 font-medium">{row.building_name} · {row.unit_code}{row.agreement_active && <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">Acuerdo de pago</span>}</span>
           <span className="block truncate text-muted-foreground">{row.owner_name ?? "Sin nombre en el censo"}</span>
           <span className="block text-xs text-muted-foreground">Último pago: {formatDay(row.last_payment_on)}</span></span>
         <span className="sm:text-right"><span className={`block font-semibold ${row.in_arrears ? "text-red-700" : ""}`}>{formatCop(row.in_arrears ? row.overdue : row.outstanding)}</span>
           <span className="block text-xs text-muted-foreground">{row.days_overdue > 0 ? `${row.days_overdue} días de mora` : row.outstanding > 0 ? "Saldo sin vencer" : "Sin saldo"}</span></span>
-      </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">{tab === "mora" ? "Ningún apartamento supera los días de mora del conjunto." : "No hay apartamentos al día."}</p>}
+      </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">{tab === "mora" ? (minDays > 1 ? `Ningún apartamento lleva ${minDays} días o más en mora.` : "Ningún apartamento está en mora.") : "No hay apartamentos al día."}</p>}
     </section>}
   </PlatformPage>;
 }

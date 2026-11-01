@@ -7,7 +7,7 @@ import { formatCop } from "@/lib/finance/constants";
 import type { LegalProperty } from "./legal-data";
 
 // Inicio de la abogada (31/10/2026): los conjuntos que le asignó el superadmin, con la cartera en mora
-// según los días de mora que define el admin de cada uno en Cartera y las novedades desde su última visita.
+// (desde el primer día de vencida una deuda) y las novedades desde su última visita.
 // Tarjetas con el vidrio azul del login (el mismo de las tarjetas del superadmin).
 export default async function LegalHomePage() {
   const { supabase } = await requireLegalStaff();
@@ -22,7 +22,7 @@ export default async function LegalHomePage() {
           {property.news_count > 0 ? <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-primary shadow-sm">{property.news_count} {property.news_count === 1 ? "novedad" : "novedades"}</span> : <ArrowRight size={18} aria-hidden="true" className="mt-1 text-[#2f4f8a]/60" />}
         </div>
         <h2 className="mt-3 font-semibold tracking-tight">{property.property_name}</h2>
-        <p className="text-xs text-[#3d5a8a]">{property.city ?? "Sin ciudad"} · mora desde {property.overdue_days} días</p>
+        <p className="text-xs text-[#3d5a8a]">{property.city ?? "Sin ciudad"}</p>
         <dl className="mt-3 grid grid-cols-3 gap-1.5 text-xs">
           <div className="rounded-xl border border-white/80 bg-white/60 px-2 py-1.5"><dt className="text-[11px] text-muted-foreground">En mora</dt><dd className="text-base font-semibold text-red-700">{property.units_in_arrears}</dd></div>
           <div className="rounded-xl border border-white/80 bg-white/60 px-2 py-1.5"><dt className="text-[11px] text-muted-foreground">Al día</dt><dd className="text-base font-semibold">{property.units_current}</dd></div>

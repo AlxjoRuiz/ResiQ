@@ -46,7 +46,7 @@ export default async function LegalUnitPage({ params }: { params: Promise<{ prop
 
   return <PlatformPage eyebrow={detail.property} title={`${detail.unit.building} · ${detail.unit.code}`} description="Cartera en solo lectura. Los cambios los hace la administración del conjunto."
     back={<Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>}
-    actions={oldest && days >= detail.overdue_days ? <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">En mora · {days} días</span> : <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">Sin mora para cobro</span>}>
+    actions={oldest ? <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">En mora · {days} días</span> : <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">Al día</span>}>
     <section aria-label="Saldo" className="grid gap-4 sm:grid-cols-3">
       <Card><CardContent><p className="text-2xl font-semibold">{formatCop(outstanding)}</p><p className="mt-1 text-sm text-muted-foreground">Saldo pendiente</p></CardContent></Card>
       <Card><CardContent><p className="text-2xl font-semibold text-red-700">{formatCop(overdue)}</p><p className="mt-1 text-sm text-muted-foreground">Vencido</p></CardContent></Card>
