@@ -7,15 +7,15 @@ import { formatDay, formatMoment, newsLabels, uuidPattern, type LegalAccount, ty
 import { MarkPropertySeen } from "../mark-seen";
 
 const tabs = [{ id: "mora", label: "En mora" }, { id: "aldia", label: "Al día" }, { id: "novedades", label: "Novedades" }] as const;
-// Filtro de En mora: desde cuántos días de vencida la deuda más antigua sin pagar (01/11/2026).
-const dayFilters = [1, 30, 60, 90, 180, 360] as const;
 type Tab = (typeof tabs)[number]["id"];
 
 // Cartera de un conjunto para la abogada (31/10/2026): En mora (desde el primer día de vencida cualquier deuda,
-// con filtro de días), Al día (sin nada vencido) y Novedades (lo que el administrador cargó, registró o anuló en los últimos 60 días). Solo lectura.
+// con filtro escrito de días y de menos a más días), Al día (sin nada vencido) y Novedades (lo que el administrador cargó, registró o anuló en los últimos 60 días). Solo lectura.
 export default async function LegalPropertyPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ tab?: string; dias?: string }> }) {
   const [{ propertyId }, { tab: rawTab, dias: rawDays }] = await Promise.all([params, searchParams]);
-  const minDays = dayFilters.find((value) => String(value) === rawDays) ?? 1;
+  // Filtro de En mora: desde cuántos días de vencida la deuda más antigua sin pagar (la abogada lo escribe).
+  const typedDays = Number(rawDays);
+  const minDays = Number.isInteger(typedDays) && typedDays >= 1 && typedDays <= 3650 ? typedDays : 1;
   if (!uuidPattern.test(propertyId)) notFound();
   const tab: Tab = tabs.find((item) => item.id === rawTab)?.id ?? "mora";
   const { supabase } = await requireLegalStaff();
@@ -32,7 +32,8 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   const news = (newsData ?? []) as LegalNews[];
   const arrears = accounts.filter((row) => row.in_arrears), current = accounts.filter((row) => !row.in_arrears);
   const counts: Record<Tab, number> = { mora: arrears.length, aldia: current.length, novedades: news.filter((row) => row.is_new).length };
-  const rows = tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays) : current;
+  // En mora de menos a más días (01/11/2026).
+  const rows = tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays).sort((a, b) => a.days_overdue - b.days_overdue || Number(a.overdue) - Number(b.overdue)) : current;
 
   return <PlatformPage eyebrow="Cobro jurídico" title={property.property_name} description={`${property.city ?? "Sin ciudad"} · en mora desde el primer día de vencida una deuda sin pagar`}
     back={<Link href="/juridica" className="text-sm text-muted-foreground hover:text-foreground">← Tus conjuntos</Link>}>
@@ -47,7 +48,11 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
         <span className={`font-semibold ${voided ? "text-red-700 line-through" : ""}`}>{formatCop(item.amount)}</span>
       </li>; })}</ul> : <p className="mt-4 text-sm text-muted-foreground">Sin movimientos de cartera en los últimos 60 días.</p>}
     </section> : <section aria-label={tab === "mora" ? "Apartamentos en mora" : "Apartamentos al día"} className="rounded-2xl border bg-white p-5">
-      {tab === "mora" && arrears.length > 0 && <nav aria-label="Filtrar por días de mora" className="mb-4 flex flex-wrap items-center gap-2 text-sm"><span className="text-muted-foreground">Días en mora:</span>{dayFilters.map((value) => <Link key={value} href={`/juridica/${propertyId}?tab=mora${value > 1 ? `&dias=${value}` : ""}`} aria-current={minDays === value ? "page" : undefined} className={`rounded-full border px-3 py-1 text-xs font-medium transition hover:scale-105 motion-reduce:hover:scale-100 ${minDays === value ? "border-red-300 bg-red-50 text-red-800" : "bg-white hover:bg-secondary"}`}>{value === 1 ? "Todos" : `${value}+`}</Link>)}<span className="ml-auto text-xs text-muted-foreground">{rows.length} de {arrears.length}</span></nav>}
+      {tab === "mora" && arrears.length > 0 && <form action={`/juridica/${propertyId}`} aria-label="Filtrar por días de mora" className="mb-4 flex flex-wrap items-center gap-2 text-sm"><input type="hidden" name="tab" value="mora" />
+        <label className="flex items-center gap-2 text-muted-foreground">Desde<input name="dias" type="number" min={1} max={3650} step={1} defaultValue={minDays > 1 ? minDays : ""} placeholder="1" className="h-9 w-24 rounded-lg border bg-white px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring" />días en mora</label>
+        <button className="h-9 rounded-lg border bg-white px-3 text-sm font-medium hover:bg-secondary">Ver</button>
+        {minDays > 1 && <Link href={`/juridica/${propertyId}?tab=mora`} className="flex h-9 items-center rounded-lg px-3 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">Borrar filtro</Link>}
+        <span className="ml-auto text-xs text-muted-foreground">{rows.length} de {arrears.length}</span></form>}
       {rows.length ? <ul className="grid gap-2">{rows.map((row) => <li key={row.unit_id}><Link href={`/juridica/${propertyId}/${row.unit_id}`} className="grid gap-2 rounded-xl border p-3 text-sm transition-colors hover:bg-secondary sm:grid-cols-[1fr_auto] sm:items-center">
         <span className="min-w-0"><span className="flex flex-wrap items-center gap-2 font-medium">{row.building_name} · {row.unit_code}{row.agreement_active && <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">Acuerdo de pago</span>}</span>
           <span className="block truncate text-muted-foreground">{row.owner_name ?? "Sin nombre en el censo"}</span>
