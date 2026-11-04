@@ -1,23 +1,22 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateTimeField } from "@/components/ui/date-time-field";
-import { FilePicker } from "@/components/ui/file-picker";
+import { CameraCapture } from "@/components/ui/camera-capture";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { compressImage } from "@/lib/images/compress";
 import { closeAttendance, type AttendanceState } from "./actions";
 
-// Dentro de la tarjeta de asistencia (pensada para celular), dos partes independientes:
-// * Foto de llegada: el mismo selector de adjuntos de la app; en el celular abre la cámara frontal.
-//   La foto se reduce antes de subirla y solo se pide para la llegada.
-// * Botones: «Marcar llegada» (necesita la foto) y «Marcar salida» (sin foto). Solo está activo el que
-//   corresponde: llegada si no hay jornada abierta, salida si la hay. La hora la pone el servidor.
+// Dentro de la tarjeta de asistencia (pensada para celular), dos partes:
+// * Foto: desde el 04/11/2026 se toma con la cámara en vivo (nunca de la galería) y se pide tanto para la
+//   llegada como para la salida. La foto se reduce antes de subirla.
+// * Botones: «Marcar llegada» y «Marcar salida», cada uno con su foto. Solo está activo el que corresponde:
+//   llegada si no hay jornada abierta, salida si la hay. La hora la pone el servidor.
 export function CheckInOutForm({ open }: { open: boolean }) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
@@ -30,28 +29,28 @@ export function CheckInOutForm({ open }: { open: boolean }) {
   }
 
   async function send(kind: "in" | "out") {
-    if (kind === "in" && !photo) { setError("Toma la foto para marcar la llegada."); return; }
+    if (!photo) { setError(kind === "in" ? "Toma la foto para marcar la llegada." : "Toma la foto para marcar la salida."); return; }
     setSending(true); setError(undefined);
     const body = new FormData();
     body.set("kind", kind);
-    if (kind === "in" && photo) body.set("photo", photo);
+    body.set("photo", photo);
     try {
       const response = await fetch("/api/maintenance/attendance", { method: "POST", body });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) { setError(result.error ?? "No pudimos marcar. Intenta de nuevo."); return; }
-      setPhoto(null); if (inputRef.current) inputRef.current.value = "";
+      setPhoto(null);
       router.refresh();
     } catch { setError("Sin conexión. Revisa el internet e intenta de nuevo."); }
     finally { setSending(false); }
   }
 
   return <div className="grid gap-5">
-    <section className="grid gap-2"><h2 className="text-sm font-semibold">Foto de llegada</h2>
-      <FilePicker inputRef={inputRef} files={photo ? [photo] : []} onFilesChange={(files) => { void choose(files[0]); }} title="Foto con la cámara" hint={open ? "Ya marcaste tu llegada. La salida no lleva foto." : "Obligatoria para marcar la llegada"} accept="image/*" capture="user" actionLabel={photo ? "Tomar otra foto" : "Tomar foto"} disabled={open || sending} />
+    <section className="grid gap-2"><h2 className="text-sm font-semibold">{open ? "Foto de salida" : "Foto de llegada"}</h2>
+      <CameraCapture title="Foto con la cámara" hint={open ? "Obligatoria para marcar la salida" : "Obligatoria para marcar la llegada"} photo={photo} onCapture={(file) => { void choose(file ?? undefined); }} disabled={sending} />
     </section>
     <div className="grid grid-cols-2 gap-3">
       <Button disabled={open || !photo || sending} onClick={() => send("in")}>{sending && !open ? "Marcando…" : "Marcar llegada"}</Button>
-      <Button variant="outline" disabled={!open || sending} onClick={() => send("out")}><LogOut size={18} aria-hidden="true" />{sending && open ? "Marcando…" : "Marcar salida"}</Button>
+      <Button variant="outline" disabled={!open || !photo || sending} onClick={() => send("out")}><LogOut size={18} aria-hidden="true" />{sending && open ? "Marcando…" : "Marcar salida"}</Button>
     </div>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </div>;
