@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { PlatformPage } from "@/components/dashboard/platform-page";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
 import { formatCop } from "@/lib/finance/constants";
-import { caseStatusLabels, caseStatusTones } from "@/lib/legal/case-labels";
 import { formatDay, formatMoment, newsLabels, uuidPattern, type LegalAccount, type LegalNews, type LegalProperty } from "../legal-data";
 import { MarkPropertySeen } from "../mark-seen";
 
@@ -20,15 +19,11 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   if (!uuidPattern.test(propertyId)) notFound();
   const tab: Tab = tabs.find((item) => item.id === rawTab)?.id ?? "mora";
   const { supabase } = await requireLegalStaff();
-  const [{ data: propertyData, error: propertyError }, { data: accountData, error: accountError }, { data: newsData, error: newsError }, { data: caseData }] = await Promise.all([
+  const [{ data: propertyData, error: propertyError }, { data: accountData, error: accountError }, { data: newsData, error: newsError }] = await Promise.all([
     supabase.rpc("legal_list_properties"),
     supabase.rpc("legal_property_accounts", { target_property_id: propertyId }),
     supabase.rpc("legal_property_news", { target_property_id: propertyId }),
-    supabase.rpc("legal_property_cases", { target_property_id: propertyId }),
   ]);
-  // Expedientes abiertos (03/11/2026): estado y próximo seguimiento en cada apartamento; si falla, la lista sale sin ellos.
-  const cases = new Map(((caseData ?? []) as { unit_id: string; status: string; next_follow_up: string | null }[]).map((row) => [row.unit_id, row]));
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
   if (accountError?.message.includes("not_authorized") || newsError?.message.includes("not_authorized")) notFound();
   if (propertyError || accountError || newsError) throw new Error("No se pudo cargar la cartera del conjunto.");
   const property = ((propertyData ?? []) as LegalProperty[]).find((row) => row.property_id === propertyId);
@@ -59,7 +54,7 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
         {minDays > 1 && <Link href={`/juridica/${propertyId}?tab=mora`} className="flex h-9 items-center rounded-lg px-3 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">Borrar filtro</Link>}
         <span className="ml-auto text-xs text-muted-foreground">{rows.length} de {arrears.length}</span></form>}
       {rows.length ? <ul className="grid gap-2">{rows.map((row) => <li key={row.unit_id}><Link href={`/juridica/${propertyId}/${row.unit_id}`} className="grid gap-2 rounded-xl border p-3 text-sm transition-colors hover:bg-secondary sm:grid-cols-[1fr_auto] sm:items-center">
-        <span className="min-w-0"><span className="flex flex-wrap items-center gap-2 font-medium">{row.building_name} · {row.unit_code}{row.agreement_active && <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">Acuerdo de pago</span>}{(() => { const file = cases.get(row.unit_id); if (!file) return null; const late = file.next_follow_up && file.next_follow_up <= today; return <><span className={`rounded-full px-2 py-0.5 text-xs ${caseStatusTones[file.status] ?? "bg-secondary"}`}>{caseStatusLabels[file.status] ?? file.status}</span>{file.next_follow_up && <span className={`rounded-full px-2 py-0.5 text-xs ${late ? "bg-red-100 text-red-800" : "bg-secondary"}`}>{late ? (file.next_follow_up === today ? "Seguimiento hoy" : "Seguimiento vencido") : `Seguimiento ${formatDay(file.next_follow_up)}`}</span>}</>; })()}</span>
+        <span className="min-w-0"><span className="flex flex-wrap items-center gap-2 font-medium">{row.building_name} · {row.unit_code}{row.agreement_active && <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">Acuerdo de pago</span>}</span>
           <span className="block truncate text-muted-foreground">{row.owner_name ?? "Sin nombre en el censo"}</span>
           <span className="block text-xs text-muted-foreground">Último pago: {formatDay(row.last_payment_on)}</span></span>
         <span className="sm:text-right"><span className={`block font-semibold ${row.in_arrears ? "text-red-700" : ""}`}>{formatCop(row.in_arrears ? row.overdue : row.outstanding)}</span>
