@@ -35,7 +35,7 @@ function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId:
   </details>;
 }
 
-export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null };
+export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null ; plannedAllocations?: { receivable_id: string; amount: number }[] | null };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar pago» llena el formulario
 // con la deuda, el valor y la fecha del comprobante; la administración revisa y pulsa «Registrar pago».
@@ -50,7 +50,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
   const inHistory = evidences.length - shown.length;
   function accept(evidence: EvidenceRow) {
     const outstanding = receivables.find((item) => item.id === evidence.receivableId)?.outstanding ?? 0;
-    setPrefill({ evidenceId: evidence.id, label: evidence.concept, amount: evidence.declaredAmount ?? outstanding, paidOn: evidence.uploadedDay, reference: `Comprobante: ${evidence.originalName}`.slice(0, 120), receivableId: evidence.receivableId });
+    setPrefill({ evidenceId: evidence.id, label: evidence.concept, amount: evidence.declaredAmount ?? outstanding, paidOn: evidence.uploadedDay, reference: `Comprobante: ${evidence.originalName}`.slice(0, 120), receivableId: evidence.receivableId, allocations: evidence.plannedAllocations ?? undefined });
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 

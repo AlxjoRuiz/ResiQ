@@ -30,28 +30,32 @@ export function PaymentEvidenceUpload({ debts }: { debts: EvidenceDebt[] }) {
   const [paidMonth, setPaidMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [comment, setComment] = useState("");
   const debt = available.find((item) => keyOf(item) === debtId);
-  // Con una cuota del acuerdo, la deuda a la que se aplica ese pago (04/11/2026).
+  // Con una cuota del acuerdo, las deudas que paga (04/11/2026): en el orden en que se marcan, cada una se llena
+  // hasta su saldo y la última recibe lo que queda del valor (abono). Sin valor disponible no se marcan más.
   const openDebts = debts.filter((item) => !item.installment);
-  const [targetId, setTargetId] = useState("");
-  const target = openDebts.find((item) => item.id === targetId);
+  const [targetIds, setTargetIds] = useState<string[]>([]);
+  const plan = targetIds.reduce<{ left: number; rows: { id: string; applied: number }[] }>((acc, id) => { const item = openDebts.find((row) => row.id === id); const applied = item ? Math.min(acc.left, item.outstanding) : 0; return { left: Math.round((acc.left - applied) * 100) / 100, rows: applied > 0 ? [...acc.rows, { id, applied }] : acc.rows }; }, { left: Math.max(Number(amount) || 0, 0), rows: [] }).rows;
+  const planned = plan.reduce((sum, row) => sum + row.applied, 0);
+  const leftover = Math.max(Math.round(((Number(amount) || 0) - planned) * 100) / 100, 0);
+  const toggleTarget = (id: string, checked: boolean) => setTargetIds((current) => checked ? [...current, id] : current.filter((item) => item !== id));
 
   async function submit() {
     const file = selected;
     if (!debt) { setMessage("Elige la cuota o la deuda que estás pagando."); return; }
-    if (debt.installment && openDebts.length && !target) { setMessage("Elige la deuda que pagas con esta cuota."); return; }
+    if (debt.installment && openDebts.length && !plan.length) { setMessage("Marca la deuda o las deudas que pagas con esta cuota."); return; }
     if (!(Number(amount) > 0)) { setMessage("Escribe el valor que pagaste."); return; }
     if (!/^\d{4}-\d{2}$/.test(paidMonth)) { setMessage("Indica el mes que estás pagando."); return; }
     if (!file) { setMessage("Selecciona un comprobante."); return; }
     if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) { setMessage("Selecciona un PDF, JPG o PNG de máximo 5 MB."); return; }
     setBusy(true); setMessage("");
     try {
-      const form = new FormData(); form.set(debt.installment ? "installmentId" : "receivableId", debt.id); if (debt.installment && target) form.set("receivableId", target.id); form.set("amount", amount); form.set("file", file); form.set("paidMonth", paidMonth); form.set("comment", comment.trim());
+      const form = new FormData(); form.set(debt.installment ? "installmentId" : "receivableId", debt.id); if (debt.installment && plan.length) form.set("allocations", JSON.stringify(plan.map((row) => ({ id: row.id, amount: row.applied })))); form.set("amount", amount); form.set("file", file); form.set("paidMonth", paidMonth); form.set("comment", comment.trim());
       const response = await fetch("/api/finance/evidence", { method: "POST", body: form });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "No se pudo enviar el comprobante.");
       if (input.current) input.current.value = "";
       // La deuda queda en revisión enseguida, sin esperar a que se recargue la página.
-      setSent((current) => new Set(current).add(keyOf(debt))); setDebtId(""); setAmount(""); setTargetId("");
+      setSent((current) => new Set(current).add(keyOf(debt))); setDebtId(""); setAmount(""); setTargetIds([]);
       setSelected(null); setComment("");
       setMessage("Comprobante enviado. La administración lo revisará y registrará el pago.");
       router.refresh();
@@ -64,12 +68,19 @@ export function PaymentEvidenceUpload({ debts }: { debts: EvidenceDebt[] }) {
     <div><h2 className="text-lg font-semibold">Enviar comprobante de pago</h2><p className="mt-1 text-sm text-muted-foreground">Elige la cuota del acuerdo o la deuda que pagas o abonas, el valor y adjunta tu comprobante para que Administración lo revise.</p></div>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block text-sm font-medium">{debts.some((item) => item.installment) ? "Cuota o deuda" : "Deuda"}<select className={fieldClass} value={debtId} onChange={(event) => { setDebtId(event.target.value); const next = available.find((item) => keyOf(item) === event.target.value); if (next) setAmount(String(Math.round(next.outstanding))); }} disabled={busy}><option value="">Selecciona</option>{[{ title: "Cuotas del acuerdo de pago", items: debts.filter((item) => item.installment) }, { title: "Deudas", items: debts.filter((item) => !item.installment) }].filter((group) => group.items.length).map((group) => { const options = group.items.map((item) => <option key={keyOf(item)} value={keyOf(item)} disabled={reviewing(item)}>{item.label} · {item.installment ? "valor" : "saldo"} {formatCop(item.outstanding)}{reviewing(item) ? " · comprobante en revisión" : ""}</option>); return debts.some((item) => item.installment) ? <optgroup key={group.title} label={group.title}>{options}</optgroup> : options; })}</select></label>
-      {debt?.installment && openDebts.length > 0 && <label className="block text-sm font-medium sm:col-span-2">Deuda que pagas con esta cuota<select className={fieldClass} value={targetId} onChange={(event) => setTargetId(event.target.value)} disabled={busy}><option value="">Selecciona</option>{openDebts.map((item) => <option key={item.id} value={item.id}>{item.label} · saldo {formatCop(item.outstanding)}</option>)}</select></label>}
       <label className="block text-sm font-medium">Valor pagado (COP)<input type="number" min={1} step={1} className={fieldClass} value={amount} onChange={(event) => setAmount(event.target.value)} disabled={busy} /></label>
       <label className="block text-sm font-medium">Mes que pagas<MonthPicker className="mt-2" value={paidMonth} onChange={setPaidMonth} disabled={busy} label="Elegir el mes que pagas" /></label>
       <label className="block text-sm font-medium">Comentario para la administración (opcional)<textarea className="mt-2 block min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={500} rows={2} disabled={busy} placeholder="Ej.: abono de octubre por transferencia" /></label>
     </div>
-    {debt?.installment && target && Number(amount) > target.outstanding && <p className="text-xs text-muted-foreground">La deuda elegida queda pagada; los {formatCop(Number(amount) - target.outstanding)} que sobran los aplica la administración a otra deuda.</p>}
+    {debt?.installment && openDebts.length > 0 && <fieldset className="grid gap-2 rounded-xl border p-3"><legend className="px-1 text-sm font-medium">Deudas que pagas con esta cuota</legend>
+      <p className="text-xs text-muted-foreground">Márcalas en el orden en que quieres pagarlas. Cada una se paga hasta su saldo; la última recibe lo que queda como abono.</p>
+      {openDebts.map((item) => { const checked = targetIds.includes(item.id); const applied = plan.find((row) => row.id === item.id)?.applied ?? 0; const full = !checked && leftover <= 0; return <label key={item.id} className={`flex items-start gap-3 rounded-lg border p-2 text-sm ${checked ? "border-primary/40 bg-primary/5" : ""} ${full ? "opacity-50" : ""}`}>
+        <input type="checkbox" checked={checked} disabled={busy || full} onChange={(event) => toggleTarget(item.id, event.target.checked)} className="mt-0.5 size-4 accent-primary" />
+        <span className="min-w-0 flex-1"><span className="block">{item.label}</span><span className="block text-xs text-muted-foreground">Saldo {formatCop(item.outstanding)}</span></span>
+        {checked && <span className="text-right text-xs font-medium">{applied > 0 ? <>{formatCop(applied)}<span className="block text-muted-foreground">{applied < item.outstanding ? `abono · quedan ${formatCop(item.outstanding - applied)}` : "pagada"}</span></> : "sin valor"}</span>}
+      </label>; })}
+      <p className="text-xs text-muted-foreground">{plan.length ? `Aplicado ${formatCop(planned)} de ${formatCop(Number(amount) || 0)}` : "Marca al menos una deuda."}{plan.length && leftover > 0 ? ` · sobran ${formatCop(leftover)}; marca otra deuda o la administración los aplicará.` : ""}</p>
+    </fieldset>}
     {debt && Number(amount) > 0 && Number(amount) < debt.outstanding && <p className="text-xs text-muted-foreground">Es un abono: quedarán {formatCop(debt.outstanding - Number(amount))} por pagar en esta {debt.installment ? "cuota" : "deuda"}.</p>}
     <FilePicker inputRef={input} files={selected ? [selected] : []} onFilesChange={(files) => { setSelected(files[0] ?? null); setMessage(""); }} title="Elige tu comprobante" hint="PDF, JPG o PNG · máximo 5 MB" disabled={busy} />
     <p className="text-xs text-muted-foreground">El comprobante no cambia el saldo hasta que Administración lo acepte.</p>
