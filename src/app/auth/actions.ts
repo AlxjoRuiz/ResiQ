@@ -65,41 +65,46 @@ export async function signIn(_: AuthState, formData: FormData): Promise<AuthStat
   redirect(next);
 }
 
+// Registro con invitación al instante (04/11/2026): con nombre, el correo invitado y una contraseña se crea la
+// cuenta ya confirmada, se inicia sesión y se acepta la invitación en el mismo paso, sin ir al correo. Solo se
+// acepta el correo al que se envió la invitación. Si ese correo se registró antes y nunca confirmó, se completa
+// esa cuenta. Si ya tiene una cuenta confirmada, debe iniciar sesión con ella.
 export async function registerWithInvitation(_: AuthState, formData: FormData): Promise<AuthState> {
   const email = field(formData, "email").toLowerCase();
-  const password = field(formData, "password");
+  const password = String(formData.get("password") ?? "");
   const displayName = field(formData, "displayName");
   const token = field(formData, "token");
-  if (!token || !email.includes("@") || password.length < 8 || displayName.length < 2) {
-    return { error: "Completa el nombre, un correo válido y una contraseña de mínimo 8 caracteres." };
+  if (!token || !email.includes("@") || password.length < 8 || displayName.length < 2 || displayName.length > 80) {
+    return { error: "Completa el nombre, el correo invitado y una contraseña de mínimo 8 caracteres." };
   }
+  const admin = createAdminClient();
+  const { data: targets, error: targetError } = await admin.rpc("invitation_signup_target", { invitation_token: token });
+  const target = Array.isArray(targets) ? targets[0] as { email: string; user_id: string | null; confirmed: boolean | null } | undefined : undefined;
+  if (targetError || !target) return { error: "La invitación venció o ya no es válida. Pide un enlace nuevo." };
+  if (target.email !== email) return { error: "Usa el mismo correo al que llegó la invitación." };
+  if (target.user_id && target.confirmed) return { error: "Este correo ya tiene una cuenta. Usa «Ingresar» o «Continuar con Google» y luego acepta la invitación." };
 
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
-  const next = `/invitacion?token=${encodeURIComponent(token)}`;
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { display_name: displayName },
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-    },
-  });
-  // Mensajes según la causa, sin confirmar si un correo ya tiene cuenta (evita enumerar usuarios).
-  const existingAccount = "Si ya tienes una cuenta con este correo, usa «Iniciar sesión» o «Continuar con Google» y luego acepta la invitación.";
-  if (error) {
-    logAuthFailure("signup", { method: "email", reason: error.code ?? error.name, status: error.status });
-    if (error.code === "user_already_exists" || error.code === "email_exists") return { error: existingAccount };
-    if (error.code === "weak_password") return { error: "La contraseña es muy débil. Usa al menos 8 caracteres combinando letras y números." };
-    if (error.code === "over_email_send_rate_limit" || error.code === "email_address_not_authorized" || error.code === "signup_disabled" || error.code === "email_provider_disabled") {
-      return { error: "Por ahora no podemos crear cuentas con contraseña. Usa «Continuar con Google» con el correo invitado." };
-    }
-    return { error: "No fue posible crear la cuenta. Verifica los datos o usa «Continuar con Google»." };
+  const metadata = { display_name: displayName };
+  const created = target.user_id
+    ? await admin.auth.admin.updateUserById(target.user_id, { password, email_confirm: true, user_metadata: metadata })
+    : await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: metadata });
+  if (created.error || !created.data.user) {
+    logAuthFailure("signup", { method: "email", reason: created.error?.code ?? created.error?.name ?? "no_user", status: created.error?.status });
+    if (created.error?.code === "weak_password") return { error: "La contraseña es muy débil. Usa al menos 8 caracteres combinando letras y números." };
+    return { error: "No fue posible crear la cuenta. Intenta de nuevo o usa «Continuar con Google»." };
   }
-  // Supabase responde sin identidades cuando el correo ya estaba registrado.
-  if (data.user && !data.user.identities?.length) return { error: existingAccount };
-  if (data.session) redirect(next);
-  return { success: "Revisa tu correo para confirmar la cuenta y continuar con la invitación." };
+  // Cuenta que existía sin confirmar: se deja el nombre que escribió ahora.
+  if (target.user_id) await admin.from("profiles").update({ display_name: displayName }).eq("id", target.user_id);
+
+  const supabase = await createClient();
+  const { data: session, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+  if (signInError || !session.user) {
+    logAuthFailure("password", { method: "email", reason: signInError?.code ?? "signup_sign_in", status: signInError?.status });
+    return { error: "La cuenta quedó creada. Inicia sesión con tu correo y contraseña para continuar." };
+  }
+  const accepted = await acceptInvitationToken(supabase, session.user, token);
+  if (accepted.error) return { error: accepted.error };
+  redirect(accepted.path!);
 }
 
 export async function signInWithGoogle(formData: FormData) {
@@ -141,6 +146,13 @@ export async function acceptInvitation(_: AuthState, formData: FormData): Promis
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Inicia sesión con el correo invitado para continuar." };
+  const accepted = await acceptInvitationToken(supabase, user, token);
+  if (accepted.error) return { error: accepted.error };
+  redirect(accepted.path!);
+}
+
+// Acepta la invitación (de un conjunto, de mantenimiento o de jurídica) y dice a dónde llevar a la persona.
+async function acceptInvitationToken(supabase: Awaited<ReturnType<typeof createClient>>, user: { email?: string; identities?: { provider: string }[] | null }, token: string): Promise<{ error?: string; path?: string }> {
   let { error } = await supabase.rpc("accept_invitation", { invitation_token: token });
   let maintenance = false, legal = false;
   if (error?.message.includes("invalid_invitation")) {
@@ -159,7 +171,7 @@ export async function acceptInvitation(_: AuthState, formData: FormData): Promis
     if (error.message.includes("membership_exists") || error.message.includes("already_assigned")) return { error: "Esta cuenta ya tiene acceso a esta comunidad, a este apartamento, al equipo de mantenimiento o al módulo jurídico." };
     return { error: "No pudimos aceptar la invitación. Intenta nuevamente." };
   }
-  redirect(user.identities?.some((identity) => identity.provider === "google") && !user.identities.some((identity) => identity.provider === "email") ? "/invitacion/contrasena" : maintenance ? "/mantenimiento" : legal ? "/juridica" : "/panel?invitation=accepted");
+  return { path: user.identities?.some((identity) => identity.provider === "google") && !user.identities.some((identity) => identity.provider === "email") ? "/invitacion/contrasena" : maintenance ? "/mantenimiento" : legal ? "/juridica" : "/panel?invitation=accepted" };
 }
 
 export async function createInvitedPassword(_: AuthState, formData: FormData): Promise<AuthState> {

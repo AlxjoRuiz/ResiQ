@@ -4,11 +4,23 @@ import styles from "./login.module.css";
 import { LoginForm } from "./login-form";
 import { safeNext } from "@/lib/auth/safe-next";
 import { accessErrorMessages } from "@/lib/auth/app-access";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+// Correo al que se envió la invitación (04/11/2026), para dejarlo fijo en «Crear cuenta con invitación».
+// null = la invitación venció o no existe; undefined = no se pudo consultar (el formulario sigue igual).
+async function invitedEmail(token: string) {
+  try {
+    const { data, error } = await createAdminClient().rpc("invitation_signup_target", { invitation_token: token });
+    if (error) return undefined;
+    return (Array.isArray(data) ? (data[0] as { email?: string } | undefined)?.email : undefined) ?? null;
+  } catch { return undefined; }
+}
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; reset?: string }> }) {
   const params = await searchParams;
   const next = safeNext(params.next);
   const invitationToken = next.startsWith("/invitacion?") ? new URL(next, "http://localhost").searchParams.get("token") ?? undefined : undefined;
+  const invited = invitationToken ? await invitedEmail(invitationToken) : undefined;
   return (
     <main className={styles.page}>
       <div className={styles.ambient} aria-hidden="true" />
@@ -26,7 +38,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className={styles.welcome}>Ingresa con la cuenta asociada a tu invitación.</p>
           {params.error && <p role="alert" className={styles.error}>{accessErrorMessages[params.error] ?? "No pudimos completar el acceso. Intenta nuevamente."}</p>}
           {params.reset === "success" && <p role="status" className={styles.success}>Contraseña actualizada. Ya puedes iniciar sesión.</p>}
-          <LoginForm next={next} invitationToken={invitationToken} />
+          <LoginForm next={next} invitationToken={invitationToken} invitedEmail={invited} />
           {process.env.PASSWORD_RECOVERY_ENABLED === "true" && <p className={styles.recovery}><Link href="/recuperar-contrasena">¿Olvidaste tu contraseña?</Link></p>}
           <p className={styles.security}><ShieldCheck size={16} aria-hidden="true" />Acceso protegido para miembros autorizados.</p>
         </section>
