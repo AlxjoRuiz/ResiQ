@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PlatformPage } from "@/components/dashboard/platform-page";
+import { CaseFilePanel, type CaseFile } from "@/components/legal/case-file";
 import { CollectionNoticeForm } from "@/components/legal/collection-notice-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
@@ -24,10 +25,11 @@ export default async function LegalUnitPage({ params }: { params: Promise<{ prop
   const { propertyId, unitId } = await params;
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(unitId)) notFound();
   const { supabase } = await requireLegalStaff();
-  const [{ data, error }, { data: recipientData, error: recipientError }, { data: noticeData, error: noticeError }] = await Promise.all([
+  const [{ data, error }, { data: recipientData, error: recipientError }, { data: noticeData, error: noticeError }, { data: caseData, error: caseError }] = await Promise.all([
     supabase.rpc("legal_unit_detail", { target_property_id: propertyId, target_unit_id: unitId }),
     supabase.rpc("legal_unit_recipients", { target_property_id: propertyId, target_unit_id: unitId }),
     supabase.rpc("legal_unit_notices", { target_property_id: propertyId, target_unit_id: unitId }),
+    supabase.rpc("legal_unit_case", { target_property_id: propertyId, target_unit_id: unitId }),
   ]);
   if (error?.message.includes("not_authorized") || error?.message.includes("unit_not_found")) notFound();
   if (error || !data) throw new Error("No se pudo cargar el apartamento.");
@@ -52,6 +54,12 @@ export default async function LegalUnitPage({ params }: { params: Promise<{ prop
       <Card><CardContent><p className="text-2xl font-semibold text-red-700">{formatCop(overdue)}</p><p className="mt-1 text-sm text-muted-foreground">Vencido</p></CardContent></Card>
       <Card><CardContent><p className="text-2xl font-semibold">{days}</p><p className="mt-1 text-sm text-muted-foreground">Días desde la deuda más antigua sin pagar</p></CardContent></Card>
     </section>
+
+    <Card id="expediente" className="scroll-mt-6"><CardContent>
+      <h2 className="text-lg font-semibold">Expediente prejurídico</h2>
+      <p className="mt-1 mb-5 text-sm text-muted-foreground">Estado del cobro, próximo seguimiento, gestiones y compromisos de pago. Solo lo ves tú; la administración solo ve que el apartamento está «En cobro jurídico».</p>
+      {caseError ? <p className="text-sm text-muted-foreground">El expediente todavía no está disponible.</p> : <CaseFilePanel propertyId={propertyId} unitId={unitId} caseFile={(caseData ?? null) as CaseFile | null} />}
+    </CardContent></Card>
 
     <Card><CardContent><h2 className="text-lg font-semibold">Contactos del censo</h2>
       {detail.contacts.length ? <ul className="mt-3 grid gap-2">{detail.contacts.map((contact, index) => <li key={index} className="rounded-xl border p-3 text-sm">

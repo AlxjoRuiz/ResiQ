@@ -52,3 +52,72 @@ export async function postLegalMessage(_: CollectionNoticeState, data: FormData)
   revalidatePath("/juridica/respuestas");
   return { success: "Mensaje enviado." };
 }
+
+// Expediente prejurídico (03/11/2026): la base de datos valida permisos, estados, fechas y valores.
+const dayPattern = /^\d{4}-\d{2}-\d{2}$/;
+const caseErrors: Record<string, string> = {
+  case_closed: "El expediente está cerrado.",
+  closed_reason_required: "Escribe el motivo del cierre (3 a 500 caracteres).",
+  invalid_status: "Estado no válido.",
+  invalid_action: "Elige el tipo de gestión y escribe un resumen (2 a 2000 caracteres).",
+  invalid_date: "La fecha de la gestión no puede ser futura.",
+  invalid_commitment: "Escribe el valor y la fecha del compromiso.",
+};
+const caseError = (message: string, fallback: string) => Object.entries(caseErrors).find(([code]) => message.includes(code))?.[1] ?? fallback;
+const refreshUnit = (data: FormData) => {
+  const propertyId = String(data.get("propertyId") ?? ""), unitId = String(data.get("unitId") ?? "");
+  if (uuidPattern.test(propertyId) && uuidPattern.test(unitId)) { revalidatePath(`/juridica/${propertyId}/${unitId}`); revalidatePath(`/juridica/${propertyId}`); }
+};
+
+export async function openLegalCase(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
+  const propertyId = String(data.get("propertyId") ?? ""), unitId = String(data.get("unitId") ?? "");
+  if (!uuidPattern.test(propertyId) || !uuidPattern.test(unitId)) return { error: "Apartamento inválido." };
+  const { supabase } = await requireLegalStaff();
+  const { error } = await supabase.rpc("legal_open_case", { target_property_id: propertyId, target_unit_id: unitId });
+  if (error) return { error: "No pudimos abrir el expediente." };
+  refreshUnit(data);
+  return { success: "Expediente abierto." };
+}
+
+export async function updateLegalCase(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
+  const caseId = String(data.get("caseId") ?? ""), status = String(data.get("status") ?? ""), followUp = String(data.get("nextFollowUp") ?? "").trim();
+  if (!uuidPattern.test(caseId)) return { error: "Expediente inválido." };
+  if (followUp && !dayPattern.test(followUp)) return { error: "Fecha de seguimiento inválida." };
+  const { supabase } = await requireLegalStaff();
+  const { error } = await supabase.rpc("legal_update_case", { target_case_id: caseId, target_status: status, target_next_follow_up: followUp || null, target_closed_reason: String(data.get("closedReason") ?? "") });
+  if (error) return { error: caseError(error.message, "No pudimos guardar el expediente.") };
+  refreshUnit(data);
+  return { success: status === "closed" ? "Expediente cerrado." : "Expediente actualizado." };
+}
+
+export async function addLegalCaseAction(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
+  const caseId = String(data.get("caseId") ?? ""), occurred = String(data.get("occurredOn") ?? "");
+  if (!uuidPattern.test(caseId)) return { error: "Expediente inválido." };
+  if (!dayPattern.test(occurred)) return { error: "Elige la fecha de la gestión." };
+  const { supabase } = await requireLegalStaff();
+  const { error } = await supabase.rpc("legal_add_case_action", { target_case_id: caseId, target_kind: String(data.get("kind") ?? ""), target_occurred_on: occurred, target_summary: String(data.get("summary") ?? "") });
+  if (error) return { error: caseError(error.message, "No pudimos registrar la gestión.") };
+  refreshUnit(data);
+  return { success: "Gestión registrada." };
+}
+
+export async function addLegalCommitment(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
+  const caseId = String(data.get("caseId") ?? ""), due = String(data.get("dueOn") ?? ""), amount = Number(data.get("amount"));
+  if (!uuidPattern.test(caseId)) return { error: "Expediente inválido." };
+  if (!(amount > 0) || !dayPattern.test(due)) return { error: caseErrors.invalid_commitment };
+  const { supabase } = await requireLegalStaff();
+  const { error } = await supabase.rpc("legal_add_commitment", { target_case_id: caseId, target_amount: amount, target_due_on: due, target_note: String(data.get("note") ?? "") });
+  if (error) return { error: caseError(error.message, "No pudimos registrar el compromiso.") };
+  refreshUnit(data);
+  return { success: "Compromiso registrado." };
+}
+
+export async function setLegalCommitmentStatus(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
+  const commitmentId = String(data.get("commitmentId") ?? ""), status = String(data.get("status") ?? "");
+  if (!uuidPattern.test(commitmentId) || !["met", "broken"].includes(status)) return { error: "Compromiso inválido." };
+  const { supabase } = await requireLegalStaff();
+  const { error } = await supabase.rpc("legal_set_commitment_status", { target_commitment_id: commitmentId, target_status: status });
+  if (error) return { error: caseError(error.message, "No pudimos actualizar el compromiso.") };
+  refreshUnit(data);
+  return { success: status === "met" ? "Compromiso cumplido." : "Compromiso incumplido." };
+}
