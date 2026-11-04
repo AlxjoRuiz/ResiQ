@@ -51,6 +51,9 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
   // Días que faltan o que lleva vencida cada deuda con saldo.
   const dayDiff = (due: string) => Math.round((Date.parse(`${due}T12:00:00Z`) - Date.parse(`${detail.today}T12:00:00Z`)) / 86400000);
   const base = `/juridica/${propertyId}/${unitId}`;
+  // Cobros en orden: vencidos, por vencer, pagados y anulados (04/11/2026).
+  const receivableRank = (row: Detail["receivables"][number]) => row.status === "void" ? 3 : Number(row.outstanding) <= 0 ? 2 : row.due_on < detail.today ? 0 : 1;
+  const sortedReceivables = [...detail.receivables].sort((a, b) => receivableRank(a) - receivableRank(b) || (receivableRank(a) >= 2 ? b.due_on.localeCompare(a.due_on) : a.due_on.localeCompare(b.due_on)));
 
   return <PlatformPage eyebrow={detail.property} title={`${detail.unit.building} · ${detail.unit.code}`} description="Cartera en solo lectura. Los cambios los hace la administración del conjunto."
     back={<Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>}
@@ -96,10 +99,10 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     {tab === "cartera" && <>
     <Card><CardContent><h2 className="text-lg font-semibold">Cobros</h2>
       {detail.receivables.length ? <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3 font-medium">Concepto</th><th className="py-2 pr-3 font-medium">Vence</th><th className="py-2 pr-3 text-right font-medium">Valor</th><th className="py-2 text-right font-medium">Pendiente</th></tr></thead>
-        <tbody>{detail.receivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
+        <tbody>{sortedReceivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
           <td className="py-2 pr-3"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span> <span className="text-xs text-muted-foreground">· {sourceLabels[row.source] ?? row.source}{row.status === "void" ? " · anulado" : ""}</span></td>
           <td className={`py-2 pr-3 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
-          <td className="py-2 pr-3 text-right">{formatCop(row.amount)}</td><td className="py-2 text-right font-medium">{row.status === "void" ? "—" : formatCop(row.outstanding)}</td>
+          <td className="py-2 pr-3 text-right">{formatCop(row.amount)}</td><td className="py-2 text-right font-medium">{row.status === "void" ? "—" : Number(row.outstanding) <= 0 ? <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Pagada</span> : formatCop(row.outstanding)}</td>
         </tr>)}</tbody></table></div> : <p className="mt-2 text-sm text-muted-foreground">Sin cobros registrados.</p>}
     </CardContent></Card>
 
