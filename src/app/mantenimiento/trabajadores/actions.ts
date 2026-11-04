@@ -68,6 +68,10 @@ export async function registerMaintenanceWorker(_: WorkerState, data: FormData):
     return !recordRemoval.error && !staffRemoval?.error && !profileRemoval.error && !authRemoval.error;
   }
   const incomplete = "El registro quedó incompleto y no se pudo revertir totalmente. No lo repitas; revisa la cuenta antes de continuar.";
+  // Un admin de prueba crea trabajadores de prueba (04/11/2026): su correo queda marcado como de prueba.
+  const { supabase } = await requireMaintenanceStaff("admin");
+  const { data: testSide } = await supabase.rpc("maintenance_is_test_side");
+  if (testSide === true && !email.endsWith("@resiq.invalid")) await admin.from("platform_test_emails").upsert({ email_normalized: email, created_by: adminId }, { onConflict: "email_normalized", ignoreDuplicates: true });
   const staff = await admin.from("maintenance_staff").insert({ user_id: workerId, role: "worker", status: "active", created_by: adminId }).select("id").single();
   if (staff.error || !staff.data) return { error: await cleanup() ? "No pudimos agregar la cuenta al equipo de mantenimiento." : incomplete };
   staffId = staff.data.id;
@@ -78,10 +82,14 @@ export async function registerMaintenanceWorker(_: WorkerState, data: FormData):
 }
 
 // Ficha vigente del trabajador (no eliminada) con su cuenta del equipo.
+// Solo trabajadores del mismo lado que el admin (prueba o producción, 04/11/2026); los demás no existen para él.
 async function findWorker(recordId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin.from("maintenance_worker_records").select("id,staff_id,user_id,document_number,removed_at").eq("id", recordId).maybeSingle();
-  return { admin, record: error || !data || data.removed_at ? null : data };
+  if (error || !data || data.removed_at) return { admin, record: null };
+  const { supabase } = await requireMaintenanceStaff("admin");
+  const { data: allowed } = await supabase.rpc("maintenance_can_manage_worker", { target_staff_id: data.staff_id });
+  return { admin, record: allowed === true ? data : null };
 }
 
 export async function editMaintenanceWorker(_: WorkerState, data: FormData): Promise<WorkerState> {
