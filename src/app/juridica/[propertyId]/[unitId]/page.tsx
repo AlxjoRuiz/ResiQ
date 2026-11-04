@@ -6,6 +6,7 @@ import { CollectionNoticeForm } from "@/components/legal/collection-notice-form"
 import { Card, CardContent } from "@/components/ui/card";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
 import { formatCop } from "@/lib/finance/constants";
+import { caseStatusLabels, caseStatusTones } from "@/lib/legal/case-labels";
 import { formatDay, formatMoment, uuidPattern } from "../../legal-data";
 
 type Detail = {
@@ -18,11 +19,15 @@ type Detail = {
 const sourceLabels: Record<string, string> = { import: "Excel", manual: "Manual", opening_balance: "Saldo inicial" };
 type Notice = { notice_id: string; created_at: string; recipient_email: string; recipient_name: string | null; subject: string; total: number; debt_count: number; delivery_status: string; replies?: number };
 const deliveryLabels: Record<string, string> = { held: "Retenido (modo de prueba)", queued: "En cola", processing: "Enviando", accepted: "Enviado", failed: "No se pudo enviar", cancelled: "Cancelado" };
+const tabs = [{ id: "expediente", label: "Expediente" }, { id: "requerimiento", label: "Requerimiento de pago" }, { id: "cartera", label: "Cartera" }, { id: "contactos", label: "Contactos" }] as const;
+type Tab = (typeof tabs)[number]["id"];
 
-// Detalle de un apartamento para la abogada (31/10/2026), en solo lectura (cada consulta queda en auditoría),
-// con el requerimiento de pago debajo de los cobros.
-export default async function LegalUnitPage({ params }: { params: Promise<{ propertyId: string; unitId: string }> }) {
-  const { propertyId, unitId } = await params;
+// Detalle de un apartamento para la abogada (31/10/2026), en solo lectura (cada consulta queda en auditoría).
+// Desde el 04/11/2026 en pestañas: arriba siempre el saldo y el estado del expediente; abajo Expediente,
+// Requerimiento de pago, Cartera (cobros, pagos y acuerdos) y Contactos, una a la vez.
+export default async function LegalUnitPage({ params, searchParams }: { params: Promise<{ propertyId: string; unitId: string }>; searchParams: Promise<{ seccion?: string }> }) {
+  const [{ propertyId, unitId }, { seccion }] = await Promise.all([params, searchParams]);
+  const tab: Tab = tabs.find((item) => item.id === seccion)?.id ?? "expediente";
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(unitId)) notFound();
   const { supabase } = await requireLegalStaff();
   const [{ data, error }, { data: recipientData, error: recipientError }, { data: noticeData, error: noticeError }, { data: caseData, error: caseError }] = await Promise.all([
@@ -45,39 +50,34 @@ export default async function LegalUnitPage({ params }: { params: Promise<{ prop
   const notices = (noticeData ?? []) as Notice[];
   const debts = active.filter((row) => Number(row.outstanding) > 0).sort((a, b) => a.due_on.localeCompare(b.due_on)).map((row) => ({ id: row.id, concept: row.concept, due_on: row.due_on, outstanding: Number(row.outstanding), overdue: row.due_on < detail.today }));
   const days = oldest ? Math.round((Date.parse(`${detail.today}T12:00:00Z`) - Date.parse(`${oldest}T12:00:00Z`)) / 86400000) : 0;
+  const caseFile = caseError ? null : (caseData ?? null) as CaseFile | null;
+  const openCase = caseFile && caseFile.status !== "closed" ? caseFile : null;
+  const counts: Record<Tab, number> = { expediente: openCase?.actions.length ?? 0, requerimiento: notices.length, cartera: debts.length, contactos: detail.contacts.length };
+  const base = `/juridica/${propertyId}/${unitId}`;
 
   return <PlatformPage eyebrow={detail.property} title={`${detail.unit.building} · ${detail.unit.code}`} description="Cartera en solo lectura. Los cambios los hace la administración del conjunto."
     back={<Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>}
-    actions={oldest ? <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">En mora · {days} días</span> : <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">Al día</span>}>
+    actions={<span className="flex flex-wrap gap-2">{oldest ? <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">En mora · {days} días</span> : <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">Al día</span>}
+      {openCase && <span className={`rounded-full px-3 py-1 text-xs font-medium ${caseStatusTones[openCase.status] ?? "bg-secondary"}`}>Expediente: {caseStatusLabels[openCase.status] ?? openCase.status}</span>}</span>}>
     <section aria-label="Saldo" className="grid gap-4 sm:grid-cols-3">
       <Card><CardContent><p className="text-2xl font-semibold">{formatCop(outstanding)}</p><p className="mt-1 text-sm text-muted-foreground">Saldo pendiente</p></CardContent></Card>
       <Card><CardContent><p className="text-2xl font-semibold text-red-700">{formatCop(overdue)}</p><p className="mt-1 text-sm text-muted-foreground">Vencido</p></CardContent></Card>
       <Card><CardContent><p className="text-2xl font-semibold">{days}</p><p className="mt-1 text-sm text-muted-foreground">Días desde la deuda más antigua sin pagar</p></CardContent></Card>
     </section>
 
-    <Card id="expediente" className="scroll-mt-6"><CardContent>
+    <nav aria-label="Secciones del apartamento" className="flex flex-wrap gap-2">{tabs.map((item) => <Link key={item.id} href={item.id === "expediente" ? base : `${base}?seccion=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
+      className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
+
+    {tab === "expediente" && <>
+    <Card><CardContent>
       <h2 className="text-lg font-semibold">Expediente prejurídico</h2>
       <p className="mt-1 mb-5 text-sm text-muted-foreground">Estado del cobro, próximo seguimiento, gestiones y compromisos de pago. Solo lo ves tú; la administración solo ve que el apartamento está «En cobro jurídico».</p>
       {caseError ? <p className="text-sm text-muted-foreground">El expediente todavía no está disponible.</p> : <CaseFilePanel propertyId={propertyId} unitId={unitId} caseFile={(caseData ?? null) as CaseFile | null} />}
     </CardContent></Card>
+    </>}
 
-    <Card><CardContent><h2 className="text-lg font-semibold">Contactos del censo</h2>
-      {detail.contacts.length ? <ul className="mt-3 grid gap-2">{detail.contacts.map((contact, index) => <li key={index} className="rounded-xl border p-3 text-sm">
-        <p className="font-medium">{contact.name ?? "Sin nombre"}{contact.type && <span className="font-normal text-muted-foreground"> · {contact.type}</span>}{contact.primary && <span className="ml-2 rounded-full bg-primary/12 px-2 py-0.5 text-xs text-primary">Principal</span>}</p>
-        <p className="break-all text-muted-foreground">{[contact.email, contact.phone].filter(Boolean).join(" · ") || "Sin correo ni teléfono"}</p>
-      </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">El censo no tiene contactos de este apartamento.</p>}
-    </CardContent></Card>
-
-    <Card><CardContent><h2 className="text-lg font-semibold">Cobros</h2>
-      {detail.receivables.length ? <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3 font-medium">Concepto</th><th className="py-2 pr-3 font-medium">Vence</th><th className="py-2 pr-3 text-right font-medium">Valor</th><th className="py-2 text-right font-medium">Pendiente</th></tr></thead>
-        <tbody>{detail.receivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
-          <td className="py-2 pr-3"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span> <span className="text-xs text-muted-foreground">· {sourceLabels[row.source] ?? row.source}{row.status === "void" ? " · anulado" : ""}</span></td>
-          <td className={`py-2 pr-3 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
-          <td className="py-2 pr-3 text-right">{formatCop(row.amount)}</td><td className="py-2 text-right font-medium">{row.status === "void" ? "—" : formatCop(row.outstanding)}</td>
-        </tr>)}</tbody></table></div> : <p className="mt-2 text-sm text-muted-foreground">Sin cobros registrados.</p>}
-    </CardContent></Card>
-
-    <Card id="requerimiento" className="scroll-mt-6"><CardContent>
+    {tab === "requerimiento" && <>
+    <Card><CardContent>
       <h2 className="text-lg font-semibold">Requerimiento de pago</h2>
       <p className="mt-1 mb-5 text-sm text-muted-foreground">Elige las deudas que vas a cobrar y escribe el mensaje. Le llega al correo del apartamento con el detalle de las deudas y tu firma.</p>
       {noticesReady ? <CollectionNoticeForm propertyId={propertyId} unitId={unitId} unitLabel={`${detail.unit.building} · ${detail.unit.code}`} propertyName={detail.property} debts={debts} recipients={recipients} />
@@ -88,6 +88,17 @@ export default async function LegalUnitPage({ params }: { params: Promise<{ prop
             <Link href={`/juridica/respuestas/${notice.notice_id}`} className="mt-1 inline-block text-xs text-primary hover:underline">{notice.replies ? `${notice.replies} ${notice.replies === 1 ? "respuesta" : "respuestas"} · ver conversación →` : "Ver conversación →"}</Link></div>
           <span className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${notice.delivery_status === "accepted" ? "bg-primary/12 text-primary" : notice.delivery_status === "failed" || notice.delivery_status === "cancelled" ? "bg-red-100 text-red-800" : "bg-secondary"}`}>{deliveryLabels[notice.delivery_status] ?? notice.delivery_status}</span>
         </li>)}</ul></div>}
+    </CardContent></Card>
+    </>}
+
+    {tab === "cartera" && <>
+    <Card><CardContent><h2 className="text-lg font-semibold">Cobros</h2>
+      {detail.receivables.length ? <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3 font-medium">Concepto</th><th className="py-2 pr-3 font-medium">Vence</th><th className="py-2 pr-3 text-right font-medium">Valor</th><th className="py-2 text-right font-medium">Pendiente</th></tr></thead>
+        <tbody>{detail.receivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
+          <td className="py-2 pr-3"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span> <span className="text-xs text-muted-foreground">· {sourceLabels[row.source] ?? row.source}{row.status === "void" ? " · anulado" : ""}</span></td>
+          <td className={`py-2 pr-3 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
+          <td className="py-2 pr-3 text-right">{formatCop(row.amount)}</td><td className="py-2 text-right font-medium">{row.status === "void" ? "—" : formatCop(row.outstanding)}</td>
+        </tr>)}</tbody></table></div> : <p className="mt-2 text-sm text-muted-foreground">Sin cobros registrados.</p>}
     </CardContent></Card>
 
     <Card><CardContent><h2 className="text-lg font-semibold">Pagos</h2>
@@ -103,5 +114,15 @@ export default async function LegalUnitPage({ params }: { params: Promise<{ prop
         {agreement.installments.length > 0 && <ol className="mt-2 grid gap-1">{agreement.installments.map((installment, number) => <li key={number} className="flex justify-between gap-3"><span>Cuota {number + 1} · {formatDay(installment.due_on)}</span><span>{formatCop(installment.amount)}</span></li>)}</ol>}
       </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin acuerdos de pago.</p>}
     </CardContent></Card>
+    </>}
+
+    {tab === "contactos" && <>
+    <Card><CardContent><h2 className="text-lg font-semibold">Contactos del censo</h2>
+      {detail.contacts.length ? <ul className="mt-3 grid gap-2">{detail.contacts.map((contact, index) => <li key={index} className="rounded-xl border p-3 text-sm">
+        <p className="font-medium">{contact.name ?? "Sin nombre"}{contact.type && <span className="font-normal text-muted-foreground"> · {contact.type}</span>}{contact.primary && <span className="ml-2 rounded-full bg-primary/12 px-2 py-0.5 text-xs text-primary">Principal</span>}</p>
+        <p className="break-all text-muted-foreground">{[contact.email, contact.phone].filter(Boolean).join(" · ") || "Sin correo ni teléfono"}</p>
+      </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">El censo no tiene contactos de este apartamento.</p>}
+    </CardContent></Card>
+    </>}
   </PlatformPage>;
 }
