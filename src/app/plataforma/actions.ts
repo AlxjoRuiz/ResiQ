@@ -27,9 +27,10 @@ export async function createPlatformProperty(_: CreatePropertyState, data: FormD
     if (testError) return { error: "El conjunto se creó, pero quedó en producción. Pásalo a Pruebas desde su ficha." };
   }
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
+  await queueAdminInvitationEmail(supabase, token);
   revalidatePath("/plataforma", "layout");
   revalidatePath("/panel");
-  return { success: `Conjunto «${name}» creado. Comparte este enlace con el administrador; debe entrar con ${email}. Vence en 7 días.`, link: `${origin}/invitacion?token=${encodeURIComponent(token)}` };
+  return { success: `Conjunto «${name}» creado. Comparte este enlace con el administrador; debe entrar con ${email}. Vence en 7 días. Le llegará también al correo apenas se active el envío de correos.`, link: `${origin}/invitacion?token=${encodeURIComponent(token)}` };
 }
 
 export type PlatformState = { error?: string; success?: string } | undefined;
@@ -67,8 +68,9 @@ export async function inviteAdministrator(_: CreatePropertyState, data: FormData
     if (error?.message.includes("property_inactive")) return { error: "Reactiva el conjunto antes de invitar administradores." };
     return { error: "No pudimos crear la invitación." };
   }
+  await queueAdminInvitationEmail(supabase, token);
   revalidatePath("/plataforma", "layout");
-  return { success: `Invitación creada. Comparte el enlace; debe entrar con ${email}. Vence en 7 días.`, link: await invitationLink(token) };
+  return { success: `Invitación creada. Comparte el enlace; debe entrar con ${email}. Vence en 7 días. Le llegará también al correo apenas se active el envío de correos.`, link: await invitationLink(token) };
 }
 
 export async function reissueAdminInvitation(_: CreatePropertyState, data: FormData): Promise<CreatePropertyState> {
@@ -77,8 +79,9 @@ export async function reissueAdminInvitation(_: CreatePropertyState, data: FormD
   const { supabase } = await requirePlatformAdmin();
   const { data: token, error } = await supabase.rpc("platform_reissue_admin_invitation", { target_invitation_id: invitationId });
   if (error || typeof token !== "string") return { error: error?.message.includes("property_inactive") ? "Reactiva el conjunto antes de generar el enlace." : "No pudimos generar el enlace." };
+  await queueAdminInvitationEmail(supabase, token);
   revalidatePath("/plataforma", "layout");
-  return { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días.", link: await invitationLink(token) };
+  return { success: "Enlace nuevo generado; el anterior dejó de servir. Vence en 7 días. Le llegará también al correo apenas se active el envío de correos.", link: await invitationLink(token) };
 }
 
 // Equipo de mantenimiento de ResiQ (28/10/2026): el superadmin invita al admin de mantenimiento.
@@ -108,6 +111,13 @@ async function markTestEmail(supabase: Awaited<ReturnType<typeof requirePlatform
   if (field(data, "test") !== "true" || email.endsWith("@resiq.invalid")) return true;
   const { error } = await supabase.rpc("platform_set_test_email", { target_email: email, target_is_test: true });
   return !error;
+}
+
+// Correo de invitación al administrador del conjunto (04/11/2026): queda en la cola con este mismo enlace;
+// en modo de prueba se retiene y sale solo al activar el envío. Si falla, la invitación sigue sirviendo.
+async function queueAdminInvitationEmail(supabase: Awaited<ReturnType<typeof requirePlatformAdmin>>["supabase"], token: string) {
+  const { error } = await supabase.rpc("queue_admin_invitation_email", { invitation_token: token });
+  if (error) console.error(JSON.stringify({ event: "admin_invitation_email_not_queued", code: error.code }));
 }
 
 async function invitationLink(token: string) {

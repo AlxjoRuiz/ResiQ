@@ -40,6 +40,22 @@ export function legalNoticeContent(job: EmailJob) {
   return { subject, text, html };
 }
 
+// Invitación al administrador del conjunto (04/11/2026). El enlace viene en template_data.link_token.
+export function adminInvitationContent(job: EmailJob, link: string) {
+  const data = job.template_data as EmailJob["template_data"] & { link_token?: string; assistant?: boolean; expires_at?: string };
+  const role = data.assistant ? "auxiliar de administración" : "administrador";
+  const subject = `Invitación a ResiQ · ${data.property_name ?? "tu conjunto"}`;
+  const expires = data.expires_at ? new Date(data.expires_at).toLocaleString("es-CO", { timeZone: "America/Bogota" }) : "";
+  const lines = [
+    `Te invitaron a ResiQ como ${role} de ${data.property_name ?? "un conjunto"}.`,
+    "Abre este enlace, escribe tu nombre y una contraseña, y entras de una vez con este mismo correo:",
+    link,
+    expires ? `El enlace vence el ${expires}. Si no esperabas esta invitación, ignora este mensaje.` : "Si no esperabas esta invitación, ignora este mensaje.",
+  ];
+  const html = `<h1>${escapeHtml(subject)}</h1><p>${escapeHtml(lines[0])}</p><p>${escapeHtml(lines[1])}</p><p><a href="${escapeHtml(link)}">Aceptar invitación</a></p><p>${escapeHtml(lines[3])}</p>`;
+  return { subject, text: lines.join("\n\n"), html };
+}
+
 function emailContent(job: EmailJob, appUrl: string) {
   if (job.template_key.startsWith("assembly_")) {
     const headings: Record<string, string> = { assembly_published: "Nueva convocatoria de asamblea", assembly_reminder: "Recordatorio de asamblea", assembly_updated: "Cambio en una asamblea", assembly_cancelled: "Asamblea cancelada" };
@@ -132,6 +148,15 @@ export default {
         logged = { subject: content.subject, text: content.text.replace(link, "[enlace de invitación omitido]") };
         // Cada intento lleva un código nuevo, así que la clave de idempotencia es por intento.
         idempotencyKey = `${job.dedupe_key}:${job.attempt_count}`;
+      } else if (job.template_key === "admin_invitation") {
+        // Invitación de administrador: se revalida que siga pendiente y que el enlace sea el último.
+        const authorization = await supabase.rpc("authorize_admin_invitation_job", { target_job_id: job.id, worker_name: workerName });
+        if (authorization.error) throw new Error("email_authorization_unavailable");
+        if (authorization.data !== true) { results.push({ id: job.id, status: "cancelled" }); continue; }
+        const linkToken = String((job.template_data as { link_token?: string }).link_token ?? "");
+        const link = `${appUrl}/invitacion?token=${encodeURIComponent(linkToken)}`;
+        content = adminInvitationContent(job, link);
+        logged = { subject: content.subject, text: content.text.replace(link, "[enlace de invitación omitido]") };
       } else {
         // Avisos al correo de facturas del censo: no hay cuenta, se revalida la autorización del censo.
         // Requerimientos de la abogada: se revalida que siga activa y con el conjunto asignado.
