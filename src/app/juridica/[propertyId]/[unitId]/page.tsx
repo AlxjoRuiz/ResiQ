@@ -11,7 +11,8 @@ type Detail = {
   unit: { building: string; code: string; floor: string | null }; property: string; overdue_days: number; today: string; signer: string | null;
   contacts: { name: string | null; type: string | null; email: string | null; phone: string | null; primary: boolean }[];
   receivables: { id: string; concept: string; amount: number; outstanding: number; issued_on: string; due_on: string; status: string; source: string }[];
-  payments: { amount: number; paid_on: string; reference: string | null; status: string }[];
+  // Historial de pagos (04/11/2026): lo pagado, el comprobante, la anulación y si fue corregido.
+  payments: { id?: string; amount: number; paid_on: string; reference: string | null; status: string; voided_at?: string | null; void_reason?: string | null; concepts?: string | null; evidence_id?: string | null; evidence_name?: string | null; corrected_on?: string | null; corrects?: boolean }[];
   agreements: { total: number; status: string; notes: string | null; created_at: string; installments: { amount: number; due_on: string }[] }[];
 };
 const sourceLabels: Record<string, string> = { import: "Excel", manual: "Manual", opening_balance: "Saldo inicial" };
@@ -106,10 +107,18 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
         </tr>)}</tbody></table></div> : <p className="mt-2 text-sm text-muted-foreground">Sin cobros registrados.</p>}
     </CardContent></Card>
 
-    <Card><CardContent><h2 className="text-lg font-semibold">Pagos</h2>
-      {detail.payments.length ? <ul className="mt-3 grid gap-2">{detail.payments.map((row, index) => <li key={index} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${row.status === "void" ? "border-red-300 bg-red-50 text-red-800" : "border-primary/40 bg-primary/5"}`}>
-        <span>{formatDay(row.paid_on)}{row.reference && <span className="text-muted-foreground"> · {row.reference}</span>}{row.status === "void" && " · anulado"}</span><span className={`font-semibold ${row.status === "void" ? "text-red-700 line-through" : ""}`}>{formatCop(row.amount)}</span>
-      </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin pagos registrados.</p>}
+    <Card><CardContent><h2 className="text-lg font-semibold">Historial de pagos</h2>
+      {detail.payments.length ? <ul className="mt-3 grid gap-2">{detail.payments.map((row, index) => { const voided = row.status === "void"; return <li key={row.id ?? index} className={`grid gap-1 rounded-xl border p-3 text-sm ${voided ? "border-red-300 bg-red-50" : "border-primary/40 bg-primary/5"}`}>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <p className={`font-medium ${voided ? "text-red-800" : ""}`}>Pagado el {formatDay(row.paid_on)}{voided && " · anulado"}</p>
+          <span className={`font-semibold ${voided ? "text-red-700 line-through" : ""}`}>{formatCop(row.amount)}</span>
+        </div>
+        <p className="text-muted-foreground">{row.concepts ?? (row.reference && !row.reference.startsWith("Comprobante:") ? row.reference : "Sin aplicar a una deuda")}</p>
+        <p className="flex flex-wrap items-center gap-2 text-xs">{row.evidence_id ? <a href={`/api/legal/evidence/${row.evidence_id}`} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Ver comprobante{row.evidence_name ? ` · ${row.evidence_name}` : ""}</a> : <span className="text-muted-foreground">Registrado por la administración sin comprobante</span>}
+          {row.corrects && <span className="rounded-full bg-primary/12 px-2 py-0.5 font-medium text-primary">Corrige un pago anulado</span>}</p>
+        {voided && <p className="text-xs text-red-800">Anulado{row.voided_at ? ` el ${formatMoment.format(new Date(row.voided_at))}` : ""}{row.void_reason ? ` · Motivo: ${row.void_reason}` : ""}</p>}
+        {voided && row.corrected_on && <p><span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Corregido · pagado de nuevo el {formatDay(row.corrected_on)}</span></p>}
+      </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin pagos registrados.</p>}
     </CardContent></Card>
 
     <Card><CardContent><h2 className="text-lg font-semibold">Acuerdos de pago</h2>
