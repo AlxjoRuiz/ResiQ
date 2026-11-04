@@ -85,7 +85,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
         </li>)}</ul></div>}
     </CardContent></Card>
 
-    <Card><CardContent><h2 className="text-lg font-semibold">Contactos del censo</h2>
+    <Card><CardContent><h2 className="text-lg font-semibold">Contacto del residente</h2>
       {detail.contacts.length ? <ul className="mt-3 grid gap-2">{detail.contacts.map((contact, index) => <li key={index} className="rounded-xl border p-3 text-sm">
         <p className="font-medium">{contact.name ?? "Sin nombre"}{contact.type && <span className="font-normal text-muted-foreground"> · {contact.type}</span>}{contact.primary && <span className="ml-2 rounded-full bg-primary/12 px-2 py-0.5 text-xs text-primary">Principal</span>}</p>
         <p className="break-all text-muted-foreground">{[contact.email, contact.phone].filter(Boolean).join(" · ") || "Sin correo ni teléfono"}</p>
