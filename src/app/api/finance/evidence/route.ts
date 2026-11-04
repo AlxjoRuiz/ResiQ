@@ -37,7 +37,8 @@ export async function POST(request: Request) {
   let receivable: { id: string; property_id: string; unit_id: string; status: string } | null = null;
   let installment: string | null = null;
   if (uuidPattern.test(installmentId)) {
-    // Cuota de un acuerdo vigente del apartamento; el comprobante también queda en su deuda más antigua.
+    // Cuota de un acuerdo vigente del apartamento. Desde el 04/11/2026 el residente elige a qué deuda aplica el
+    // pago de la cuota; si no eligió, queda en la deuda más antigua.
     const { data: row } = await supabase.from("payment_agreement_installments").select("id,property_id,agreement_id").eq("id", installmentId).maybeSingle();
     const { data: agreement } = row ? await supabase.from("payment_agreements").select("id,unit_id,status").eq("property_id", row.property_id).eq("id", row.agreement_id).maybeSingle() : { data: null };
     if (!row || !agreement || agreement.status !== "active") return NextResponse.json({ error: "Cuota no disponible." }, { status: 404 });
@@ -45,6 +46,11 @@ export async function POST(request: Request) {
       .order("due_on", { ascending: true }).order("created_at", { ascending: true }).limit(1).maybeSingle();
     if (!oldest) return NextResponse.json({ error: "Cuota no disponible." }, { status: 404 });
     receivable = oldest; installment = row.id;
+    if (uuidPattern.test(receivableId)) {
+      const { data: chosen } = await supabase.from("accounts_receivable").select("id,property_id,unit_id,status").eq("id", receivableId).maybeSingle();
+      if (!chosen || chosen.status !== "active" || chosen.property_id !== row.property_id || chosen.unit_id !== agreement.unit_id) return NextResponse.json({ error: "Elige una deuda de tu apartamento." }, { status: 400 });
+      receivable = chosen;
+    }
   } else {
     const { data: row } = await supabase.from("accounts_receivable").select("id,property_id,unit_id,status").eq("id", receivableId).maybeSingle();
     receivable = row;
