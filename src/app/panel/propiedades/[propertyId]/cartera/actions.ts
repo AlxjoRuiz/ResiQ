@@ -28,6 +28,9 @@ function friendlyError(message?: string) {
   if (message?.includes("no_active_agreement")) return "El apartamento no tiene un acuerdo de pago activo.";
   if (message?.includes("already_added")) return "Esa deuda ya está sumada al acuerdo.";
   if (message?.includes("no_pending_installments")) return "El acuerdo no tiene cuotas pendientes.";
+  if (message?.includes("agreement_total_mismatch")) return "Las cuotas deben sumar exactamente el saldo de las deudas elegidas.";
+  if (message?.includes("agreement_payment_mismatch")) return "El pago de una cuota debe quedar aplicado completo a las deudas del acuerdo y no puede pasar de lo que falta.";
+  if (message?.includes("agreement_not_active")) return "Ese acuerdo de pago ya no está vigente.";
   if (message?.includes("agreement_exists")) return "Este apartamento ya tiene un acuerdo de pago activo. Cancélalo antes de crear otro.";
   if (message?.includes("invalid_import_row")) return "Una fila del archivo no cumple las reglas de cartera.";
   return "No pudimos guardar el cambio. Revisa los datos e inténtalo nuevamente.";
@@ -94,13 +97,15 @@ export async function addReceivableToAgreement(_: FinanceState, data: FormData):
   refreshFinance(propertyId,unitId);return{success:"Deuda sumada al acuerdo."};
 }
 
-// Acuerdo de pago: cuotas con valor y fecha; el total es la suma de las cuotas.
+// Acuerdo de pago (05/11/2026): las deudas que cubre y las cuotas; la base de datos exige que sumen lo mismo.
 export async function createPaymentAgreement(_: FinanceState, data: FormData): Promise<FinanceState> {
   const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),notes=field(data,"notes");
-  let installments:{amount:number;due_on:string}[]=[];
+  let installments:{amount:number;due_on:string}[]=[];let receivableIds:string[]=[];
+  try{const parsed:unknown=JSON.parse(field(data,"receivableIds")||"[]");if(Array.isArray(parsed))receivableIds=parsed.map(String);}catch{receivableIds=[];}
+  if(!receivableIds.length||receivableIds.length>200||receivableIds.some((id)=>!uuidPattern.test(id)))return{error:"Elige las deudas que entran al acuerdo."};
   try{const parsed:unknown=JSON.parse(field(data,"installments")||"[]");if(Array.isArray(parsed))installments=parsed.map((item)=>({amount:Number((item as {amount?:unknown}).amount),due_on:String((item as {due_on?:unknown}).due_on??"")}));}catch{installments=[];}
   if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||installments.length<1||installments.length>120||installments.some((item)=>!Number.isFinite(item.amount)||item.amount<=0||!isoDatePattern.test(item.due_on))||(notes&&(notes.length<3||notes.length>1000)))return{error:"Revisa las cuotas: cada una necesita valor y fecha. La nota debe tener entre 3 y 1000 caracteres."};
-  const supabase=await createClient();const result=await supabase.rpc("create_payment_agreement",{target_property_id:propertyId,target_unit_id:unitId,target_notes:notes||null,target_installments:installments});if(result.error)return{error:friendlyError(result.error.message)};
+  const supabase=await createClient();const result=await supabase.rpc("create_payment_agreement",{target_property_id:propertyId,target_unit_id:unitId,target_notes:notes||null,target_installments:installments,target_receivable_ids:receivableIds});if(result.error)return{error:friendlyError(result.error.message)};
   refreshFinance(propertyId,unitId);return{success:"Acuerdo de pago registrado."};
 }
 

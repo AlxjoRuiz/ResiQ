@@ -28,7 +28,7 @@ export function NewObligationCard({ propertyId, units, arrears, policy }: { prop
     <div role="tabpanel" hidden={tab !== "agreement"} className="mt-5">{arrears.length ? <div className="grid gap-5">
         <p className="text-sm text-muted-foreground">Elige el apartamento, esté o no en mora. Cada apartamento puede tener un acuerdo activo; para hacer otro, cancela el actual desde su estado de cuenta. El residente verá el acuerdo y su próxima cuota.</p>
         <label className="block text-sm font-medium">Apartamento<select className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" value={agreementUnit} onChange={(event) => setAgreementUnit(event.target.value)}><option value="">Selecciona</option>{arrears.map((item) => <option key={item.id} value={item.id} disabled={item.hasAgreement}>{item.label} · {formatCop(item.balance)}{item.overdueDays > 0 ? ` · ${item.overdueDays} ${item.overdueDays === 1 ? "día" : "días"} en mora` : ""}{item.hasAgreement ? " · ya tiene acuerdo activo" : ""}</option>)}</select></label>
-        {selected && <PaymentAgreementForm key={selected.id} propertyId={propertyId} unitId={selected.id} suggestedTotal={selected.balance} />}
+        {selected && <PaymentAgreementForm key={selected.id} propertyId={propertyId} unitId={selected.id} />}
       </div> : <p className="text-sm text-muted-foreground">No hay apartamentos activos.</p>}</div>
   </div>;
 }

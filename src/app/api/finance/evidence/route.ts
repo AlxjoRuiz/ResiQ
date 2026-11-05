@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   if (uuidPattern.test(installmentId)) {
     // Cuota de un acuerdo vigente del apartamento. Desde el 04/11/2026 el residente elige una o varias deudas a
     // las que aplica el pago de la cuota (cada una hasta su saldo; la última, como abono); el admin lo revisa al
-    // registrar. Si no eligió, queda en la deuda más antigua.
+    // registrar. Desde el 05/11/2026 solo deudas del acuerdo y todo el valor aplicado.
     const { data: row } = await supabase.from("payment_agreement_installments").select("id,property_id,agreement_id").eq("id", installmentId).maybeSingle();
     const { data: agreement } = row ? await supabase.from("payment_agreements").select("id,unit_id,status").eq("property_id", row.property_id).eq("id", row.agreement_id).maybeSingle() : { data: null };
     if (!row || !agreement || agreement.status !== "active") return NextResponse.json({ error: "Cuota no disponible." }, { status: 404 });
@@ -49,11 +49,20 @@ export async function POST(request: Request) {
       .order("due_on", { ascending: true }).order("created_at", { ascending: true }).limit(1).maybeSingle();
     if (!oldest) return NextResponse.json({ error: "Cuota no disponible." }, { status: 404 });
     receivable = oldest; installment = row.id;
+    // Desde el 05/11/2026: el pago de la cuota se aplica completo a las deudas del acuerdo y no pasa de lo que falta.
+    const [{ data: scheduleData }, { data: agreementDebts }] = await Promise.all([
+      supabase.rpc("payment_agreement_schedule", { target_agreement_id: agreement.id }),
+      supabase.from("payment_agreement_debts").select("receivable_id").eq("agreement_id", agreement.id),
+    ]);
+    const remaining = Number((scheduleData as { remaining?: number } | null)?.remaining ?? 0);
+    const debtIds = new Set((agreementDebts ?? []).map((item) => String(item.receivable_id)));
+    if (Math.round(amount * 100) > Math.round(remaining * 100)) return NextResponse.json({ error: `El valor no puede pasar de lo que falta del acuerdo (${remaining.toLocaleString("es-CO")} COP).` }, { status: 400 });
     let parts: { id: string; amount: number }[] = [];
     try { const raw: unknown = JSON.parse(String(form.get("allocations") ?? "[]")); parts = Array.isArray(raw) ? raw.map((item) => ({ id: String(item?.id ?? ""), amount: Math.round(Number(item?.amount) * 100) / 100 })) : []; } catch { parts = []; }
-    if (parts.length) {
+    if (!parts.length) return NextResponse.json({ error: "Marca la deuda o las deudas del acuerdo que pagas con esta cuota." }, { status: 400 });
+    {
       const total = parts.reduce((sum, item) => sum + item.amount, 0);
-      if (parts.length > 50 || new Set(parts.map((item) => item.id)).size !== parts.length || parts.some((item) => !uuidPattern.test(item.id) || !(item.amount > 0)) || total > Math.round(amount * 100) / 100 + 0.01) return NextResponse.json({ error: "Revisa las deudas que pagas con esta cuota." }, { status: 400 });
+      if (parts.length > 50 || new Set(parts.map((item) => item.id)).size !== parts.length || parts.some((item) => !uuidPattern.test(item.id) || !(item.amount > 0) || !debtIds.has(item.id)) || Math.round(total * 100) !== Math.round(amount * 100)) return NextResponse.json({ error: "Todo el valor debe quedar aplicado a las deudas del acuerdo." }, { status: 400 });
       const { data: chosen } = await supabase.from("accounts_receivable").select("id,property_id,unit_id,status").in("id", parts.map((item) => item.id));
       const valid = (chosen ?? []).filter((item) => item.status === "active" && item.property_id === row.property_id && item.unit_id === agreement.unit_id);
       if (valid.length !== parts.length) return NextResponse.json({ error: "Elige deudas de tu apartamento." }, { status: 400 });
@@ -61,8 +70,14 @@ export async function POST(request: Request) {
       planned = parts.map((item) => ({ receivable_id: item.id, amount: item.amount }));
     }
   } else {
-    const { data: row } = await supabase.from("accounts_receivable").select("id,property_id,unit_id,status").eq("id", receivableId).maybeSingle();
+    const { data: row } = await supabase.from("accounts_receivable").select("id,property_id,unit_id,status,amount").eq("id", receivableId).maybeSingle();
     receivable = row;
+    // Sin saldo a favor (05/11/2026): el valor no puede pasar del saldo de la deuda.
+    if (row) {
+      const { data: applied } = await supabase.from("payment_allocations").select("amount,payments!inner(status)").eq("property_id", row.property_id).eq("receivable_id", row.id).eq("payments.status", "posted");
+      const owed = Number(row.amount) - (applied ?? []).reduce((sum, item) => sum + Number(item.amount), 0);
+      if (Math.round(amount * 100) > Math.round(owed * 100)) return NextResponse.json({ error: `El valor no puede pasar del saldo de la deuda (${Math.max(owed, 0).toLocaleString("es-CO")} COP).` }, { status: 400 });
+    }
   }
   if (!receivable || receivable.status !== "active") return NextResponse.json({ error: "Obligación no disponible." }, { status: 404 });
 

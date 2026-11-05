@@ -5,6 +5,7 @@ import { CollectionNoticeForm } from "@/components/legal/collection-notice-form"
 import { Card, CardContent } from "@/components/ui/card";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
 import { formatCop } from "@/lib/finance/constants";
+import { installmentStateLabels, parseSchedule, type InstallmentState } from "@/lib/finance/agreement-schedule";
 import { deliveryLabels, formatDay, formatMoment, uuidPattern } from "../../legal-data";
 
 type Detail = {
@@ -14,14 +15,13 @@ type Detail = {
   // Historial de pagos (04/11/2026): lo pagado, el comprobante, la anulación y si fue corregido.
   // Quién pagó y quién anuló (05/11/2026).
   payments: { id?: string; amount: number; paid_on: string; reference: string | null; status: string; recorded_at?: string; voided_at?: string | null; void_reason?: string | null; concepts?: string | null; evidence_id?: string | null; evidence_name?: string | null; payer_name?: string | null; recorded_by_name?: string | null; voided_by_name?: string | null; corrected_on?: string | null; corrects?: boolean }[];
-  agreements: { total: number; status: string; notes: string | null; created_at: string; cancel_reason?: string | null; cancelled_at?: string | null; cancelled_by_name?: string | null; installments: { amount: number; due_on: string }[] }[];
+  agreements: { total: number; status: string; notes: string | null; created_at: string; cancel_reason?: string | null; cancelled_at?: string | null; cancelled_by_name?: string | null; schedule?: unknown; installments: { amount: number; due_on: string }[] }[];
 };
 // Encabezado de tabla con el azul de ResiQ y bordes redondeados (05/11/2026).
 const tableHead = "bg-primary text-left text-primary-foreground";
 // Mismo ancho de columnas en todas las tablas del cuadro (Concepto/Cuota, Vence, Valor, Pendiente/Estado).
 const tableClass = "w-full min-w-[560px] table-fixed text-sm";
 const columns = <colgroup><col /><col className="w-32" /><col className="w-36" /><col className="w-32" /></colgroup>;
-const installmentLabels = { paid: "Pagada", late: "Vencida", pending: "Por vencer" } as const;
 type Notice = { notice_id: string; created_at: string; recipient_email: string; recipient_name: string | null; subject: string; total: number; debt_count: number; delivery_status: string; replies?: number };
 const tabs = [{ id: "requerimiento", label: "Requerimiento de pago" }, { id: "cartera", label: "Cartera" }] as const;
 type Tab = (typeof tabs)[number]["id"];
@@ -60,17 +60,13 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
   // Cobros en orden: vencidos, por vencer, pagados y anulados (04/11/2026).
   const receivableRank = (row: Detail["receivables"][number]) => row.status === "void" ? 3 : Number(row.outstanding) <= 0 ? 2 : row.due_on < detail.today ? 0 : 1;
   const sortedReceivables = [...detail.receivables].sort((a, b) => receivableRank(a) - receivableRank(b) || (receivableRank(a) >= 2 ? b.due_on.localeCompare(a.due_on) : a.due_on.localeCompare(b.due_on)));
-  // Acuerdos de pago (05/11/2026): las cuotas del acuerdo vigente se cubren en orden con los pagos registrados
-  // después de crearlo (la misma regla que la cartera del administrador).
-  // Los acuerdos cancelados no se muestran (05/11/2026); solo el vigente.
-  const agreements = detail.agreements.filter((agreement) => agreement.status === "active").map((agreement) => {
-    const paidSince = agreement.status === "active" ? detail.payments.filter((row) => row.status === "posted" && row.recorded_at && Date.parse(row.recorded_at) >= Date.parse(agreement.created_at)).reduce((sum, row) => sum + Number(row.amount), 0) : 0;
-    const installments = agreement.installments.reduce<{ rows: { amount: number; due_on: string; state: keyof typeof installmentLabels | null }[]; covered: number }>((acc, item) => {
-      const covered = acc.covered + Number(item.amount);
-      const state = agreement.status !== "active" ? null : covered <= paidSince ? "paid" : item.due_on < detail.today ? "late" : "pending";
-      return { rows: [...acc.rows, { amount: Number(item.amount), due_on: item.due_on, state }], covered };
-    }, { rows: [], covered: 0 }).rows;
-    return { ...agreement, installments, paid: installments.length > 0 && installments.every((row) => row.state === "paid") };
+  // Acuerdos de pago (05/11/2026): el vigente o el ya pagado (los cancelados no se muestran). El calendario es el
+  // mismo cálculo de la base de datos que ven el admin y el residente: lo que falta es lo que falta de sus deudas.
+  const agreements = detail.agreements.filter((agreement) => agreement.status !== "cancelled").map((agreement) => {
+    const schedule = parseSchedule(agreement.schedule);
+    const installments = schedule ? schedule.installments.map((item) => ({ amount: item.amount, due: item.due_amount, due_on: item.due_on, state: item.state as InstallmentState | null }))
+      : agreement.installments.map((item) => ({ amount: Number(item.amount), due: Number(item.amount), due_on: item.due_on, state: null as InstallmentState | null }));
+    return { ...agreement, installments, remaining: schedule?.remaining ?? null, paid: agreement.status === "completed" || (schedule ? schedule.remaining <= 0 : false) };
   });
 
   // Historial de pagos (05/11/2026): se ven los 4 más recientes; el resto en «Ver más».
@@ -155,12 +151,12 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
       {/* Acuerdos de pago debajo de los cobros, en su propia sección dentro del cuadro (05/11/2026). */}
       <section aria-label="Acuerdos de pago" className="mt-6"><h3 className="text-sm font-semibold">Acuerdos de pago</h3>
         {agreements.length ? <div className="mt-2 grid gap-3">{agreements.map((agreement, index) => <div key={index} className="overflow-hidden rounded-xl border">
-          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.status !== "active" ? "Cancelado" : agreement.paid ? "Pagado" : "Vigente"}</span><span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
+          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.paid ? "Pagado" : "Vigente"}</span>{agreement.remaining !== null && !agreement.paid && <span className="text-xs font-medium">Falta {formatCop(agreement.remaining)}</span>}<span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
             {agreement.notes && <span className="basis-full text-xs text-muted-foreground">{agreement.notes}</span>}</div>
           {agreement.installments.length > 0 && <div className="overflow-x-auto"><table className={tableClass}>{columns}<thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Cuota</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Estado</th></tr></thead>
             <tbody>{agreement.installments.map((installment, number) => <tr key={number} className="border-b last:border-0">
-              <td className="px-3 py-2">Cuota {number + 1}</td><td className={`px-3 py-2 ${installment.state === "late" ? "text-red-700" : ""}`}>{formatDay(installment.due_on)}</td><td className="px-3 py-2 text-right">{formatCop(installment.amount)}</td>
-              <td className="px-3 py-2 text-right">{installment.state && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${installment.state === "paid" ? "bg-primary/12 text-primary" : installment.state === "late" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{installmentLabels[installment.state]}</span>}</td>
+              <td className="px-3 py-2">Cuota {number + 1}</td><td className={`px-3 py-2 ${installment.state === "late" ? "text-red-700" : ""}`}>{formatDay(installment.due_on)}</td><td className="px-3 py-2 text-right">{installment.state && installment.state !== "paid" && installment.due !== installment.amount ? <>{formatCop(installment.due)} <span className="block text-xs text-muted-foreground line-through">{formatCop(installment.amount)}</span></> : formatCop(installment.amount)}</td>
+              <td className="px-3 py-2 text-right">{installment.state && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${installment.state === "paid" || installment.state === "settled" ? "bg-primary/12 text-primary" : installment.state === "late" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{installmentStateLabels[installment.state]}</span>}</td>
             </tr>)}</tbody></table></div>}
         </div>)}</div> : <p className="mt-1 text-sm text-muted-foreground">Sin acuerdos de pago.</p>}
       </section>
