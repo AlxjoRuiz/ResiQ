@@ -66,7 +66,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
       const state = agreement.status !== "active" ? null : covered <= paidSince ? "paid" : item.due_on < detail.today ? "late" : "pending";
       return { rows: [...acc.rows, { amount: Number(item.amount), due_on: item.due_on, state }], covered };
     }, { rows: [], covered: 0 }).rows;
-    return { ...agreement, installments };
+    return { ...agreement, installments, paid: installments.length > 0 && installments.every((row) => row.state === "paid") };
   });
 
   return <PlatformPage eyebrow={detail.property} title={`${detail.unit.building} · ${detail.unit.code}`} description="Cartera en solo lectura. Los cambios los hace la administración del conjunto."
@@ -112,10 +112,19 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
 
     {tab === "cartera" && <>
     <Card><CardContent><h2 className="text-lg font-semibold">Cobros</h2>
-      {/* Acuerdos de pago arriba, en su propia sección dentro del cuadro (05/11/2026). */}
-      <section aria-label="Acuerdos de pago" className="mt-4"><h3 className="text-sm font-semibold">Acuerdos de pago</h3>
+      <section aria-label="Cuotas y cobros" className="mt-4"><h3 className="text-sm font-semibold">Cuotas y cobros</h3>
+      {detail.receivables.length ? <div className="mt-2 overflow-hidden rounded-xl border"><div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Concepto</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Pendiente</th></tr></thead>
+        <tbody>{sortedReceivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
+          <td className="px-3 py-2"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span>{row.status === "void" && <span className="text-xs text-muted-foreground"> · anulado</span>}</td>
+          <td className={`px-3 py-2 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
+          <td className="px-3 py-2 text-right">{formatCop(row.amount)}</td><td className="px-3 py-2 text-right font-medium">{row.status === "void" ? "—" : Number(row.outstanding) <= 0 ? <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Pagada</span> : formatCop(row.outstanding)}</td>
+        </tr>)}</tbody></table></div></div> : <p className="mt-1 text-sm text-muted-foreground">Sin cobros registrados.</p>}
+      </section>
+
+      {/* Acuerdos de pago debajo de los cobros, en su propia sección dentro del cuadro (05/11/2026). */}
+      <section aria-label="Acuerdos de pago" className="mt-6"><h3 className="text-sm font-semibold">Acuerdos de pago</h3>
         {agreements.length ? <div className="mt-2 grid gap-3">{agreements.map((agreement, index) => <div key={index} className="overflow-hidden rounded-xl border">
-          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.status === "active" ? "Vigente" : "Cancelado"}</span><span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
+          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.status !== "active" ? "Cancelado" : agreement.paid ? "Pagado" : "Vigente"}</span><span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
             {agreement.notes && <span className="basis-full text-xs text-muted-foreground">{agreement.notes}</span>}</div>
           {agreement.installments.length > 0 && <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-sm"><thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Cuota</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Estado</th></tr></thead>
             <tbody>{agreement.installments.map((installment, number) => <tr key={number} className="border-b last:border-0">
@@ -123,15 +132,6 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
               <td className="px-3 py-2 text-right">{installment.state && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${installment.state === "paid" ? "bg-primary/12 text-primary" : installment.state === "late" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{installmentLabels[installment.state]}</span>}</td>
             </tr>)}</tbody></table></div>}
         </div>)}</div> : <p className="mt-1 text-sm text-muted-foreground">Sin acuerdos de pago.</p>}
-      </section>
-
-      <section aria-label="Cuotas y cobros" className="mt-6"><h3 className="text-sm font-semibold">Cuotas y cobros</h3>
-      {detail.receivables.length ? <div className="mt-2 overflow-hidden rounded-xl border"><div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Concepto</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Pendiente</th></tr></thead>
-        <tbody>{sortedReceivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
-          <td className="px-3 py-2"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span>{row.status === "void" && <span className="text-xs text-muted-foreground"> · anulado</span>}</td>
-          <td className={`px-3 py-2 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
-          <td className="px-3 py-2 text-right">{formatCop(row.amount)}</td><td className="px-3 py-2 text-right font-medium">{row.status === "void" ? "—" : Number(row.outstanding) <= 0 ? <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Pagada</span> : formatCop(row.outstanding)}</td>
-        </tr>)}</tbody></table></div></div> : <p className="mt-1 text-sm text-muted-foreground">Sin cobros registrados.</p>}
       </section>
     </CardContent></Card>
 
