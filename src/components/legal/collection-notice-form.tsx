@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { sendCollectionNotice, type CollectionNoticeState } from "@/app/juridica/actions";
 import { Button } from "@/components/ui/button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
+import { LegalFilesField, withFiles } from "@/components/legal/legal-files-field";
 import { formatCop } from "@/lib/finance/constants";
 
 type Debt = { id: string; concept: string; due_on: string; outstanding: number; overdue: boolean };
@@ -17,7 +18,13 @@ const formatDay = (value: string) => dayFormat.format(new Date(`${value}T12:00:0
 // marcar o desmarcar todas), el correo del apartamento y escribe el mensaje. El correo lleva el detalle de
 // las deudas elegidas y su firma; si el residente responde desde su correo, le llega a Respuestas.
 export function CollectionNoticeForm({ propertyId, unitId, unitLabel, propertyName, debts, recipients }: { propertyId: string; unitId: string; unitLabel: string; propertyName: string; debts: Debt[]; recipients: Recipient[] }) {
-  const [state, action, pending] = useFormActionState(sendCollectionNotice, undefined as CollectionNoticeState);
+  // Adjuntos (05/11/2026): van en el correo del requerimiento.
+  const [files, setFiles] = useState<File[]>([]);
+  const [state, action, pending] = useFormActionState(async (previous: CollectionNoticeState, data: FormData) => {
+    const result = await sendCollectionNotice(previous, withFiles(data, files));
+    if (!result?.error) setFiles([]);
+    return result;
+  }, undefined as CollectionNoticeState);
   // Empieza sin ninguna deuda marcada; la abogada elige una por una o todas con el botón.
   const [selected, setSelected] = useState(() => new Set<string>());
   const total = debts.filter((debt) => selected.has(debt.id)).reduce((sum, debt) => sum + debt.outstanding, 0);
@@ -49,6 +56,7 @@ export function CollectionNoticeForm({ propertyId, unitId, unitLabel, propertyNa
     <label className="text-sm font-medium">Enviar a<select name="recipient" required defaultValue={recipients[0].email} className={`${field} h-11`}>{recipients.map((recipient) => <option key={recipient.email} value={recipient.email}>{recipient.name ? `${recipient.name} · ` : ""}{recipient.email} ({recipient.kind})</option>)}</select></label>
     <label className="text-sm font-medium">Asunto<input name="subject" required minLength={3} maxLength={150} defaultValue={`Requerimiento de pago · ${unitLabel} · ${propertyName}`} className={`${field} h-11`} /></label>
     <label className="text-sm font-medium">Mensaje<textarea name="message" required minLength={10} maxLength={5000} rows={10} defaultValue={message} className={`${field} py-2 leading-relaxed`} /></label>
+    <LegalFilesField files={files} onChange={setFiles} disabled={pending} />
     <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900">ResiQ está en modo de prueba: el requerimiento queda registrado, pero el correo no sale hasta activar los envíos reales.</p>
     <div className="flex flex-wrap items-center gap-3"><Button disabled={pending || !selected.size}>{pending ? "Registrando…" : "Enviar requerimiento"}</Button>
       {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}</div>

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
+import { isValidDocument } from "@/lib/documents/validation";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -14,6 +16,35 @@ export async function markLegalPropertySeen(propertyId: string) {
 }
 
 export type CollectionNoticeState = { error?: string; success?: string } | undefined;
+
+// Adjuntos de la abogada (05/11/2026): hasta 5 archivos PDF, JPG o PNG y 4 MB en total (el límite del envío).
+// Se suben a la carpeta del conjunto antes de guardar el mensaje; si el mensaje no se guarda, se borran.
+const attachmentTypes: Record<string, string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png" };
+type UploadedAttachment = { path: string; name: string; type: string; size: number };
+async function uploadAttachments(propertyId: string, data: FormData): Promise<{ error?: string; files: UploadedAttachment[] }> {
+  const files = data.getAll("files").filter((item): item is File => item instanceof File && item.size > 0);
+  if (!files.length) return { files: [] };
+  if (files.length > 5) return { error: "Adjunta máximo 5 archivos.", files: [] };
+  if (files.reduce((sum, file) => sum + file.size, 0) > 4 * 1024 * 1024) return { error: "Los adjuntos pueden sumar máximo 4 MB.", files: [] };
+  const admin = createAdminClient();
+  const uploaded: UploadedAttachment[] = [];
+  for (const file of files) {
+    const extension = attachmentTypes[file.type];
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!extension || !file.name.trim() || file.name.length > 180 || !isValidDocument(bytes, file.type, file.size)) {
+      await removeAttachments(uploaded);
+      return { error: "Adjunta solo archivos PDF, JPG o PNG válidos.", files: [] };
+    }
+    const path = `${propertyId}/legal/${crypto.randomUUID()}.${extension}`;
+    const { error } = await admin.storage.from("private-documents").upload(path, bytes, { contentType: file.type, upsert: false });
+    if (error) { await removeAttachments(uploaded); return { error: "No pudimos subir los adjuntos. Intenta de nuevo.", files: [] }; }
+    uploaded.push({ path, name: file.name.trim(), type: file.type, size: file.size });
+  }
+  return { files: uploaded };
+}
+async function removeAttachments(files: UploadedAttachment[]) {
+  if (files.length) await createAdminClient().storage.from("private-documents").remove(files.map((file) => file.path));
+}
 const noticeErrors: Record<string, string> = {
   recipient_not_allowed: "Elige un correo del apartamento.",
   no_debts_selected: "Elige al menos una deuda.",
@@ -33,21 +64,25 @@ export async function sendCollectionNotice(_: CollectionNoticeState, data: FormD
   if (!recipient) return { error: noticeErrors.recipient_not_allowed };
   if (subject.length < 3 || subject.length > 150 || message.length < 10 || message.length > 5000) return { error: noticeErrors.invalid_message };
   const { supabase } = await requireLegalStaff();
+  const attachments = await uploadAttachments(propertyId, data);
+  if (attachments.error) return { error: attachments.error };
   const { error } = await supabase.rpc("legal_send_collection_notice", { target_property_id: propertyId, target_unit_id: unitId, target_receivable_ids: debts,
-    target_recipient_email: recipient, target_subject: subject, target_message: message });
-  if (error) return { error: Object.entries(noticeErrors).find(([code]) => error.message.includes(code))?.[1] ?? "No pudimos registrar el requerimiento." };
+    target_recipient_email: recipient, target_subject: subject, target_message: message, target_attachments: attachments.files });
+  if (error) { await removeAttachments(attachments.files); return { error: Object.entries(noticeErrors).find(([code]) => error.message.includes(code))?.[1] ?? "No pudimos registrar el requerimiento." }; }
   revalidatePath(`/juridica/${propertyId}/${unitId}`);
   return { success: `Requerimiento registrado para ${recipient}.` };
 }
 
 // La abogada contesta en la conversación del requerimiento: queda guardado y le llega al residente por correo.
 export async function postLegalMessage(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
-  const noticeId = String(data.get("noticeId") ?? ""), message = String(data.get("message") ?? "").trim();
-  if (!uuidPattern.test(noticeId)) return { error: "Conversación inválida." };
+  const noticeId = String(data.get("noticeId") ?? ""), propertyId = String(data.get("propertyId") ?? ""), message = String(data.get("message") ?? "").trim();
+  if (!uuidPattern.test(noticeId) || !uuidPattern.test(propertyId)) return { error: "Conversación inválida." };
   if (message.length < 2 || message.length > 5000) return { error: "Escribe un mensaje de 2 a 5000 caracteres." };
   const { supabase } = await requireLegalStaff();
-  const { error } = await supabase.rpc("legal_post_message", { target_notice_id: noticeId, message_body: message });
-  if (error) return { error: "No pudimos enviar el mensaje." };
+  const attachments = await uploadAttachments(propertyId, data);
+  if (attachments.error) return { error: attachments.error };
+  const { error } = await supabase.rpc("legal_post_message", { target_notice_id: noticeId, message_body: message, target_attachments: attachments.files });
+  if (error) { await removeAttachments(attachments.files); return { error: "No pudimos enviar el mensaje." }; }
   revalidatePath(`/juridica/respuestas/${noticeId}`);
   revalidatePath("/juridica", "layout");
   return { success: "Mensaje enviado." };

@@ -6,6 +6,13 @@ type LegalNoticeItem = { concept: string; due_on: string; outstanding: number };
 const jsonHeaders = { "content-type": "application/json" };
 type InvitationDetails = { token: string; property_name: string; building_name: string; unit_code: string; relationship: string; expires_at: string };
 
+// Archivo a Base64 por partes (los archivos grandes no caben en un solo String.fromCharCode).
+function toBase64(bytes: Uint8Array) {
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += 0x8000) binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  return btoa(binary);
+}
+
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
 
 export function invitationContent(invitation: InvitationDetails, link: string) {
@@ -170,7 +177,18 @@ export default {
         content = job.legal_notice_id ? legalNoticeContent(job) : emailContent(job, appUrl);
         logged = { subject: content.subject, text: content.text };
       }
-      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text, ...(job.legal_notice_id && job.template_data.reply_token && legalReplyDomain ? { reply_to: `respuesta+${job.template_data.reply_token}@${legalReplyDomain}` } : {}) }) });
+      // Adjuntos de la abogada (05/11/2026): se leen del almacenamiento y viajan en el correo.
+      const attachments: { filename: string; content: string }[] = [];
+      if (job.legal_notice_id) {
+        const listed = await supabase.rpc("legal_job_attachments", { target_job_id: job.id });
+        if (listed.error) throw new Error("attachments_unavailable");
+        for (const item of (listed.data ?? []) as { object_path: string; original_name: string }[]) {
+          const file = await supabase.storage.from("private-documents").download(item.object_path);
+          if (file.error || !file.data) throw new Error("attachment_download_failed");
+          attachments.push({ filename: item.original_name, content: toBase64(new Uint8Array(await file.data.arrayBuffer())) });
+        }
+      }
+      const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${resendKey}`, "content-type": "application/json", "idempotency-key": idempotencyKey }, body: JSON.stringify({ from, to: [job.recipient_email], subject: content.subject, html: content.html, text: content.text, ...(attachments.length ? { attachments } : {}), ...(job.legal_notice_id && job.template_data.reply_token && legalReplyDomain ? { reply_to: `respuesta+${job.template_data.reply_token}@${legalReplyDomain}` } : {}) }) });
       const responseBody = await response.json() as { id?: string; message?: string; name?: string };
       if (!response.ok || !responseBody.id) throw new Error(responseBody.message ?? responseBody.name ?? `http_${response.status}`);
       await supabase.rpc("complete_email_job", { target_job_id: job.id, provider_id: responseBody.id, target_subject: logged.subject, target_body: logged.text });
