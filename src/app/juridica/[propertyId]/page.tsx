@@ -36,7 +36,7 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   const arrears = accounts.filter((row) => row.in_arrears), current = accounts.filter((row) => !row.in_arrears);
   // Conversaciones de este conjunto; si la consulta falla, la pestaña sale vacía.
   const threads = ((threadData ?? []) as Thread[]).filter((row) => row.property_id === propertyId);
-  const counts: Record<Tab, number> = { mora: arrears.length, aldia: current.length, novedades: news.filter((row) => row.is_new).length, respuestas: threads.reduce((sum, row) => sum + row.unread, 0) };
+  const counts: Record<Tab, number> = { mora: arrears.length, aldia: current.length, novedades: news.filter((row) => row.is_new).length, respuestas: threads.filter((row) => row.last_author === "resident").length };
   // En mora de menos a más días (01/11/2026).
   const rows = tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays).sort((a, b) => a.days_overdue - b.days_overdue || Number(a.overdue) - Number(b.overdue)) : current;
 
@@ -46,11 +46,11 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
       className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
 
     {tab === "respuestas" ? <section aria-label="Respuestas" className="rounded-2xl border bg-white p-5">
-      {threads.length ? <ul className="grid gap-3">{threads.map((thread) => <li key={thread.notice_id}><Link href={`/juridica/respuestas/${thread.notice_id}`} className={`block rounded-xl border p-4 transition-colors hover:bg-secondary ${thread.unread ? "border-primary/40 bg-primary/5" : ""}`}>
-        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="flex flex-wrap items-center gap-2 font-semibold">{thread.unread > 0 && <span aria-hidden="true" className="size-2.5 rounded-full bg-red-500" />}{thread.unit_label}</p><p className="break-all text-sm text-muted-foreground">{thread.recipient_name ? `${thread.recipient_name} · ` : ""}{thread.recipient_email}</p></div>
+      {threads.length ? <ul className="grid gap-3">{threads.map((thread) => <li key={thread.notice_id}><Link href={`/juridica/respuestas/${thread.notice_id}`} className={`block rounded-xl border p-4 transition-colors hover:bg-secondary ${thread.last_author === "resident" ? "border-primary/40 bg-primary/5" : ""}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="flex flex-wrap items-center gap-2 font-semibold">{thread.last_author === "resident" && <span aria-hidden="true" className="size-2.5 rounded-full bg-red-500" />}{thread.unit_label}</p><p className="break-all text-sm text-muted-foreground">{thread.recipient_name ? `${thread.recipient_name} · ` : ""}{thread.recipient_email}</p></div>
           <span className="shrink-0 text-xs text-muted-foreground">{formatMoment.format(new Date(thread.last_at))}</span></div>
         <p className="mt-2 line-clamp-2 text-sm"><span className="text-muted-foreground">{thread.last_author === "lawyer" ? "Tú: " : ""}</span>{thread.last_message}</p>
-        {thread.unread > 0 && <p className="mt-1 text-xs font-medium text-primary">{thread.unread} {thread.unread === 1 ? "respuesta sin leer" : "respuestas sin leer"}</p>}
+        {thread.last_author === "resident" && <p className="mt-1 text-xs font-medium text-red-700">Por responder</p>}
       </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">Todavía no hay respuestas de este conjunto. Cuando un residente responda un requerimiento desde su correo, aparece aquí.</p>}
     </section> : tab === "novedades" ? <section aria-label="Novedades" className="rounded-2xl border bg-white p-5">
       <MarkPropertySeen propertyId={propertyId} />

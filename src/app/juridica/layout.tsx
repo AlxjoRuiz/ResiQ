@@ -10,6 +10,7 @@ export default async function LegalLayout({ children }: { children: ReactNode })
   const { supabase } = await requireLegalStaff();
   // Respuestas por conjunto (05/11/2026), para «Respuestas» en la barra cuando se está dentro de un conjunto.
   const { data } = await supabase.rpc("legal_list_threads");
-  const threads = ((data ?? []) as { notice_id: string; property_id: string; unread: number }[]).map((row) => ({ noticeId: row.notice_id, propertyId: row.property_id, unread: row.unread }));
+  // Pendiente = el último mensaje es del residente (la abogada aún no le contesta).
+  const threads = ((data ?? []) as { notice_id: string; property_id: string; last_author: string }[]).map((row) => ({ noticeId: row.notice_id, propertyId: row.property_id, pending: row.last_author === "resident" }));
   return <div className={styles.panelSurface}><SeasonalDecor /><LegalShell threads={threads}>{children}</LegalShell></div>;
 }

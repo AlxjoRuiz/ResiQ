@@ -12,9 +12,9 @@ import type { LegalProperty } from "./legal-data";
 export default async function LegalHomePage() {
   const { supabase } = await requireLegalStaff();
   const [{ data, error }, { data: threadData }] = await Promise.all([supabase.rpc("legal_list_properties"), supabase.rpc("legal_list_threads")]);
-  // Respuestas sin leer por conjunto (05/11/2026), en su tarjeta.
+  // Respuestas por contestar por conjunto (05/11/2026), en su tarjeta: el último mensaje es del residente.
   const unread = new Map<string, number>();
-  for (const row of (threadData ?? []) as { property_id: string; unread: number }[]) unread.set(row.property_id, (unread.get(row.property_id) ?? 0) + row.unread);
+  for (const row of (threadData ?? []) as { property_id: string; last_author: string }[]) if (row.last_author === "resident") unread.set(row.property_id, (unread.get(row.property_id) ?? 0) + 1);
   if (error) throw new Error("No se pudieron cargar tus conjuntos.");
   const properties = (data ?? []) as LegalProperty[];
   return <PlatformPage eyebrow="Cobro jurídico" title="Tus conjuntos" description="Cartera en vivo, en solo lectura, de los conjuntos que ResiQ te asignó.">
@@ -22,7 +22,7 @@ export default async function LegalHomePage() {
       <div className={`${styles.glassCard} flex h-full flex-col rounded-[22px] p-4`}>
         <div className="flex items-start justify-between gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/70 text-[#2f4f8a] shadow-sm"><Building2 size={18} aria-hidden="true" /></span>
-          {property.news_count > 0 || unread.get(property.property_id) ? <span className="flex flex-wrap justify-end gap-1">{property.news_count > 0 && <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-primary shadow-sm">{property.news_count} {property.news_count === 1 ? "novedad" : "novedades"}</span>}{(unread.get(property.property_id) ?? 0) > 0 && <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm">{unread.get(property.property_id)} {unread.get(property.property_id) === 1 ? "respuesta" : "respuestas"}</span>}</span> : <ArrowRight size={18} aria-hidden="true" className="mt-1 text-[#2f4f8a]/60" />}
+          {property.news_count > 0 || unread.get(property.property_id) ? <span className="flex flex-wrap justify-end gap-1">{property.news_count > 0 && <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-primary shadow-sm">{property.news_count} {property.news_count === 1 ? "novedad" : "novedades"}</span>}{(unread.get(property.property_id) ?? 0) > 0 && <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-[11px] font-medium text-white shadow-sm">{unread.get(property.property_id)} por responder</span>}</span> : <ArrowRight size={18} aria-hidden="true" className="mt-1 text-[#2f4f8a]/60" />}
         </div>
         <h2 className="mt-3 font-semibold tracking-tight">{property.property_name}</h2>
         <p className="text-xs text-[#3d5a8a]">{property.city ?? "Sin ciudad"}</p>
