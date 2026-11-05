@@ -10,11 +10,11 @@ import { deliveryLabels, formatDay, formatMoment, uuidPattern } from "../../lega
 type Detail = {
   unit: { building: string; code: string; floor: string | null }; property: string; overdue_days: number; today: string; signer: string | null;
   contacts: { name: string | null; type: string | null; email: string | null; phone: string | null; primary: boolean }[];
-  receivables: { id: string; concept: string; amount: number; outstanding: number; issued_on: string; due_on: string; status: string; source: string }[];
+  receivables: { id: string; concept: string; amount: number; outstanding: number; issued_on: string; due_on: string; status: string; source: string; void_reason?: string | null; voided_at?: string | null; voided_by_name?: string | null }[];
   // Historial de pagos (04/11/2026): lo pagado, el comprobante, la anulación y si fue corregido.
   // Quién pagó y quién anuló (05/11/2026).
   payments: { id?: string; amount: number; paid_on: string; reference: string | null; status: string; recorded_at?: string; voided_at?: string | null; void_reason?: string | null; concepts?: string | null; evidence_id?: string | null; evidence_name?: string | null; payer_name?: string | null; recorded_by_name?: string | null; voided_by_name?: string | null; corrected_on?: string | null; corrects?: boolean }[];
-  agreements: { total: number; status: string; notes: string | null; created_at: string; installments: { amount: number; due_on: string }[] }[];
+  agreements: { total: number; status: string; notes: string | null; created_at: string; cancel_reason?: string | null; cancelled_at?: string | null; cancelled_by_name?: string | null; installments: { amount: number; due_on: string }[] }[];
 };
 // Encabezado de tabla con el azul de ResiQ y bordes redondeados (05/11/2026).
 const tableHead = "bg-primary text-left text-primary-foreground";
@@ -72,6 +72,33 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     }, { rows: [], covered: 0 }).rows;
     return { ...agreement, installments, paid: installments.length > 0 && installments.every((row) => row.state === "paid") };
   });
+
+  // Historial de pagos (05/11/2026): se ven los 4 más recientes; el resto en «Ver más».
+  const postedPayments = detail.payments.filter((row) => row.status !== "void");
+  const paymentItem = (row: Detail["payments"][number], index: number) => { const voided = row.status === "void"; const byResident = Boolean(row.evidence_id && row.payer_name); return <li key={row.id ?? index} className={`grid gap-1.5 rounded-xl border p-3 text-sm ${voided ? "border-red-300 bg-red-50" : "border-primary/40 bg-primary/5"}`}>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <p className={`font-medium ${voided ? "text-red-800" : ""}`}>Pagado el {formatDay(row.paid_on)}{voided && " · anulado"}</p>
+          <span className={`font-semibold ${voided ? "text-red-700 line-through" : ""}`}>{formatCop(row.amount)}</span>
+        </div>
+        {/* Quién pagó (05/11/2026): el residente que envió el comprobante o la administración que lo registró. */}
+        <p className="text-xs"><span className={`rounded-full px-2 py-0.5 font-medium ${byResident ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{byResident ? `Pagado por el residente · ${row.payer_name}` : `Registrado por la administración${row.recorded_by_name ? ` · ${row.recorded_by_name}` : ""}`}</span></p>
+        <p className="text-muted-foreground">{row.concepts ?? (row.reference && !row.reference.startsWith("Comprobante:") ? row.reference : "Sin aplicar a una deuda")}</p>
+        <p className="flex flex-wrap items-center gap-2 text-xs">{row.evidence_id ? <a href={`/api/legal/evidence/${row.evidence_id}`} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Ver comprobante{row.evidence_name ? ` · ${row.evidence_name}` : ""}</a> : <span className="text-muted-foreground">Sin comprobante</span>}
+          {row.corrects && <span className="rounded-full bg-primary/12 px-2 py-0.5 font-medium text-primary">Corrige un pago anulado</span>}</p>
+        {/* Anulación más visible: quién la hizo (la administración), cuándo y el motivo destacado. */}
+        {voided && <div className="rounded-lg border border-red-300 bg-white p-3">
+          <p className="text-xs font-semibold text-red-800">Anulado por la administración{row.voided_by_name ? ` · ${row.voided_by_name}` : ""}{row.voided_at ? ` · ${formatMoment.format(new Date(row.voided_at))}` : ""}</p>
+          {row.void_reason && <p className="mt-1 text-sm text-red-900"><span className="font-semibold">Motivo:</span> {row.void_reason}</p>}
+        </div>}
+        {voided && row.corrected_on && <p><span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Corregido · pagado de nuevo el {formatDay(row.corrected_on)}</span></p>}
+      </li>; };
+  // Anulaciones y cancelaciones (05/11/2026): obligaciones anuladas (administración, multas, otras deudas), acuerdos
+  // cancelados y pagos anulados, con el motivo, la fecha y quién lo hizo. De la más reciente a la más antigua.
+  const voids = [
+    ...detail.receivables.filter((row) => row.status === "void").map((row) => ({ key: `r-${row.id}`, title: "Obligación anulada", detail: row.concept, amount: Number(row.amount), at: row.voided_at ?? null, by: row.voided_by_name ?? null, reason: row.void_reason ?? null, verb: "Anulada", note: null as string | null })),
+    ...detail.payments.filter((row) => row.status === "void").map((row, index) => ({ key: `p-${row.id ?? index}`, title: "Pago anulado", detail: `Pagado el ${formatDay(row.paid_on)}${row.concepts ? ` · ${row.concepts}` : ""}`, amount: Number(row.amount), at: row.voided_at ?? null, by: row.voided_by_name ?? null, reason: row.void_reason ?? null, verb: "Anulado", note: row.corrected_on ? `Corregido · pagado de nuevo el ${formatDay(row.corrected_on)}` : null })),
+    ...detail.agreements.filter((row) => row.status === "cancelled").map((row, index) => ({ key: `a-${index}`, title: "Acuerdo de pago cancelado", detail: `${row.installments.length} ${row.installments.length === 1 ? "cuota" : "cuotas"} · creado el ${formatMoment.format(new Date(row.created_at))}`, amount: Number(row.total), at: row.cancelled_at ?? null, by: row.cancelled_by_name ?? null, reason: row.cancel_reason ?? null, verb: "Cancelado", note: null as string | null })),
+  ].sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""));
 
   return <PlatformPage eyebrow={detail.property} title={`${detail.unit.building} · ${detail.unit.code}`} description="Cartera en solo lectura. Los cambios los hace la administración del conjunto."
     back={<Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>}
@@ -140,23 +167,23 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     </CardContent></Card>
 
     <Card><CardContent><h2 className="text-lg font-semibold">Historial de pagos</h2>
-      {detail.payments.length ? <ul className="mt-3 grid gap-2">{detail.payments.map((row, index) => { const voided = row.status === "void"; const byResident = Boolean(row.evidence_id && row.payer_name); return <li key={row.id ?? index} className={`grid gap-1.5 rounded-xl border p-3 text-sm ${voided ? "border-red-300 bg-red-50" : "border-primary/40 bg-primary/5"}`}>
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <p className={`font-medium ${voided ? "text-red-800" : ""}`}>Pagado el {formatDay(row.paid_on)}{voided && " · anulado"}</p>
-          <span className={`font-semibold ${voided ? "text-red-700 line-through" : ""}`}>{formatCop(row.amount)}</span>
+      {postedPayments.length ? <>
+        <ul className="mt-3 grid gap-2">{postedPayments.slice(0, 4).map(paymentItem)}</ul>
+        {postedPayments.length > 4 && <details className="group mt-2"><summary className="cursor-pointer list-none rounded-lg px-2 py-1.5 text-sm font-medium text-primary marker:hidden hover:bg-secondary"><span className="group-open:hidden">Ver {postedPayments.length - 4} {postedPayments.length - 4 === 1 ? "pago más" : "pagos más"}</span><span className="hidden group-open:inline">Ver menos</span></summary>
+          <ul className="mt-2 grid gap-2">{postedPayments.slice(4).map((row, index) => paymentItem(row, index + 4))}</ul></details>}
+      </> : <p className="mt-2 text-sm text-muted-foreground">Sin pagos registrados.</p>}
+    </CardContent></Card>
+
+    <Card><CardContent><h2 className="text-lg font-semibold">Anulaciones y cancelaciones</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Obligaciones anuladas (administración, multas u otras deudas), acuerdos de pago cancelados y pagos anulados por la administración.</p>
+      {voids.length ? <ul className="mt-3 grid gap-2">{voids.map((item) => <li key={item.key} className="grid gap-1.5 rounded-xl border border-red-300 bg-red-50 p-3 text-sm">
+        <div className="flex flex-wrap items-start justify-between gap-2"><p className="min-w-0 font-medium text-red-800">{item.title} · <span className="font-normal text-foreground">{item.detail}</span></p><span className="font-semibold text-red-700 line-through">{formatCop(item.amount)}</span></div>
+        <div className="rounded-lg border border-red-300 bg-white p-3">
+          <p className="text-xs font-semibold text-red-800">{item.verb} por la administración{item.by ? ` · ${item.by}` : ""}{item.at ? ` · ${formatMoment.format(new Date(item.at))}` : ""}</p>
+          {item.reason && <p className="mt-1 text-sm text-red-900"><span className="font-semibold">Motivo:</span> {item.reason}</p>}
         </div>
-        {/* Quién pagó (05/11/2026): el residente que envió el comprobante o la administración que lo registró. */}
-        <p className="text-xs"><span className={`rounded-full px-2 py-0.5 font-medium ${byResident ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{byResident ? `Pagado por el residente · ${row.payer_name}` : `Registrado por la administración${row.recorded_by_name ? ` · ${row.recorded_by_name}` : ""}`}</span></p>
-        <p className="text-muted-foreground">{row.concepts ?? (row.reference && !row.reference.startsWith("Comprobante:") ? row.reference : "Sin aplicar a una deuda")}</p>
-        <p className="flex flex-wrap items-center gap-2 text-xs">{row.evidence_id ? <a href={`/api/legal/evidence/${row.evidence_id}`} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Ver comprobante{row.evidence_name ? ` · ${row.evidence_name}` : ""}</a> : <span className="text-muted-foreground">Sin comprobante</span>}
-          {row.corrects && <span className="rounded-full bg-primary/12 px-2 py-0.5 font-medium text-primary">Corrige un pago anulado</span>}</p>
-        {/* Anulación más visible: quién la hizo (la administración), cuándo y el motivo destacado. */}
-        {voided && <div className="rounded-lg border border-red-300 bg-white p-3">
-          <p className="text-xs font-semibold text-red-800">Anulado por la administración{row.voided_by_name ? ` · ${row.voided_by_name}` : ""}{row.voided_at ? ` · ${formatMoment.format(new Date(row.voided_at))}` : ""}</p>
-          {row.void_reason && <p className="mt-1 text-sm text-red-900"><span className="font-semibold">Motivo:</span> {row.void_reason}</p>}
-        </div>}
-        {voided && row.corrected_on && <p><span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Corregido · pagado de nuevo el {formatDay(row.corrected_on)}</span></p>}
-      </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin pagos registrados.</p>}
+        {item.note && <p><span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">{item.note}</span></p>}
+      </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin anulaciones ni cancelaciones.</p>}
     </CardContent></Card>
     </>}
 
