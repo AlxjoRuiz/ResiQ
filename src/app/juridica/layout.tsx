@@ -8,7 +8,8 @@ import { LegalShell } from "./legal-shell";
 // Solo ve los conjuntos que el superadmin le asigna; la base de datos lo vuelve a validar en cada consulta.
 export default async function LegalLayout({ children }: { children: ReactNode }) {
   const { supabase } = await requireLegalStaff();
-  // Respuestas sin leer de los residentes (31/10/2026), para la barra; si falla, la barra sale sin el número.
-  const { data } = await supabase.rpc("legal_unread_replies");
-  return <div className={styles.panelSurface}><SeasonalDecor /><LegalShell unread={typeof data === "number" ? data : 0}>{children}</LegalShell></div>;
+  // Respuestas por conjunto (05/11/2026), para «Respuestas» en la barra cuando se está dentro de un conjunto.
+  const { data } = await supabase.rpc("legal_list_threads");
+  const threads = ((data ?? []) as { notice_id: string; property_id: string; unread: number }[]).map((row) => ({ noticeId: row.notice_id, propertyId: row.property_id, unread: row.unread }));
+  return <div className={styles.panelSurface}><SeasonalDecor /><LegalShell threads={threads}>{children}</LegalShell></div>;
 }

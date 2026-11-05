@@ -24,7 +24,7 @@ export default async function LegalThreadPage({ params }: { params: Promise<{ no
   const thread = data as Thread;
   const { notice } = thread;
   return <PlatformPage eyebrow={`${thread.unit_label} · ${thread.property}`} title={notice.subject} description={`Con ${notice.recipient_name ? `${notice.recipient_name} · ` : ""}${notice.recipient_email}`}
-    back={<Link href="/juridica/respuestas" className="text-sm text-muted-foreground hover:text-foreground">← Respuestas</Link>}
+    back={<Link href={`/juridica/${notice.property_id}?tab=respuestas`} className="text-sm text-muted-foreground hover:text-foreground">← Respuestas del conjunto</Link>}
     actions={<Link href={`/juridica/${notice.property_id}/${notice.unit_id}`} className="text-sm text-primary hover:underline">Ver la cartera del apartamento →</Link>}>
     <ol className="grid gap-3">
       <li className="rounded-2xl border bg-white p-5 text-sm"><p className="text-xs text-muted-foreground">Requerimiento enviado · {formatMoment.format(new Date(notice.created_at))}</p>

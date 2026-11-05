@@ -6,11 +6,13 @@ import { formatCop } from "@/lib/finance/constants";
 import { formatDay, formatMoment, newsLabels, uuidPattern, type LegalAccount, type LegalNews, type LegalProperty } from "../legal-data";
 import { MarkPropertySeen } from "../mark-seen";
 
-const tabs = [{ id: "mora", label: "En mora" }, { id: "aldia", label: "Al día" }, { id: "novedades", label: "Novedades" }] as const;
+const tabs = [{ id: "mora", label: "En mora" }, { id: "aldia", label: "Al día" }, { id: "novedades", label: "Novedades" }, { id: "respuestas", label: "Respuestas" }] as const;
+type Thread = { notice_id: string; property_id: string; unit_label: string; recipient_email: string; recipient_name: string | null; last_message: string; last_author: string; last_at: string; unread: number };
 type Tab = (typeof tabs)[number]["id"];
 
 // Cartera de un conjunto para la abogada (31/10/2026): En mora (desde el primer día de vencida cualquier deuda,
-// con filtro escrito de días y de menos a más días), Al día (sin nada vencido) y Novedades (lo que el administrador cargó, registró o anuló en los últimos 60 días). Solo lectura.
+// con filtro escrito de días y de menos a más días), Al día (sin nada vencido), Novedades (lo que el administrador cargó, registró o anuló en los últimos 60 días)
+// y, desde el 05/11/2026, Respuestas (se abre desde la barra izquierda): lo que contestaron los residentes de este conjunto. Solo lectura.
 export default async function LegalPropertyPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ tab?: string; dias?: string }> }) {
   const [{ propertyId }, { tab: rawTab, dias: rawDays }] = await Promise.all([params, searchParams]);
   // Filtro de En mora: desde cuántos días de vencida la deuda más antigua sin pagar (la abogada lo escribe).
@@ -19,10 +21,11 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   if (!uuidPattern.test(propertyId)) notFound();
   const tab: Tab = tabs.find((item) => item.id === rawTab)?.id ?? "mora";
   const { supabase } = await requireLegalStaff();
-  const [{ data: propertyData, error: propertyError }, { data: accountData, error: accountError }, { data: newsData, error: newsError }] = await Promise.all([
+  const [{ data: propertyData, error: propertyError }, { data: accountData, error: accountError }, { data: newsData, error: newsError }, { data: threadData }] = await Promise.all([
     supabase.rpc("legal_list_properties"),
     supabase.rpc("legal_property_accounts", { target_property_id: propertyId }),
     supabase.rpc("legal_property_news", { target_property_id: propertyId }),
+    supabase.rpc("legal_list_threads"),
   ]);
   if (accountError?.message.includes("not_authorized") || newsError?.message.includes("not_authorized")) notFound();
   if (propertyError || accountError || newsError) throw new Error("No se pudo cargar la cartera del conjunto.");
@@ -31,16 +34,25 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   const accounts = (accountData ?? []) as LegalAccount[];
   const news = (newsData ?? []) as LegalNews[];
   const arrears = accounts.filter((row) => row.in_arrears), current = accounts.filter((row) => !row.in_arrears);
-  const counts: Record<Tab, number> = { mora: arrears.length, aldia: current.length, novedades: news.filter((row) => row.is_new).length };
+  // Conversaciones de este conjunto; si la consulta falla, la pestaña sale vacía.
+  const threads = ((threadData ?? []) as Thread[]).filter((row) => row.property_id === propertyId);
+  const counts: Record<Tab, number> = { mora: arrears.length, aldia: current.length, novedades: news.filter((row) => row.is_new).length, respuestas: threads.reduce((sum, row) => sum + row.unread, 0) };
   // En mora de menos a más días (01/11/2026).
   const rows = tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays).sort((a, b) => a.days_overdue - b.days_overdue || Number(a.overdue) - Number(b.overdue)) : current;
 
   return <PlatformPage eyebrow="Cobro jurídico" title={property.property_name} description={`${property.city ?? "Sin ciudad"} · en mora desde el primer día de vencida una deuda sin pagar`}
     back={<Link href="/juridica" className="text-sm text-muted-foreground hover:text-foreground">← Tus conjuntos</Link>}>
-    <nav aria-label="Secciones de la cartera" className="flex flex-wrap gap-2">{tabs.map((item) => <Link key={item.id} href={`/juridica/${propertyId}?tab=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
+    <nav aria-label="Secciones de la cartera" className="flex flex-wrap gap-2">{tabs.filter((item) => item.id !== "respuestas").map((item) => <Link key={item.id} href={`/juridica/${propertyId}?tab=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
       className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
 
-    {tab === "novedades" ? <section aria-label="Novedades" className="rounded-2xl border bg-white p-5">
+    {tab === "respuestas" ? <section aria-label="Respuestas" className="rounded-2xl border bg-white p-5">
+      {threads.length ? <ul className="grid gap-3">{threads.map((thread) => <li key={thread.notice_id}><Link href={`/juridica/respuestas/${thread.notice_id}`} className={`block rounded-xl border p-4 transition-colors hover:bg-secondary ${thread.unread ? "border-primary/40 bg-primary/5" : ""}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="flex flex-wrap items-center gap-2 font-semibold">{thread.unread > 0 && <span aria-hidden="true" className="size-2.5 rounded-full bg-red-500" />}{thread.unit_label}</p><p className="break-all text-sm text-muted-foreground">{thread.recipient_name ? `${thread.recipient_name} · ` : ""}{thread.recipient_email}</p></div>
+          <span className="shrink-0 text-xs text-muted-foreground">{formatMoment.format(new Date(thread.last_at))}</span></div>
+        <p className="mt-2 line-clamp-2 text-sm"><span className="text-muted-foreground">{thread.last_author === "lawyer" ? "Tú: " : ""}</span>{thread.last_message}</p>
+        {thread.unread > 0 && <p className="mt-1 text-xs font-medium text-primary">{thread.unread} {thread.unread === 1 ? "respuesta sin leer" : "respuestas sin leer"}</p>}
+      </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">Todavía no hay respuestas de este conjunto. Cuando un residente responda un requerimiento desde su correo, aparece aquí.</p>}
+    </section> : tab === "novedades" ? <section aria-label="Novedades" className="rounded-2xl border bg-white p-5">
       <MarkPropertySeen propertyId={propertyId} />
       <p className="text-sm text-muted-foreground">{property.seen_at ? `Lo resaltado es nuevo desde tu última visita (${formatMoment.format(new Date(property.seen_at))}).` : "Primera visita: todo lo de los últimos 60 días sale como nuevo."}</p>
       {news.length ? <ul className="mt-4 grid gap-2">{news.map((item, index) => { const voided = item.kind.endsWith("voided") || item.kind === "agreement_cancelled"; return <li key={`${item.occurred_at}-${index}`} className={`grid gap-1 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start ${voided ? "border-red-300 bg-red-50" : item.kind === "payment" || item.is_new ? "border-primary/40 bg-primary/5" : ""}`}>

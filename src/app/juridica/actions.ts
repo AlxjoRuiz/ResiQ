@@ -49,7 +49,7 @@ export async function postLegalMessage(_: CollectionNoticeState, data: FormData)
   const { error } = await supabase.rpc("legal_post_message", { target_notice_id: noticeId, message_body: message });
   if (error) return { error: "No pudimos enviar el mensaje." };
   revalidatePath(`/juridica/respuestas/${noticeId}`);
-  revalidatePath("/juridica/respuestas");
+  revalidatePath("/juridica", "layout");
   return { success: "Mensaje enviado." };
 }
 
