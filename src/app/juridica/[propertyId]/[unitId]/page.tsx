@@ -12,10 +12,13 @@ type Detail = {
   contacts: { name: string | null; type: string | null; email: string | null; phone: string | null; primary: boolean }[];
   receivables: { id: string; concept: string; amount: number; outstanding: number; issued_on: string; due_on: string; status: string; source: string }[];
   // Historial de pagos (04/11/2026): lo pagado, el comprobante, la anulación y si fue corregido.
-  payments: { id?: string; amount: number; paid_on: string; reference: string | null; status: string; voided_at?: string | null; void_reason?: string | null; concepts?: string | null; evidence_id?: string | null; evidence_name?: string | null; corrected_on?: string | null; corrects?: boolean }[];
+  // Quién pagó y quién anuló (05/11/2026).
+  payments: { id?: string; amount: number; paid_on: string; reference: string | null; status: string; recorded_at?: string; voided_at?: string | null; void_reason?: string | null; concepts?: string | null; evidence_id?: string | null; evidence_name?: string | null; payer_name?: string | null; recorded_by_name?: string | null; voided_by_name?: string | null; corrected_on?: string | null; corrects?: boolean }[];
   agreements: { total: number; status: string; notes: string | null; created_at: string; installments: { amount: number; due_on: string }[] }[];
 };
-const sourceLabels: Record<string, string> = { import: "Excel", manual: "Manual", opening_balance: "Saldo inicial" };
+// Encabezado de tabla con el azul de ResiQ y bordes redondeados (05/11/2026).
+const tableHead = "bg-primary text-left text-primary-foreground";
+const installmentLabels = { paid: "Pagada", late: "Vencida", pending: "Por vencer" } as const;
 type Notice = { notice_id: string; created_at: string; recipient_email: string; recipient_name: string | null; subject: string; total: number; debt_count: number; delivery_status: string; replies?: number };
 const tabs = [{ id: "requerimiento", label: "Requerimiento de pago" }, { id: "cartera", label: "Cartera" }] as const;
 type Tab = (typeof tabs)[number]["id"];
@@ -54,6 +57,17 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
   // Cobros en orden: vencidos, por vencer, pagados y anulados (04/11/2026).
   const receivableRank = (row: Detail["receivables"][number]) => row.status === "void" ? 3 : Number(row.outstanding) <= 0 ? 2 : row.due_on < detail.today ? 0 : 1;
   const sortedReceivables = [...detail.receivables].sort((a, b) => receivableRank(a) - receivableRank(b) || (receivableRank(a) >= 2 ? b.due_on.localeCompare(a.due_on) : a.due_on.localeCompare(b.due_on)));
+  // Acuerdos de pago (05/11/2026): las cuotas del acuerdo vigente se cubren en orden con los pagos registrados
+  // después de crearlo (la misma regla que la cartera del administrador).
+  const agreements = detail.agreements.map((agreement) => {
+    const paidSince = agreement.status === "active" ? detail.payments.filter((row) => row.status === "posted" && row.recorded_at && Date.parse(row.recorded_at) >= Date.parse(agreement.created_at)).reduce((sum, row) => sum + Number(row.amount), 0) : 0;
+    const installments = agreement.installments.reduce<{ rows: { amount: number; due_on: string; state: keyof typeof installmentLabels | null }[]; covered: number }>((acc, item) => {
+      const covered = acc.covered + Number(item.amount);
+      const state = agreement.status !== "active" ? null : covered <= paidSince ? "paid" : item.due_on < detail.today ? "late" : "pending";
+      return { rows: [...acc.rows, { amount: Number(item.amount), due_on: item.due_on, state }], covered };
+    }, { rows: [], covered: 0 }).rows;
+    return { ...agreement, installments };
+  });
 
   return <PlatformPage eyebrow={detail.property} title={`${detail.unit.building} · ${detail.unit.code}`} description="Cartera en solo lectura. Los cambios los hace la administración del conjunto."
     back={<Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>}
@@ -98,34 +112,47 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
 
     {tab === "cartera" && <>
     <Card><CardContent><h2 className="text-lg font-semibold">Cobros</h2>
-      {detail.receivables.length ? <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className="border-b text-left text-muted-foreground"><th className="py-2 pr-3 font-medium">Concepto</th><th className="py-2 pr-3 font-medium">Vence</th><th className="py-2 pr-3 text-right font-medium">Valor</th><th className="py-2 text-right font-medium">Pendiente</th></tr></thead>
+      {/* Acuerdos de pago arriba, en su propia sección dentro del cuadro (05/11/2026). */}
+      <section aria-label="Acuerdos de pago" className="mt-4"><h3 className="text-sm font-semibold">Acuerdos de pago</h3>
+        {agreements.length ? <div className="mt-2 grid gap-3">{agreements.map((agreement, index) => <div key={index} className="overflow-hidden rounded-xl border">
+          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.status === "active" ? "Vigente" : "Cancelado"}</span><span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
+            {agreement.notes && <span className="basis-full text-xs text-muted-foreground">{agreement.notes}</span>}</div>
+          {agreement.installments.length > 0 && <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-sm"><thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Cuota</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Estado</th></tr></thead>
+            <tbody>{agreement.installments.map((installment, number) => <tr key={number} className="border-b last:border-0">
+              <td className="px-3 py-2">Cuota {number + 1}</td><td className={`px-3 py-2 ${installment.state === "late" ? "text-red-700" : ""}`}>{formatDay(installment.due_on)}</td><td className="px-3 py-2 text-right">{formatCop(installment.amount)}</td>
+              <td className="px-3 py-2 text-right">{installment.state && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${installment.state === "paid" ? "bg-primary/12 text-primary" : installment.state === "late" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{installmentLabels[installment.state]}</span>}</td>
+            </tr>)}</tbody></table></div>}
+        </div>)}</div> : <p className="mt-1 text-sm text-muted-foreground">Sin acuerdos de pago.</p>}
+      </section>
+
+      <section aria-label="Cuotas y cobros" className="mt-6"><h3 className="text-sm font-semibold">Cuotas y cobros</h3>
+      {detail.receivables.length ? <div className="mt-2 overflow-hidden rounded-xl border"><div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Concepto</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Pendiente</th></tr></thead>
         <tbody>{sortedReceivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
-          <td className="py-2 pr-3"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span> <span className="text-xs text-muted-foreground">· {sourceLabels[row.source] ?? row.source}{row.status === "void" ? " · anulado" : ""}</span></td>
-          <td className={`py-2 pr-3 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
-          <td className="py-2 pr-3 text-right">{formatCop(row.amount)}</td><td className="py-2 text-right font-medium">{row.status === "void" ? "—" : Number(row.outstanding) <= 0 ? <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Pagada</span> : formatCop(row.outstanding)}</td>
-        </tr>)}</tbody></table></div> : <p className="mt-2 text-sm text-muted-foreground">Sin cobros registrados.</p>}
+          <td className="px-3 py-2"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span>{row.status === "void" && <span className="text-xs text-muted-foreground"> · anulado</span>}</td>
+          <td className={`px-3 py-2 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
+          <td className="px-3 py-2 text-right">{formatCop(row.amount)}</td><td className="px-3 py-2 text-right font-medium">{row.status === "void" ? "—" : Number(row.outstanding) <= 0 ? <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Pagada</span> : formatCop(row.outstanding)}</td>
+        </tr>)}</tbody></table></div></div> : <p className="mt-1 text-sm text-muted-foreground">Sin cobros registrados.</p>}
+      </section>
     </CardContent></Card>
 
     <Card><CardContent><h2 className="text-lg font-semibold">Historial de pagos</h2>
-      {detail.payments.length ? <ul className="mt-3 grid gap-2">{detail.payments.map((row, index) => { const voided = row.status === "void"; return <li key={row.id ?? index} className={`grid gap-1 rounded-xl border p-3 text-sm ${voided ? "border-red-300 bg-red-50" : "border-primary/40 bg-primary/5"}`}>
+      {detail.payments.length ? <ul className="mt-3 grid gap-2">{detail.payments.map((row, index) => { const voided = row.status === "void"; const byResident = Boolean(row.evidence_id && row.payer_name); return <li key={row.id ?? index} className={`grid gap-1.5 rounded-xl border p-3 text-sm ${voided ? "border-red-300 bg-red-50" : "border-primary/40 bg-primary/5"}`}>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <p className={`font-medium ${voided ? "text-red-800" : ""}`}>Pagado el {formatDay(row.paid_on)}{voided && " · anulado"}</p>
           <span className={`font-semibold ${voided ? "text-red-700 line-through" : ""}`}>{formatCop(row.amount)}</span>
         </div>
+        {/* Quién pagó (05/11/2026): el residente que envió el comprobante o la administración que lo registró. */}
+        <p className="text-xs"><span className={`rounded-full px-2 py-0.5 font-medium ${byResident ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{byResident ? `Pagado por el residente · ${row.payer_name}` : `Registrado por la administración${row.recorded_by_name ? ` · ${row.recorded_by_name}` : ""}`}</span></p>
         <p className="text-muted-foreground">{row.concepts ?? (row.reference && !row.reference.startsWith("Comprobante:") ? row.reference : "Sin aplicar a una deuda")}</p>
-        <p className="flex flex-wrap items-center gap-2 text-xs">{row.evidence_id ? <a href={`/api/legal/evidence/${row.evidence_id}`} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Ver comprobante{row.evidence_name ? ` · ${row.evidence_name}` : ""}</a> : <span className="text-muted-foreground">Registrado por la administración sin comprobante</span>}
+        <p className="flex flex-wrap items-center gap-2 text-xs">{row.evidence_id ? <a href={`/api/legal/evidence/${row.evidence_id}`} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Ver comprobante{row.evidence_name ? ` · ${row.evidence_name}` : ""}</a> : <span className="text-muted-foreground">Sin comprobante</span>}
           {row.corrects && <span className="rounded-full bg-primary/12 px-2 py-0.5 font-medium text-primary">Corrige un pago anulado</span>}</p>
-        {voided && <p className="text-xs text-red-800">Anulado{row.voided_at ? ` el ${formatMoment.format(new Date(row.voided_at))}` : ""}{row.void_reason ? ` · Motivo: ${row.void_reason}` : ""}</p>}
+        {/* Anulación más visible: quién la hizo (la administración), cuándo y el motivo destacado. */}
+        {voided && <div className="rounded-lg border border-red-300 bg-white p-3">
+          <p className="text-xs font-semibold text-red-800">Anulado por la administración{row.voided_by_name ? ` · ${row.voided_by_name}` : ""}{row.voided_at ? ` · ${formatMoment.format(new Date(row.voided_at))}` : ""}</p>
+          {row.void_reason && <p className="mt-1 text-sm text-red-900"><span className="font-semibold">Motivo:</span> {row.void_reason}</p>}
+        </div>}
         {voided && row.corrected_on && <p><span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Corregido · pagado de nuevo el {formatDay(row.corrected_on)}</span></p>}
       </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin pagos registrados.</p>}
-    </CardContent></Card>
-
-    <Card><CardContent><h2 className="text-lg font-semibold">Acuerdos de pago</h2>
-      {detail.agreements.length ? <ul className="mt-3 grid gap-3">{detail.agreements.map((agreement, index) => <li key={index} className="rounded-xl border p-3 text-sm">
-        <p className="flex flex-wrap items-center gap-2 font-medium">{formatCop(agreement.total)}<span className={`rounded-full px-2 py-0.5 text-xs ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.status === "active" ? "Vigente" : "Cancelado"}</span><span className="text-xs font-normal text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span></p>
-        {agreement.notes && <p className="mt-1 text-muted-foreground">{agreement.notes}</p>}
-        {agreement.installments.length > 0 && <ol className="mt-2 grid gap-1">{agreement.installments.map((installment, number) => <li key={number} className="flex justify-between gap-3"><span>Cuota {number + 1} · {formatDay(installment.due_on)}</span><span>{formatCop(installment.amount)}</span></li>)}</ol>}
-      </li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Sin acuerdos de pago.</p>}
     </CardContent></Card>
     </>}
 
