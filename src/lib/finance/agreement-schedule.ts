@@ -3,6 +3,8 @@
 export type InstallmentState = "paid" | "settled" | "late" | "pending";
 export type AgreementSchedule = {
   agreement_id: string; status: string; total: number; remaining: number; paid: number;
+  // Deudas que cubre el acuerdo (05/11/2026): las demás salen como «No está en el acuerdo de pago».
+  debt_ids?: string[];
   installments: { id: string; number: number; due_on: string; amount: number; due_amount: number; state: InstallmentState }[];
 };
 

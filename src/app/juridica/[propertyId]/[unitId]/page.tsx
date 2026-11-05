@@ -60,9 +60,12 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
   // Cobros en orden: vencidos, por vencer, pagados y anulados (04/11/2026).
   const receivableRank = (row: Detail["receivables"][number]) => row.status === "void" ? 3 : Number(row.outstanding) <= 0 ? 2 : row.due_on < detail.today ? 0 : 1;
   const sortedReceivables = [...detail.receivables].sort((a, b) => receivableRank(a) - receivableRank(b) || (receivableRank(a) >= 2 ? b.due_on.localeCompare(a.due_on) : a.due_on.localeCompare(b.due_on)));
-  // Acuerdos de pago (05/11/2026): el vigente o el ya pagado (los cancelados no se muestran). El calendario es el
+  // Acuerdos de pago (05/11/2026): solo el vigente (los cancelados y los ya pagados no se muestran). El calendario es el
   // mismo cálculo de la base de datos que ven el admin y el residente: lo que falta es lo que falta de sus deudas.
-  const agreements = detail.agreements.filter((agreement) => agreement.status !== "cancelled").map((agreement) => {
+  // Deudas del acuerdo vigente (05/11/2026): una deuda con saldo que no está en él sale «No está en el acuerdo de pago».
+  const activeAgreement = detail.agreements.find((agreement) => agreement.status === "active");
+  const agreementDebtIds = activeAgreement ? new Set(parseSchedule(activeAgreement.schedule)?.debt_ids ?? []) : null;
+  const agreements = detail.agreements.filter((agreement) => agreement.status === "active").map((agreement) => {
     const schedule = parseSchedule(agreement.schedule);
     const installments = schedule ? schedule.installments.map((item) => ({ amount: item.amount, due: item.due_amount, due_on: item.due_on, state: item.state as InstallmentState | null }))
       : agreement.installments.map((item) => ({ amount: Number(item.amount), due: Number(item.amount), due_on: item.due_on, state: null as InstallmentState | null }));
@@ -142,7 +145,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
       <section aria-label="Cuotas y cobros" className="mt-4"><h3 className="text-sm font-semibold">Cuotas y cobros</h3>
       {detail.receivables.length ? <div className="mt-2 overflow-hidden rounded-xl border"><div className="overflow-x-auto"><table className={tableClass}>{columns}<thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Concepto</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Pendiente</th></tr></thead>
         <tbody>{sortedReceivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
-          <td className="px-3 py-2"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span>{row.status === "void" && <span className="text-xs text-muted-foreground"> · anulado</span>}</td>
+          <td className="px-3 py-2"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span>{row.status === "void" && <span className="text-xs text-muted-foreground"> · anulado</span>}{agreementDebtIds && row.status === "active" && Number(row.outstanding) > 0 && !agreementDebtIds.has(row.id) && <span className="ml-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>}</td>
           <td className={`px-3 py-2 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
           <td className="px-3 py-2 text-right">{formatCop(row.amount)}</td><td className="px-3 py-2 text-right font-medium">{row.status === "void" ? "—" : Number(row.outstanding) <= 0 ? <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Pagada</span> : formatCop(row.outstanding)}</td>
         </tr>)}</tbody></table></div></div> : <p className="mt-1 text-sm text-muted-foreground">Sin cobros registrados.</p>}
