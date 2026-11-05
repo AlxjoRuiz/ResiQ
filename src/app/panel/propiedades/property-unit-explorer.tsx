@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Building2 } from "lucide-react";
 import { LazyUnit } from "./unit-detail";
 
-export type ExplorerTower = {
+type ExplorerTower = {
   id: string;
   name: string;
   code: string;

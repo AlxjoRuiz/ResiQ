@@ -8,7 +8,7 @@ import { FilePicker } from "@/components/ui/file-picker";
 import { formatCop } from "@/lib/finance/constants";
 
 // installment: cuota del acuerdo de pago (01/11/2026); outstanding es lo que falta de esa cuota.
-export type EvidenceDebt = { id: string; label: string; outstanding: number; inReview?: boolean; installment?: boolean };
+type EvidenceDebt = { id: string; label: string; outstanding: number; inReview?: boolean; installment?: boolean };
 const keyOf = (item: EvidenceDebt) => `${item.installment ? "c" : "d"}:${item.id}`;
 const fieldClass = "mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 

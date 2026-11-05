@@ -14,7 +14,7 @@ import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 const inputClass="mt-2 block box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass="block min-w-0 text-sm font-medium";
 function Result({state}:{state:FinanceState}){if(state?.error)return <p role="alert" className="text-sm text-destructive">{state.error}</p>;if(state?.success)return <p role="status" className="text-sm text-primary">{state.success}</p>;return null;}
-export type FinanceUnit={id:string;label:string};
+type FinanceUnit={id:string;label:string};
 
 // agreementUnitIds: apartamentos con acuerdo de pago activo; para ellos se ofrece sumar la deuda al acuerdo.
 export function ReceivableForm({propertyId,units,defaultUnitId,agreementUnitIds=[]}:{propertyId:string;units:FinanceUnit[];defaultUnitId?:string;agreementUnitIds?:string[]}){

@@ -7,7 +7,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { changeConciergePassword, editConcierge, removeConcierge, setConciergeStatus, type ConciergeState } from "./concierge-actions";
 
 type Vehicle = { type: string; brand: string; model: string; plate: string };
-export type EditableConcierge = { id: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; address: string | null; vehicles: unknown; username: string; email_normalized: string };
+type EditableConcierge = { id: string; full_name: string; document_number: string; birth_date: string; phone_e164: string; address: string | null; vehicles: unknown; username: string; email_normalized: string };
 const input = "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm";
 function initialVehicles(value: unknown): Vehicle[] { return Array.isArray(value) ? value.filter((item): item is Vehicle => !!item && typeof item === "object" && ["type", "brand", "model", "plate"].every((key) => typeof item[key] === "string")) : []; }
 

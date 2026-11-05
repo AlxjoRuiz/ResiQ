@@ -1,6 +1,6 @@
 import type { CensusImportRow } from "./parse";
 
-export type PrimarySelection = { source_row: number; relationship: "owner" | "resident" };
+type PrimarySelection = { source_row: number; relationship: "owner" | "resident" };
 
 export function censusRelationship(row: CensusImportRow): PrimarySelection["relationship"] | null {
   const value = row.user_type.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
@@ -13,7 +13,7 @@ export function censusUnitKey(row: CensusImportRow): string {
   return `${row.building_code}|${row.unit_code.toLocaleLowerCase("es")}`;
 }
 
-export function eligiblePrimary(row: CensusImportRow): boolean {
+function eligiblePrimary(row: CensusImportRow): boolean {
   return Boolean(row.full_name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email));
 }
 

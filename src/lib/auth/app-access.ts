@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // «suspended»: todas las comunidades de la cuenta están suspendidas; «suspended_admin», además, la
 // cuenta administra alguna de ellas (recibe el aviso de pago). «assistant_suspended»: la cuenta es
 // un auxiliar de administración con el acceso suspendido por la administración del conjunto.
-export type AppAccessStatus = "authorized" | "unauthorized" | "suspended" | "suspended_admin" | "assistant_suspended" | "concierge_suspended" | "maintenance_suspended" | "legal_suspended" | "error";
+type AppAccessStatus = "authorized" | "unauthorized" | "suspended" | "suspended_admin" | "assistant_suspended" | "concierge_suspended" | "maintenance_suspended" | "legal_suspended" | "error";
 type PropertyStatusRow = { property_id: string; property_status: string; roles: string[] | null };
 
 /** A session may enter ResiQ only through an active membership in an active property, or a platform role. */

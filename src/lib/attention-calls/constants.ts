@@ -4,7 +4,7 @@ export const attentionCallCategories = [
   ["parking", "Parqueaderos"], ["administrative", "Incumplimiento administrativo"], ["other", "Otro"],
 ] as const;
 
-export const attentionCallStatuses = [
+const attentionCallStatuses = [
   ["created", "Creado"], ["notified", "Notificado"], ["in_review", "En revisión"], ["closed", "Cerrado"],
 ] as const;
 

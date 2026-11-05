@@ -42,7 +42,7 @@ function Result({ state }: { state: ReservationState }) {
   return null;
 }
 
-export type AmenityHour = { weekday: number; opens_at: string; closes_at: string };
+type AmenityHour = { weekday: number; opens_at: string; closes_at: string };
 export type AmenityFormValue = { id: string; name: string; description: string | null; capacity: number; requires_approval: boolean; rules: string | null; slot_minutes: number; status: string; amenity_hours?: AmenityHour[] };
 
 export function AmenityForm({ propertyId, amenity }: { propertyId: string; amenity?: AmenityFormValue }) {

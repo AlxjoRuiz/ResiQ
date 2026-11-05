@@ -16,3 +16,6 @@ export const newsLabels: Record<string, string> = {
 const dayFormat = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "UTC" });
 export const formatDay = (value: string | null) => value ? dayFormat.format(new Date(`${value.slice(0, 10)}T12:00:00Z`)) : "—";
 export const formatMoment = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" });
+
+// Estado del correo de un requerimiento o de una respuesta de la abogada.
+export const deliveryLabels: Record<string, string> = { held: "Retenido (modo de prueba)", queued: "En cola", processing: "Enviando", accepted: "Enviado", failed: "No se pudo enviar", cancelled: "Cancelado" };

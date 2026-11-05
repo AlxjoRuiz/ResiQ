@@ -5,7 +5,7 @@ import { CollectionNoticeForm } from "@/components/legal/collection-notice-form"
 import { Card, CardContent } from "@/components/ui/card";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
 import { formatCop } from "@/lib/finance/constants";
-import { formatDay, formatMoment, uuidPattern } from "../../legal-data";
+import { deliveryLabels, formatDay, formatMoment, uuidPattern } from "../../legal-data";
 
 type Detail = {
   unit: { building: string; code: string; floor: string | null }; property: string; overdue_days: number; today: string; signer: string | null;
@@ -17,7 +17,6 @@ type Detail = {
 };
 const sourceLabels: Record<string, string> = { import: "Excel", manual: "Manual", opening_balance: "Saldo inicial" };
 type Notice = { notice_id: string; created_at: string; recipient_email: string; recipient_name: string | null; subject: string; total: number; debt_count: number; delivery_status: string; replies?: number };
-const deliveryLabels: Record<string, string> = { held: "Retenido (modo de prueba)", queued: "En cola", processing: "Enviando", accepted: "Enviado", failed: "No se pudo enviar", cancelled: "Cancelado" };
 const tabs = [{ id: "requerimiento", label: "Requerimiento de pago" }, { id: "cartera", label: "Cartera" }] as const;
 type Tab = (typeof tabs)[number]["id"];
 

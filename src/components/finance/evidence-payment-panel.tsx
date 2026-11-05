@@ -9,7 +9,7 @@ import { statusPill } from "@/lib/ui/status-tones";
 import { formatCop } from "@/lib/finance/constants";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 
-export type PostedPayment = { id: string; label: string };
+type PostedPayment = { id: string; label: string };
 
 // Anular un pago registrado por error: se elige el pago y se escribe el motivo.
 function VoidPaymentPicker({ propertyId, unitId, payments }: { propertyId: string; unitId: string; payments: PostedPayment[] }) {
@@ -35,7 +35,7 @@ function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId:
   </details>;
 }
 
-export type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null ; plannedAllocations?: { receivable_id: string; amount: number }[] | null };
+type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null ; plannedAllocations?: { receivable_id: string; amount: number }[] | null };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar pago» llena el formulario
 // con la deuda, el valor y la fecha del comprobante; la administración revisa y pulsa «Registrar pago».

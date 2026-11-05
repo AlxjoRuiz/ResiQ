@@ -1,4 +1,4 @@
-export const packageStatuses = [
+const packageStatuses = [
   ["received", "En portería"],
   ["notified", "Notificado"],
   ["delivered", "Entregado"],

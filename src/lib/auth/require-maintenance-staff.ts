@@ -5,7 +5,7 @@ import { cache } from "react";
 import { getSessionUserId } from "@/lib/auth/session-user";
 import { createClient } from "@/lib/supabase/server";
 
-export type MaintenanceRole = "admin" | "worker";
+type MaintenanceRole = "admin" | "worker";
 
 /**
  * Cuenta del equipo de mantenimiento de ResiQ (28/10/2026). Sin sesión lleva al login; sin rol activo

@@ -31,7 +31,7 @@ function fieldHint(header: string, occupied: boolean) {
   return null;
 }
 
-export type LinkedResident = { linkId: string; label: string };
+type LinkedResident = { linkId: string; label: string };
 
 // Desvincular junto a Editar, con confirmación antes de quitar el acceso.
 function UnlinkResidents({ propertyId, residents }: { propertyId: string; residents: LinkedResident[] }) {

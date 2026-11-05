@@ -5,7 +5,7 @@ import { addDays, zonedDayStart } from "@/lib/time-zone";
 // con .gte(columna, start).lt(columna, end). Si falta o no es válido, no hay filtro.
 const validDay = (value?: string) => !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
 
-export type DateFilter = { from: string; to: string; start: string; end: string };
+type DateFilter = { from: string; to: string; start: string; end: string };
 
 export function readDateFilter(params: { desde?: string; hasta?: string }, timeZone: string): DateFilter | null {
   if (!validDay(params.desde) || !validDay(params.hasta)) return null;

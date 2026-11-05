@@ -2,7 +2,7 @@ import { strToU8, zipSync } from "fflate";
 
 // Arma un .xlsx sencillo con varias hojas (texto en línea y números), sin estilos ni fórmulas.
 // La primera fila de cada hoja son los encabezados.
-export type Sheet = { name: string; rows: (string | number)[][] };
+type Sheet = { name: string; rows: (string | number)[][] };
 
 const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const column = (n: number) => { let label = ""; for (n++; n > 0; n = Math.floor((n - 1) / 26)) label = String.fromCharCode(65 + ((n - 1) % 26)) + label; return label; };

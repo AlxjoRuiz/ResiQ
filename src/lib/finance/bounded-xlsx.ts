@@ -2,7 +2,7 @@ import { Unzip, UnzipInflate, zipSync } from "fflate";
 
 const maxEntries = 64;
 
-export type XlsxLimits = { maxRows?: number; maxInputBytes?: number; maxEntryBytes?: number; maxExpandedBytes?: number };
+type XlsxLimits = { maxRows?: number; maxInputBytes?: number; maxEntryBytes?: number; maxExpandedBytes?: number };
 const defaultLimits = { maxRows: 500, maxInputBytes: 2 * 1024 * 1024, maxEntryBytes: 2 * 1024 * 1024, maxExpandedBytes: 8 * 1024 * 1024 };
 
 function checkWorksheetBounds(xml: string, maxColumns: number, maxRows: number) {

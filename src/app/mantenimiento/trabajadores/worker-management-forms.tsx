@@ -7,7 +7,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { changeMaintenanceWorkerPassword, editMaintenanceWorker, removeMaintenanceWorker, type WorkerState } from "./actions";
 
 type Vehicle = { type: string; brand: string; model: string; plate: string };
-export type EditableWorker = { id: string; first_name: string; first_surname: string; document_number: string; birth_date: string; phone_e164: string; address: string | null; vehicles: unknown; username: string; email: string };
+type EditableWorker = { id: string; first_name: string; first_surname: string; document_number: string; birth_date: string; phone_e164: string; address: string | null; vehicles: unknown; username: string; email: string };
 const input = "mt-1 h-10 w-full rounded-lg border bg-white px-3 text-sm";
 function initialVehicles(value: unknown): Vehicle[] { return Array.isArray(value) ? value.filter((item): item is Vehicle => !!item && typeof item === "object" && ["type", "brand", "model", "plate"].every((key) => typeof item[key] === "string")) : []; }
 

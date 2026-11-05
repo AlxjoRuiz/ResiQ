@@ -5,11 +5,11 @@ import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 // Informe de mantenimiento por rango de fechas (entrega 6; desde–hasta con calendario el 28/10/2026): lo comparten la
 // página, la vista para imprimir y el Excel, para que los tres muestren exactamente las mismas cifras.
 // Se calcula en vivo cada vez que se abre, así que siempre está al día.
-export type ReportAttendance = { staff_id: string; check_in_at: string; check_out_at: string | null; check_out_manual: boolean; check_out_reason: string | null };
-export type ReportTask = { id: string; staff_id: string; title: string; property_name: string; due_date: string; status: "pending" | "submitted" | "approved" | "rejected"; overdue: boolean; first_submitted_at: string | null; deliveries: number; approved_at: string | null };
-export type ReportWarning = { staff_id: string; warning_date: string; reason: string; description: string };
-export type ReportWorker = { staff_id: string; name: string; username: string | null; status: string };
-export type WorkerSummary = ReportWorker & { days: number; minutes: number; openShifts: number; manualExits: number; tasks: number; approved: number; submitted: number; pending: number; rejected: number; overdue: number; late: number; warnings: number };
+type ReportAttendance = { staff_id: string; check_in_at: string; check_out_at: string | null; check_out_manual: boolean; check_out_reason: string | null };
+type ReportTask = { id: string; staff_id: string; title: string; property_name: string; due_date: string; status: "pending" | "submitted" | "approved" | "rejected"; overdue: boolean; first_submitted_at: string | null; deliveries: number; approved_at: string | null };
+type ReportWarning = { staff_id: string; warning_date: string; reason: string; description: string };
+type ReportWorker = { staff_id: string; name: string; username: string | null; status: string };
+type WorkerSummary = ReportWorker & { days: number; minutes: number; openShifts: number; manualExits: number; tasks: number; approved: number; submitted: number; pending: number; rejected: number; overdue: number; late: number; warnings: number };
 
 const dayPattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const uuidPattern = /^[0-9a-f-]{36}$/i;

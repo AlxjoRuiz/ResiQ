@@ -4,14 +4,13 @@ import { PlatformPage } from "@/components/dashboard/platform-page";
 import { LegalReplyForm } from "@/components/legal/legal-reply-form";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
 import { formatCop } from "@/lib/finance/constants";
-import { formatDay, formatMoment, uuidPattern } from "../../legal-data";
+import { deliveryLabels, formatDay, formatMoment, uuidPattern } from "../../legal-data";
 
 type Thread = {
   notice: { id: string; property_id: string; unit_id: string; subject: string; message: string; items: { concept: string; due_on: string; outstanding: number }[]; total: number; recipient_email: string; recipient_name: string | null; created_at: string };
   property: string; unit_label: string;
   messages: { id: string; author: "resident" | "lawyer"; from_email: string | null; body: string; created_at: string; delivery_status: string | null }[];
 };
-const deliveryLabels: Record<string, string> = { held: "Retenido (modo de prueba)", queued: "En cola", processing: "Enviando", accepted: "Enviado", failed: "No se pudo enviar", cancelled: "Cancelado" };
 
 // Conversación de un requerimiento de pago (31/10/2026): el requerimiento, las respuestas del residente
 // (llegan desde su correo) y lo que contesta la abogada, que le llega al residente por correo.
