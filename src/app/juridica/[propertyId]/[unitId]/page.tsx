@@ -18,6 +18,9 @@ type Detail = {
 };
 // Encabezado de tabla con el azul de ResiQ y bordes redondeados (05/11/2026).
 const tableHead = "bg-primary text-left text-primary-foreground";
+// Mismo ancho de columnas en todas las tablas del cuadro (Concepto/Cuota, Vence, Valor, Pendiente/Estado).
+const tableClass = "w-full min-w-[560px] table-fixed text-sm";
+const columns = <colgroup><col /><col className="w-32" /><col className="w-36" /><col className="w-32" /></colgroup>;
 const installmentLabels = { paid: "Pagada", late: "Vencida", pending: "Por vencer" } as const;
 type Notice = { notice_id: string; created_at: string; recipient_email: string; recipient_name: string | null; subject: string; total: number; debt_count: number; delivery_status: string; replies?: number };
 const tabs = [{ id: "requerimiento", label: "Requerimiento de pago" }, { id: "cartera", label: "Cartera" }] as const;
@@ -113,7 +116,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     {tab === "cartera" && <>
     <Card><CardContent><h2 className="text-lg font-semibold">Cobros</h2>
       <section aria-label="Cuotas y cobros" className="mt-4"><h3 className="text-sm font-semibold">Cuotas y cobros</h3>
-      {detail.receivables.length ? <div className="mt-2 overflow-hidden rounded-xl border"><div className="overflow-x-auto"><table className="w-full min-w-[560px] text-sm"><thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Concepto</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Pendiente</th></tr></thead>
+      {detail.receivables.length ? <div className="mt-2 overflow-hidden rounded-xl border"><div className="overflow-x-auto"><table className={tableClass}>{columns}<thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Concepto</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Pendiente</th></tr></thead>
         <tbody>{sortedReceivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
           <td className="px-3 py-2"><span className={row.status === "void" ? "line-through" : ""}>{row.concept}</span>{row.status === "void" && <span className="text-xs text-muted-foreground"> · anulado</span>}</td>
           <td className={`px-3 py-2 ${row.status === "active" && Number(row.outstanding) > 0 && row.due_on < detail.today ? "text-red-700" : ""}`}>{formatDay(row.due_on)}</td>
@@ -126,7 +129,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
         {agreements.length ? <div className="mt-2 grid gap-3">{agreements.map((agreement, index) => <div key={index} className="overflow-hidden rounded-xl border">
           <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.status !== "active" ? "Cancelado" : agreement.paid ? "Pagado" : "Vigente"}</span><span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
             {agreement.notes && <span className="basis-full text-xs text-muted-foreground">{agreement.notes}</span>}</div>
-          {agreement.installments.length > 0 && <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-sm"><thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Cuota</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Estado</th></tr></thead>
+          {agreement.installments.length > 0 && <div className="overflow-x-auto"><table className={tableClass}>{columns}<thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Cuota</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Estado</th></tr></thead>
             <tbody>{agreement.installments.map((installment, number) => <tr key={number} className="border-b last:border-0">
               <td className="px-3 py-2">Cuota {number + 1}</td><td className={`px-3 py-2 ${installment.state === "late" ? "text-red-700" : ""}`}>{formatDay(installment.due_on)}</td><td className="px-3 py-2 text-right">{formatCop(installment.amount)}</td>
               <td className="px-3 py-2 text-right">{installment.state && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${installment.state === "paid" ? "bg-primary/12 text-primary" : installment.state === "late" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{installmentLabels[installment.state]}</span>}</td>
