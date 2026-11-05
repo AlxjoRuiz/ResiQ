@@ -62,7 +62,8 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
   const sortedReceivables = [...detail.receivables].sort((a, b) => receivableRank(a) - receivableRank(b) || (receivableRank(a) >= 2 ? b.due_on.localeCompare(a.due_on) : a.due_on.localeCompare(b.due_on)));
   // Acuerdos de pago (05/11/2026): las cuotas del acuerdo vigente se cubren en orden con los pagos registrados
   // después de crearlo (la misma regla que la cartera del administrador).
-  const agreements = detail.agreements.map((agreement) => {
+  // Los acuerdos cancelados no se muestran (05/11/2026); solo el vigente.
+  const agreements = detail.agreements.filter((agreement) => agreement.status === "active").map((agreement) => {
     const paidSince = agreement.status === "active" ? detail.payments.filter((row) => row.status === "posted" && row.recorded_at && Date.parse(row.recorded_at) >= Date.parse(agreement.created_at)).reduce((sum, row) => sum + Number(row.amount), 0) : 0;
     const installments = agreement.installments.reduce<{ rows: { amount: number; due_on: string; state: keyof typeof installmentLabels | null }[]; covered: number }>((acc, item) => {
       const covered = acc.covered + Number(item.amount);
