@@ -35,7 +35,7 @@ function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId:
   </details>;
 }
 
-type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null ; plannedAllocations?: { receivable_id: string; amount: number }[] | null };
+type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null ; plannedAllocations?: { receivable_id: string; amount: number; concept?: string }[] | null };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar pago» llena el formulario
 // con la deuda, el valor y la fecha del comprobante; la administración revisa y pulsa «Registrar pago».
@@ -65,6 +65,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
             <div className="min-w-0"><p className="break-words font-semibold">{evidence.concept}</p><p className="mt-0.5 text-xs text-muted-foreground">{evidence.periodLabel ? `Pago de ${evidence.periodLabel} · ` : ""}{evidence.declaredAmount !== null ? `${formatCop(evidence.declaredAmount)} · ` : ""}cargado {evidence.uploadedAt}</p><a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block break-words text-xs font-medium text-primary underline underline-offset-2">{evidence.originalName}</a></div>
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[evidence.voidReason !== null ? "danger" : evidence.registered ? "success" : "warning"]}`}>{evidence.voidReason !== null ? "Pago anulado" : evidence.registered ? "Pago registrado" : evidence.receivedAt ? "Recibido" : "Por revisar"}</span>
           </div>
+          {evidence.plannedAllocations?.length ? <div className="mt-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm"><p className="text-xs font-medium text-primary">Deudas que cubre (lo eligió el residente)</p><ul className="mt-1 grid gap-0.5">{evidence.plannedAllocations.map((item) => <li key={item.receivable_id} className="flex justify-between gap-3"><span className="min-w-0">{item.concept ?? "Obligación"}</span><span className="shrink-0 font-medium">{formatCop(item.amount)}</span></li>)}</ul></div> : null}
           {evidence.comment && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-secondary px-3 py-2 text-sm">{evidence.comment}</p>}
           {evidence.receivedAt && <p className="mt-2 text-xs text-muted-foreground">Recibido {evidence.receivedAt}</p>}
           {evidence.voidReason && <p className="mt-2 text-xs text-muted-foreground">Motivo de la anulación: {evidence.voidReason}</p>}{!evidence.registered && evidence.voidReason === null && <div className="mt-3 flex flex-wrap gap-2"><Button type="button" size="sm" variant={prefill?.evidenceId === evidence.id ? "outline" : "default"} onClick={() => accept(evidence)}>{prefill?.evidenceId === evidence.id ? "En el formulario →" : "Aceptar pago"}</Button></div>}
