@@ -72,6 +72,18 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     return { ...agreement, installments, remaining: schedule?.remaining ?? null, paid: agreement.status === "completed" || (schedule ? schedule.remaining <= 0 : false) };
   });
 
+  // Acuerdo vigente con sus cuotas (09/11/2026): se ve en la pestaña Cartera y también en Requerimiento de pago,
+  // debajo de los cobros vencidos y próximos a vencer.
+  const agreementList = <div className="mt-2 grid gap-3">{agreements.map((agreement, index) => <div key={index} className="overflow-hidden rounded-xl border">
+          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.paid ? "Pagado" : "Vigente"}</span>{agreement.remaining !== null && !agreement.paid && <span className="text-xs font-medium">Falta {formatCop(agreement.remaining)}</span>}<span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
+            {agreement.notes && <span className="basis-full text-xs text-muted-foreground">{agreement.notes}</span>}</div>
+          {agreement.installments.length > 0 && <div className="overflow-x-auto"><table className={tableClass}>{columns}<thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Cuota</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Estado</th></tr></thead>
+            <tbody>{agreement.installments.map((installment, number) => <tr key={number} className="border-b last:border-0">
+              <td className="px-3 py-2">Cuota {number + 1}</td><td className={`px-3 py-2 ${installment.state === "late" ? "text-red-700" : ""}`}>{formatDay(installment.due_on)}</td><td className="px-3 py-2 text-right">{installment.state && installment.state !== "paid" && installment.due !== installment.amount ? <>{formatCop(installment.due)} <span className="block text-xs text-muted-foreground line-through">{formatCop(installment.amount)}</span></> : formatCop(installment.amount)}</td>
+              <td className="px-3 py-2 text-right">{installment.state && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${installment.state === "paid" || installment.state === "settled" ? "bg-primary/12 text-primary" : installment.state === "late" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{installmentStateLabels[installment.state]}</span>}</td>
+            </tr>)}</tbody></table></div>}
+        </div>)}</div>;
+
   // Historial de pagos (05/11/2026): se ven los 4 más recientes; el resto en «Ver más».
   const postedPayments = detail.payments.filter((row) => row.status !== "void");
   const paymentItem = (row: Detail["payments"][number], index: number) => { const voided = row.status === "void"; const byResident = Boolean(row.evidence_id && row.payer_name); return <li key={row.id ?? index} className={`grid gap-1.5 rounded-xl border p-3 text-sm ${voided ? "border-red-300 bg-red-50" : "border-primary/40 bg-primary/5"}`}>
@@ -114,9 +126,10 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     {tab === "requerimiento" && <>
     <Card><CardContent><h2 className="text-lg font-semibold">Cobros vencidos y próximos a vencer</h2>
       {debts.length ? <ul className="mt-3 grid gap-2">{debts.map((debt) => { const diff = dayDiff(debt.due_on); return <li key={debt.id} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${debt.overdue ? "border-red-300 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
-        <span className="min-w-0"><span className="block font-medium">{debt.concept}{agreementDebtIds && !agreementDebtIds.has(debt.id) && <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-amber-900"}`}>{debt.overdue ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`} · {formatDay(debt.due_on)}</span></span>
+        <span className="min-w-0"><span className="block font-medium">{debt.concept}{agreementDebtIds && (agreementDebtIds.has(debt.id) ? <span className="ml-2 inline-block rounded-full border border-primary/40 bg-white px-2 py-0.5 text-xs font-medium text-primary">En el acuerdo de pago</span> : <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>)}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-amber-900"}`}>{debt.overdue ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`} · {formatDay(debt.due_on)}</span></span>
         <span className={`font-semibold ${debt.overdue ? "text-red-700" : ""}`}>{formatCop(debt.outstanding)}</span>
       </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Este apartamento no tiene deudas con saldo.</p>}
+      {agreements.length > 0 && <section aria-label="Acuerdo de pago vigente" className="mt-6"><h3 className="text-sm font-semibold">Acuerdo de pago vigente</h3>{agreementList}</section>}
     </CardContent></Card>
 
     <Card><CardContent>
@@ -153,15 +166,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
 
       {/* Acuerdos de pago debajo de los cobros, en su propia sección dentro del cuadro (05/11/2026). */}
       <section aria-label="Acuerdos de pago" className="mt-6"><h3 className="text-sm font-semibold">Acuerdos de pago</h3>
-        {agreements.length ? <div className="mt-2 grid gap-3">{agreements.map((agreement, index) => <div key={index} className="overflow-hidden rounded-xl border">
-          <div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${agreement.status === "active" ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{agreement.paid ? "Pagado" : "Vigente"}</span>{agreement.remaining !== null && !agreement.paid && <span className="text-xs font-medium">Falta {formatCop(agreement.remaining)}</span>}<span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span>
-            {agreement.notes && <span className="basis-full text-xs text-muted-foreground">{agreement.notes}</span>}</div>
-          {agreement.installments.length > 0 && <div className="overflow-x-auto"><table className={tableClass}>{columns}<thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Cuota</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Estado</th></tr></thead>
-            <tbody>{agreement.installments.map((installment, number) => <tr key={number} className="border-b last:border-0">
-              <td className="px-3 py-2">Cuota {number + 1}</td><td className={`px-3 py-2 ${installment.state === "late" ? "text-red-700" : ""}`}>{formatDay(installment.due_on)}</td><td className="px-3 py-2 text-right">{installment.state && installment.state !== "paid" && installment.due !== installment.amount ? <>{formatCop(installment.due)} <span className="block text-xs text-muted-foreground line-through">{formatCop(installment.amount)}</span></> : formatCop(installment.amount)}</td>
-              <td className="px-3 py-2 text-right">{installment.state && <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${installment.state === "paid" || installment.state === "settled" ? "bg-primary/12 text-primary" : installment.state === "late" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>{installmentStateLabels[installment.state]}</span>}</td>
-            </tr>)}</tbody></table></div>}
-        </div>)}</div> : <p className="mt-1 text-sm text-muted-foreground">Sin acuerdos de pago.</p>}
+        {agreements.length ? agreementList : <p className="mt-1 text-sm text-muted-foreground">Sin acuerdos de pago.</p>}
       </section>
     </CardContent></Card>
 
