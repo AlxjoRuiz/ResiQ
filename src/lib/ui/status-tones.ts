@@ -32,7 +32,8 @@ export const statusPill: Record<StatusTone, string> = {
 export type ReadTone = "unread" | "read";
 export const readCard: Record<ReadTone, string> = {
   unread: "border-unread-notice/40 bg-unread-notice-bg hover:bg-unread-notice/10",
-  read: "bg-read-bg hover:bg-muted/50",
+  // Al pasar el cursor la tarjeta leída se pone un poco azul (10/11/2026).
+  read: "bg-read-bg hover:border-primary/40 hover:bg-primary/8",
 };
 export const readPanel: Record<ReadTone, string> = {
   unread: "border-unread-notice/40 bg-unread-notice-bg",
