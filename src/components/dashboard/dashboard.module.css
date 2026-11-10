@@ -78,6 +78,8 @@
 .moduleContent section > a[data-assembly-response="pending"]:hover { background-color: #fef3c7; }
 .moduleContent section > a[data-assembly-response="answered"] { background-color: #e7ecf5; border-color: #b7c3d9; }
 .moduleContent section > a[data-assembly-response="answered"]:hover { background-color: #dbe2ef; }
+/* Comunicados (10/11/2026): la tarjeta se pone un poco azul al pasar el cursor, como las notificaciones. */
+.moduleContent section > a[data-card-hover="primary"]:hover, .moduleContent section > a[data-card-hover="primary"]:focus-visible { background-color: color-mix(in srgb, var(--primary) 8%, white); border-color: color-mix(in srgb, var(--primary) 40%, white); }
 .moduleContent header { border-color: #d3d9e3; }
 .moduleContent input:not([type="checkbox"]):not([type="radio"]), .moduleContent select, .moduleContent textarea { min-width: 0; background-color: #fff; border-color: #c6cdda; border-radius: 12px; }
 .moduleContent table { background: white; }
