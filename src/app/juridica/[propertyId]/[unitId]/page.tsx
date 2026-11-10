@@ -84,6 +84,23 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
             </tr>)}</tbody></table></div>}
         </div>)}</div>;
 
+  // En Requerimiento de pago (09/11/2026) las cuotas del acuerdo se ven con el mismo diseño de «Cobros vencidos y
+  // próximos a vencer»: rojo si está vencida, amarillo si está por vencer y azul si ya está pagada o sin saldo.
+  const agreementCards = <div className="mt-2 grid gap-3">{agreements.map((agreement, index) => <div key={index}>
+    <p className="flex flex-wrap items-center gap-2 text-sm"><span className="font-semibold">{formatCop(agreement.total)}</span><span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">{agreement.paid ? "Pagado" : "Vigente"}</span>{agreement.remaining !== null && !agreement.paid && <span className="text-xs font-medium">Falta {formatCop(agreement.remaining)}</span>}<span className="text-xs text-muted-foreground">desde {formatMoment.format(new Date(agreement.created_at))}</span></p>
+    {agreement.notes && <p className="mt-1 text-xs text-muted-foreground">{agreement.notes}</p>}
+    <ul className="mt-2 grid gap-2">{agreement.installments.map((installment, number) => {
+      const state = installment.state ?? (installment.due_on < detail.today ? "late" : "pending");
+      const done = state === "paid" || state === "settled", diff = dayDiff(installment.due_on);
+      const tone = done ? { box: "border-primary/40 bg-primary/5", text: "text-primary" } : state === "late" ? { box: "border-red-300 bg-red-50", text: "text-red-700" } : { box: "border-amber-200 bg-amber-50", text: "text-amber-900" };
+      const when = done ? installmentStateLabels[state] : state === "late" ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`;
+      const showDue = !done && installment.due !== installment.amount;
+      return <li key={number} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${tone.box}`}>
+        <span className="min-w-0"><span className="block font-medium">Cuota {number + 1}</span><span className={`block text-xs ${tone.text}`}>{when} · {formatDay(installment.due_on)}</span></span>
+        <span className="text-right"><span className={`block font-semibold ${state === "late" ? "text-red-700" : ""}`}>{formatCop(showDue ? installment.due : installment.amount)}</span>{showDue && <span className="block text-xs text-muted-foreground line-through">{formatCop(installment.amount)}</span>}</span>
+      </li>; })}</ul>
+  </div>)}</div>;
+
   // Historial de pagos (05/11/2026): se ven los 4 más recientes; el resto en «Ver más».
   const postedPayments = detail.payments.filter((row) => row.status !== "void");
   const paymentItem = (row: Detail["payments"][number], index: number) => { const voided = row.status === "void"; const byResident = Boolean(row.evidence_id && row.payer_name); return <li key={row.id ?? index} className={`grid gap-1.5 rounded-xl border p-3 text-sm ${voided ? "border-red-300 bg-red-50" : "border-primary/40 bg-primary/5"}`}>
@@ -129,7 +146,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
         <span className="min-w-0"><span className="block font-medium">{debt.concept}{agreementDebtIds && (agreementDebtIds.has(debt.id) ? <span className="ml-2 inline-block rounded-full border border-primary/40 bg-white px-2 py-0.5 text-xs font-medium text-primary">En el acuerdo de pago</span> : <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>)}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-amber-900"}`}>{debt.overdue ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`} · {formatDay(debt.due_on)}</span></span>
         <span className={`font-semibold ${debt.overdue ? "text-red-700" : ""}`}>{formatCop(debt.outstanding)}</span>
       </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Este apartamento no tiene deudas con saldo.</p>}
-      {agreements.length > 0 && <section aria-label="Acuerdo de pago vigente" className="mt-6"><h3 className="text-sm font-semibold">Acuerdo de pago vigente</h3>{agreementList}</section>}
+      {agreements.length > 0 && <section aria-label="Acuerdo de pago vigente" className="mt-6"><h3 className="text-sm font-semibold">Acuerdo de pago vigente</h3>{agreementCards}</section>}
     </CardContent></Card>
 
     <Card><CardContent>
