@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "lint": "eslint src next.config.ts postcss.config.mjs eslint.config.mjs",
+    "test": "node --experimental-strip-types --test tests/security/*.test.mjs tests/census/*.test.mjs tests/finance/*.test.mjs",
     "test:security": "node --experimental-strip-types --test tests/security/*.test.mjs",
+    "test:e2e": "node --test tests/e2e/*.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.verify.json",
-    "verify": "npm run typecheck && npm run lint && npm run build"
+    "verify": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "engines": {
     "node": ">=22.14.0 <25"
