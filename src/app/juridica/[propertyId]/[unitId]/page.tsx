@@ -152,7 +152,8 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     <Card><CardContent>
       <h2 className="text-lg font-semibold">Requerimiento de pago</h2>
       <p className="mt-1 mb-5 text-sm text-muted-foreground">Elige las deudas que vas a cobrar y escribe el mensaje. Le llega al correo del apartamento con el detalle de las deudas y tu firma.</p>
-      {noticesReady ? <CollectionNoticeForm propertyId={propertyId} unitId={unitId} unitLabel={`${detail.unit.building} · ${detail.unit.code}`} propertyName={detail.property} debts={debts} recipients={recipients} />
+      {noticesReady ? <CollectionNoticeForm propertyId={propertyId} unitId={unitId} unitLabel={`${detail.unit.building} · ${detail.unit.code}`} propertyName={detail.property} debts={debts} recipients={recipients}
+        agreement={agreements[0] && agreementDebtIds ? { total: Number(agreements[0].total), remaining: agreements[0].remaining, installments: agreements[0].installments.length, paidInstallments: agreements[0].installments.filter((item) => item.state === "paid" || item.state === "settled").length, debtIds: [...agreementDebtIds] } : null} />
         : <p className="text-sm text-muted-foreground">El requerimiento de pago todavía no está disponible.</p>}
       {notices.length > 0 && <div className="mt-6 border-t pt-5"><h3 className="font-semibold">Requerimientos enviados</h3>
         <ul className="mt-3 grid gap-2">{notices.map((notice) => <li key={notice.notice_id} className="grid gap-1 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start">

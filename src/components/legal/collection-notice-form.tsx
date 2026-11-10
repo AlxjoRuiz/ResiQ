@@ -10,6 +10,8 @@ import { formatCop } from "@/lib/finance/constants";
 
 type Debt = { id: string; concept: string; due_on: string; outstanding: number; overdue: boolean };
 type Recipient = { email: string; name: string | null; kind: string };
+// Resumen del acuerdo vigente (09/11/2026): solo se muestra en pantalla; el correo del requerimiento no cambia.
+export type NoticeAgreement = { total: number; remaining: number | null; installments: number; paidInstallments: number; debtIds: string[] };
 const field = "mt-1 block w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const dayFormat = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "UTC" });
 const formatDay = (value: string) => dayFormat.format(new Date(`${value}T12:00:00Z`));
@@ -17,7 +19,8 @@ const formatDay = (value: string) => dayFormat.format(new Date(`${value}T12:00:0
 // Requerimiento de pago (31/10/2026): la abogada elige las deudas (ninguna marcada al empezar; botones para
 // marcar o desmarcar todas), el correo del apartamento y escribe el mensaje. El correo lleva el detalle de
 // las deudas elegidas y su firma; si el residente responde desde su correo, le llega a Respuestas.
-export function CollectionNoticeForm({ propertyId, unitId, unitLabel, propertyName, debts, recipients }: { propertyId: string; unitId: string; unitLabel: string; propertyName: string; debts: Debt[]; recipients: Recipient[] }) {
+export function CollectionNoticeForm({ propertyId, unitId, unitLabel, propertyName, debts, recipients, agreement = null }: { propertyId: string; unitId: string; unitLabel: string; propertyName: string; debts: Debt[]; recipients: Recipient[]; agreement?: NoticeAgreement | null }) {
+  const inAgreement = new Set(agreement?.debtIds ?? []);
   // Adjuntos (05/11/2026): van en el correo del requerimiento.
   const [files, setFiles] = useState<File[]>([]);
   const [state, action, pending] = useFormActionState(async (previous: CollectionNoticeState, data: FormData) => {
@@ -45,9 +48,10 @@ export function CollectionNoticeForm({ propertyId, unitId, unitLabel, propertyNa
         <Button type="button" size="sm" variant="outline" disabled={selected.size === debts.length} onClick={() => setSelected(new Set(debts.map((debt) => debt.id)))}>Seleccionar todas</Button>
         <Button type="button" size="sm" variant="outline" disabled={!selected.size} onClick={() => setSelected(new Set())}>Desmarcar todas</Button>
       </div>
+      {agreement && <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-sm"><span className="font-medium">Acuerdo de pago vigente</span><span className="font-semibold">{formatCop(agreement.total)}</span>{agreement.remaining !== null && <span className="text-xs font-medium">Falta {formatCop(agreement.remaining)}</span>}<span className="text-xs text-muted-foreground">{agreement.paidInstallments} de {agreement.installments} {agreement.installments === 1 ? "cuota pagada" : "cuotas pagadas"}</span></p>}
       {debts.map((debt) => <label key={debt.id} className="flex items-start gap-3 rounded-xl border p-3 text-sm">
         <input type="checkbox" name="debt" value={debt.id} checked={selected.has(debt.id)} onChange={(event) => toggle(debt.id, event.target.checked)} className="mt-0.5 size-4 accent-primary" />
-        <span className="min-w-0 flex-1"><span className="block font-medium">{debt.concept}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-muted-foreground"}`}>Vence {formatDay(debt.due_on)}{debt.overdue ? " · vencida" : ""}</span></span>
+        <span className="min-w-0 flex-1"><span className="block font-medium">{debt.concept}{agreement && (inAgreement.has(debt.id) ? <span className="ml-2 inline-block rounded-full border border-primary/40 bg-white px-2 py-0.5 text-xs font-medium text-primary">En el acuerdo de pago</span> : <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>)}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-muted-foreground"}`}>Vence {formatDay(debt.due_on)}{debt.overdue ? " · vencida" : ""}</span></span>
         <span className="font-semibold">{formatCop(debt.outstanding)}</span>
       </label>)}
       <p className="flex justify-between rounded-xl bg-secondary px-3 py-2 text-sm font-semibold"><span>Total que se cobra</span><span>{formatCop(total)}</span></p>
