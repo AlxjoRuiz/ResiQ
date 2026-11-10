@@ -17,7 +17,8 @@ const financePath = (propertyId: string) => `/panel/propiedades/${propertyId}/ca
 
 function friendlyError(message?: string) {
   if (message?.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
-  if (message?.includes("duplicate_reference")) return "Ya existe una obligación con una de esas referencias.";
+  // Mismo nombre (10/11/2026): solo se bloquea si la obligación anterior con ese nombre o referencia no está pagada.
+  if (message?.includes("unpaid_duplicate")) return "Este apartamento ya tiene una obligación con ese nombre o referencia sin pagar. Podrás registrarla de nuevo cuando esa esté pagada.";
   if (message?.includes("duplicate_payment")) return "El pago ya fue registrado.";
   // Pagos sin sobrante (10/11/2026): un pago no puede ser mayor que lo que debe el apartamento.
   if (message?.includes("payment_exceeds_debt")) return "El pago es mayor que lo que debe el apartamento. Registra como máximo el saldo pendiente.";
