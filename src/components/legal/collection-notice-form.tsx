@@ -10,8 +10,10 @@ import { formatCop } from "@/lib/finance/constants";
 
 type Debt = { id: string; concept: string; due_on: string; outstanding: number; overdue: boolean };
 type Recipient = { email: string; name: string | null; kind: string };
-// Resumen del acuerdo vigente (09/11/2026): solo se muestra en pantalla; el correo del requerimiento no cambia.
-export type NoticeAgreement = { total: number; remaining: number | null; installments: number; paidInstallments: number; debtIds: string[] };
+// Acuerdo vigente (09/11/2026): sus cuotas con saldo se pueden cobrar igual que las deudas. Las deudas que están en
+// el acuerdo no se cobran junto con sus cuotas (se cobraría dos veces): elegir una cosa bloquea la otra.
+type NoticeInstallment = { id: string; number: number; due_on: string; outstanding: number; overdue: boolean };
+export type NoticeAgreement = { total: number; remaining: number | null; installmentCount: number; debtIds: string[]; installments: NoticeInstallment[] };
 const field = "mt-1 block w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const dayFormat = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "UTC" });
 const formatDay = (value: string) => dayFormat.format(new Date(`${value}T12:00:00Z`));
@@ -30,30 +32,44 @@ export function CollectionNoticeForm({ propertyId, unitId, unitLabel, propertyNa
   }, undefined as CollectionNoticeState);
   // Empieza sin ninguna deuda marcada; la abogada elige una por una o todas con el botón.
   const [selected, setSelected] = useState(() => new Set<string>());
-  const total = debts.filter((debt) => selected.has(debt.id)).reduce((sum, debt) => sum + debt.outstanding, 0);
+  const installments = agreement?.installments ?? [];
+  const total = [...debts, ...installments].filter((item) => selected.has(item.id)).reduce((sum, item) => sum + item.outstanding, 0);
+  const itemCount = debts.length + installments.length;
+  const installmentChosen = installments.some((item) => selected.has(item.id));
+  const agreementDebtChosen = debts.some((debt) => inAgreement.has(debt.id) && selected.has(debt.id));
+  // «Seleccionar todas»: con cuotas por cobrar, las cuotas más las deudas que no están en el acuerdo.
+  const everything = installments.length ? [...installments.map((item) => item.id), ...debts.filter((debt) => !inAgreement.has(debt.id)).map((debt) => debt.id)] : debts.map((debt) => debt.id);
   const toggle = (id: string, checked: boolean) => setSelected((current) => { const next = new Set(current); if (checked) next.add(id); else next.delete(id); return next; });
   const message = `Respetado(a) propietario(a) o residente:\n\nEn nombre de ${propertyName}, le informamos que el apartamento ${unitLabel} presenta obligaciones pendientes con la copropiedad, relacionadas al final de este mensaje.\n\nLe solicitamos ponerse al día dentro de los cinco (5) días hábiles siguientes al recibo de esta comunicación, o comunicarse con nosotros para acordar una forma de pago. De no recibir respuesta, el caso podrá continuar con el cobro jurídico.\n\nSi ya realizó el pago, por favor indíquelo con el botón «Responder» de este correo.`;
 
-  if (!debts.length) return <p className="text-sm text-muted-foreground">Este apartamento no tiene deudas con saldo para cobrar.</p>;
+  if (!itemCount) return <p className="text-sm text-muted-foreground">Este apartamento no tiene deudas con saldo para cobrar.</p>;
   if (!recipients.length) return <p className="text-sm text-muted-foreground">Este apartamento no tiene correos en el censo ni cuentas con acceso a la cartera. Pide a la administración que actualice el censo.</p>;
   return <form onSubmit={action} className="grid gap-5">
     <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
     <details className="group rounded-xl border">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3 marker:hidden">
-        <span className="min-w-0"><span className="block text-sm font-medium">Deudas que se cobran</span><span className="block text-xs text-muted-foreground">{selected.size} de {debts.length} elegidas · toca para cambiarlas</span></span>
+        <span className="min-w-0"><span className="block text-sm font-medium">Deudas que se cobran</span><span className="block text-xs text-muted-foreground">{selected.size} de {itemCount} elegidas · toca para cambiarlas</span></span>
         <span className="flex shrink-0 items-center gap-2 text-sm font-semibold">{formatCop(total)}<ChevronDown size={18} aria-hidden="true" className="text-muted-foreground transition-transform group-open:rotate-180" /></span>
       </summary>
       <fieldset className="grid gap-2 border-t p-3"><legend className="sr-only">Deudas que se cobran</legend>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" size="sm" variant="outline" disabled={selected.size === debts.length} onClick={() => setSelected(new Set(debts.map((debt) => debt.id)))}>Seleccionar todas</Button>
+        <Button type="button" size="sm" variant="outline" disabled={everything.every((id) => selected.has(id)) && selected.size === everything.length} onClick={() => setSelected(new Set(everything))}>Seleccionar todas</Button>
         <Button type="button" size="sm" variant="outline" disabled={!selected.size} onClick={() => setSelected(new Set())}>Desmarcar todas</Button>
       </div>
-      {agreement && <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-sm"><span className="font-medium">Acuerdo de pago vigente</span><span className="font-semibold">{formatCop(agreement.total)}</span>{agreement.remaining !== null && <span className="text-xs font-medium">Falta {formatCop(agreement.remaining)}</span>}<span className="text-xs text-muted-foreground">{agreement.paidInstallments} de {agreement.installments} {agreement.installments === 1 ? "cuota pagada" : "cuotas pagadas"}</span></p>}
-      {debts.map((debt) => <label key={debt.id} className="flex items-start gap-3 rounded-xl border p-3 text-sm">
-        <input type="checkbox" name="debt" value={debt.id} checked={selected.has(debt.id)} onChange={(event) => toggle(debt.id, event.target.checked)} className="mt-0.5 size-4 accent-primary" />
-        <span className="min-w-0 flex-1"><span className="block font-medium">{debt.concept}{agreement && (inAgreement.has(debt.id) ? <span className="ml-2 inline-block rounded-full border border-primary/40 bg-white px-2 py-0.5 text-xs font-medium text-primary">En el acuerdo de pago</span> : <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>)}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-muted-foreground"}`}>Vence {formatDay(debt.due_on)}{debt.overdue ? " · vencida" : ""}</span></span>
+      {debts.length > 0 && <p className="mt-1 text-xs font-semibold text-muted-foreground uppercase">Deudas</p>}
+      {debts.map((debt) => { const blocked = installmentChosen && inAgreement.has(debt.id); return <label key={debt.id} className={`flex items-start gap-3 rounded-xl border p-3 text-sm ${blocked ? "opacity-60" : ""}`}>
+        <input type="checkbox" name="debt" value={debt.id} checked={selected.has(debt.id)} disabled={blocked} onChange={(event) => toggle(debt.id, event.target.checked)} className="mt-0.5 size-4 accent-primary" />
+        <span className="min-w-0 flex-1"><span className="block font-medium">{debt.concept}{agreement && (inAgreement.has(debt.id) ? <span className="ml-2 inline-block rounded-full border border-primary/40 bg-white px-2 py-0.5 text-xs font-medium text-primary">En el acuerdo de pago</span> : <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>)}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-muted-foreground"}`}>Vence {formatDay(debt.due_on)}{debt.overdue ? " · vencida" : ""}{blocked ? " · se cobra con las cuotas del acuerdo" : ""}</span></span>
         <span className="font-semibold">{formatCop(debt.outstanding)}</span>
-      </label>)}
+      </label>; })}
+      {agreement && installments.length > 0 && <>
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-muted-foreground uppercase">Acuerdo de pago vigente<span className="font-medium normal-case">{formatCop(agreement.total)}{agreement.remaining !== null ? ` · falta ${formatCop(agreement.remaining)}` : ""}</span></p>
+        {installments.map((item) => { const blocked = agreementDebtChosen; return <label key={item.id} className={`flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm ${blocked ? "opacity-60" : ""}`}>
+          <input type="checkbox" name="installment" value={item.id} checked={selected.has(item.id)} disabled={blocked} onChange={(event) => toggle(item.id, event.target.checked)} className="mt-0.5 size-4 accent-primary" />
+          <span className="min-w-0 flex-1"><span className="block font-medium">Acuerdo de pago · Cuota {item.number} de {agreement.installmentCount}</span><span className={`block text-xs ${item.overdue ? "text-red-700" : "text-muted-foreground"}`}>Vence {formatDay(item.due_on)}{item.overdue ? " · vencida" : ""}{blocked ? " · quita las deudas del acuerdo para cobrar sus cuotas" : ""}</span></span>
+          <span className="font-semibold">{formatCop(item.outstanding)}</span>
+        </label>; })}
+      </>}
       <p className="flex justify-between rounded-xl bg-secondary px-3 py-2 text-sm font-semibold"><span>Total que se cobra</span><span>{formatCop(total)}</span></p>
       </fieldset>
     </details>

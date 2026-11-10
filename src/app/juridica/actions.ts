@@ -47,8 +47,9 @@ async function removeAttachments(files: UploadedAttachment[]) {
 }
 const noticeErrors: Record<string, string> = {
   recipient_not_allowed: "Elige un correo del apartamento.",
-  no_debts_selected: "Elige al menos una deuda.",
-  invalid_debts: "Alguna deuda ya no tiene saldo o fue anulada. Recarga la página.",
+  no_debts_selected: "Elige al menos una deuda o una cuota del acuerdo.",
+  agreement_debt_overlap: "Una deuda que está en el acuerdo de pago no se cobra junto con sus cuotas: quítala o quita las cuotas.",
+  invalid_debts: "Alguna deuda o cuota ya no tiene saldo o fue anulada. Recarga la página.",
   invalid_message: "Escribe el asunto (3 a 150 caracteres) y el mensaje (10 a 5000).",
 };
 
@@ -57,17 +58,21 @@ const noticeErrors: Record<string, string> = {
 export async function sendCollectionNotice(_: CollectionNoticeState, data: FormData): Promise<CollectionNoticeState> {
   const propertyId = String(data.get("propertyId") ?? ""), unitId = String(data.get("unitId") ?? "");
   const debts = data.getAll("debt").map(String).filter((id) => uuidPattern.test(id));
+  // Cuotas del acuerdo de pago vigente (09/11/2026): se cobran igual que las deudas.
+  const installments = data.getAll("installment").map(String).filter((id) => uuidPattern.test(id));
   const recipient = String(data.get("recipient") ?? "").trim().toLowerCase();
   const subject = String(data.get("subject") ?? "").trim(), message = String(data.get("message") ?? "").trim();
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(unitId)) return { error: "Apartamento inválido." };
-  if (!debts.length) return { error: noticeErrors.no_debts_selected };
+  if (!debts.length && !installments.length) return { error: noticeErrors.no_debts_selected };
   if (!recipient) return { error: noticeErrors.recipient_not_allowed };
   if (subject.length < 3 || subject.length > 150 || message.length < 10 || message.length > 5000) return { error: noticeErrors.invalid_message };
   const { supabase } = await requireLegalStaff();
   const attachments = await uploadAttachments(propertyId, data);
   if (attachments.error) return { error: attachments.error };
   const { error } = await supabase.rpc("legal_send_collection_notice", { target_property_id: propertyId, target_unit_id: unitId, target_receivable_ids: debts,
-    target_recipient_email: recipient, target_subject: subject, target_message: message, target_attachments: attachments.files });
+    target_recipient_email: recipient, target_subject: subject, target_message: message, target_attachments: attachments.files,
+    // Solo se envía si hay cuotas: así el cobro de deudas sigue funcionando aunque falte la migración 20261109100000.
+    ...(installments.length ? { target_installment_ids: installments } : {}) });
   if (error) { await removeAttachments(attachments.files); return { error: Object.entries(noticeErrors).find(([code]) => error.message.includes(code))?.[1] ?? "No pudimos registrar el requerimiento." }; }
   revalidatePath(`/juridica/${propertyId}/${unitId}`);
   return { success: `Requerimiento registrado para ${recipient}.` };
