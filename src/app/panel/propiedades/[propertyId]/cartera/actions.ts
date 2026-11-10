@@ -18,7 +18,7 @@ const financePath = (propertyId: string) => `/panel/propiedades/${propertyId}/ca
 function friendlyError(message?: string) {
   if (message?.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
   // Mismo nombre (10/11/2026): solo se bloquea si la obligación anterior con ese nombre o referencia no está pagada.
-  if (message?.includes("unpaid_duplicate")) return "Este apartamento ya tiene una obligación con ese nombre o referencia sin pagar. Podrás registrarla de nuevo cuando esa esté pagada.";
+  if (message?.includes("unpaid_duplicate")) return "Ya hay una obligación con ese nombre sin pagar en este apartamento. Cámbiale el nombre y regístrala con los mismos datos.";
   if (message?.includes("duplicate_payment")) return "El pago ya fue registrado.";
   // Pagos sin sobrante (10/11/2026): un pago no puede ser mayor que lo que debe el apartamento.
   if (message?.includes("payment_exceeds_debt")) return "El pago es mayor que lo que debe el apartamento. Registra como máximo el saldo pendiente.";
@@ -51,7 +51,7 @@ export async function createReceivable(_: FinanceState, data: FormData): Promise
   const amount=Number(field(data,"amount"));
   if(!uuidPattern.test(propertyId)||!uuidPattern.test(unitId)||concept.length<2||concept.length>180||!Number.isFinite(amount)||amount<=0||!isoDatePattern.test(issuedOn)||!isoDatePattern.test(dueOn)||dueOn<issuedOn||externalReference.length>120)return{error:"Completa una obligación válida."};
   const supabase=await createClient();const result=await supabase.rpc("create_receivable",{target_property_id:propertyId,target_unit_id:unitId,target_concept:concept,target_amount:amount,target_issued_on:issuedOn,target_due_on:dueOn,target_external_reference:externalReference});
-  if(result.error)return{error:friendlyError(result.error.message)};
+  if(result.error)return{error:result.error.message.includes("unpaid_duplicate")?`Ya hay una obligación «${concept}» sin pagar en este apartamento. Cámbiale el nombre (por ejemplo, «${concept} 2») y regístrala con los mismos datos.`:friendlyError(result.error.message)};
   // Opcional: sumar la obligación nueva al acuerdo de pago activo del apartamento.
   if(field(data,"addToAgreement")==="on"&&result.data){const added=await supabase.rpc("add_receivable_to_payment_agreement",{target_receivable_id:String(result.data)});if(added.error){refreshFinance(propertyId,unitId);return{error:`La obligación se registró, pero no se pudo sumar al acuerdo: ${friendlyError(added.error.message)}`};}refreshFinance(propertyId,unitId);return{success:"Obligación registrada y sumada al acuerdo de pago."};}
   refreshFinance(propertyId,unitId);return{success:"Obligación registrada."};
