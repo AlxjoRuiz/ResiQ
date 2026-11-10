@@ -9,6 +9,7 @@ import { AdminOverview, type AdminDashboard } from "@/components/dashboard/admin
 import { ResidentOverview, type ResidentDashboard } from "@/components/dashboard/resident-overview";
 import { ConciergeOverview, type ConciergeDashboard } from "@/components/dashboard/concierge-overview";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
+import { greetingFor } from "@/lib/time-zone";
 
 import { visitStatusLabel } from "@/lib/visitors/constants";
 import { packageStatusLabel, receivedItemLabel } from "@/lib/packages/constants";
@@ -19,7 +20,7 @@ type FinanceSummary = { unit_id: string; building_name: string; unit_code: strin
 type View = "residente" | "porteria" | "administracion";
 export default async function PropertyDashboardPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ vista?: string }> }) {
   const { propertyId } = await params;
-  const { supabase, membership, property } = await requirePropertyMember(propertyId);
+  const { supabase, user, membership, property } = await requirePropertyMember(propertyId);
   const views: View[] = [];
   if (membership.roles.includes("member")) views.push("residente");
   if (membership.roles.includes("concierge")) views.push("porteria");
@@ -31,7 +32,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
   const isAdmin = view === "administracion";
   // Antes de contar reservas por aprobar se marcan las vencidas (máximo una vez por minuto).
   const refreshReservations = isAdmin ? supabase.rpc("refresh_reservations", { target_property_id: propertyId }) : Promise.resolve(null);
-  const [, { count: unitCount }, { count: memberCount }, { data: ownUnits }, visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary, unseenResult, adminDashboard, residentDashboard, conciergeDashboard] = await Promise.all([
+  const [, { count: unitCount }, { count: memberCount }, { data: ownUnits }, visitSummary, packageSummary, requestSummary, notificationSummary, financeSummary, unseenResult, adminDashboard, residentDashboard, conciergeDashboard, { data: profile }] = await Promise.all([
     refreshReservations,
     view !== "residente" ? supabase.from("units").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
     isAdmin ? supabase.from("property_members").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("status", "active") : Promise.resolve({ count: null }),
@@ -45,7 +46,11 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     isAdmin ? supabase.rpc("get_admin_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
     view === "residente" ? supabase.rpc("get_resident_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
     view === "porteria" ? supabase.rpc("get_concierge_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
+    supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
   ]);
+  // Saludo (10/11/2026): según la hora del conjunto y con el primer nombre con que se registró la cuenta.
+  const firstName = profile?.display_name?.trim().split(/\s+/)[0] ?? "";
+  const greeting = `${greetingFor(new Date(), property.timezone)}${firstName ? `, ${firstName}` : ""}`;
   // Secciones con algo nuevo sin ver: punto en la barra lateral.
   const unseen = new Set(Array.isArray(unseenResult.data) ? unseenResult.data.map(String) : []);
   const base = `/panel/propiedades/${propertyId}`;
@@ -80,10 +85,9 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
           <div className={styles.roleSwitcher} aria-label="Seleccionar perfil">{views.map((allowedView) => <Button key={allowedView} asChild size="sm" variant={allowedView === view ? "default" : "outline"}><Link href={`/panel/propiedades/${propertyId}/dashboard?vista=${allowedView}`} aria-current={allowedView === view ? "page" : undefined}>{allowedView === "administracion" ? "Administración" : allowedView === "porteria" ? "Portería" : "Residente"}</Link></Button>)}</div>
         </header>
         <section className={styles.welcome}>
-          <p className={styles.eyebrow}>Tu comunidad, conectada</p>
           <div className={styles.welcomeMain}>
             <span className={styles.welcomeIcon}><House size={29} aria-hidden="true" /></span>
-            <div><h1>Panel de {viewLabel.toLowerCase()}</h1></div>
+            <div><h1>{greeting}</h1><p>Panel de {viewLabel.toLowerCase()}</p></div>
           </div>
         </section>
         <section aria-label="Resumen del perfil" className={styles.metrics}>

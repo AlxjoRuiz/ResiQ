@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Clock3, FileWarning, LogOut, UserRound, Wrench } from "lucide-react";
+import { ArrowRight, ClipboardList, Clock3, FileWarning, LogOut, Wrench } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import styles from "@/components/dashboard/dashboard.module.css";
 import { MetricCard } from "@/components/dashboard/role-dashboard";
@@ -42,7 +42,7 @@ export default async function MaintenanceHomePage() {
   return <main className="mx-auto min-h-screen max-w-4xl px-5 py-7 sm:px-10">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b pb-5">
       <div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-primary text-white"><Wrench size={20} aria-hidden="true" /></span><div><p className="font-semibold">Mantenimiento ResiQ</p><p className="text-xs text-muted-foreground">Trabajador de mantenimiento</p></div></div>
-      <div className="flex flex-wrap gap-2"><Button asChild variant="outline" size="sm"><Link href="/perfil"><UserRound size={15} />Perfil</Link></Button><form action={signOut}><Button variant="ghost" size="sm"><LogOut size={15} />Salir</Button></form></div>
+      <div className="flex flex-wrap gap-2"><form action={signOut}><Button variant="ghost" size="sm"><LogOut size={15} />Salir</Button></form></div>
     </header>
     <section className="py-7"><p className="text-sm text-muted-foreground">Hola,</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">{profile?.display_name ?? "Equipo de mantenimiento"}</h1></section>
     <section aria-label="Secciones" className="grid gap-3 sm:grid-cols-2">
