@@ -114,7 +114,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     {tab === "requerimiento" && <>
     <Card><CardContent><h2 className="text-lg font-semibold">Cobros vencidos y próximos a vencer</h2>
       {debts.length ? <ul className="mt-3 grid gap-2">{debts.map((debt) => { const diff = dayDiff(debt.due_on); return <li key={debt.id} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${debt.overdue ? "border-red-300 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
-        <span className="min-w-0"><span className="block font-medium">{debt.concept}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-amber-900"}`}>{debt.overdue ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`} · {formatDay(debt.due_on)}</span></span>
+        <span className="min-w-0"><span className="block font-medium">{debt.concept}{agreementDebtIds && !agreementDebtIds.has(debt.id) && <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-amber-900"}`}>{debt.overdue ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`} · {formatDay(debt.due_on)}</span></span>
         <span className={`font-semibold ${debt.overdue ? "text-red-700" : ""}`}>{formatCop(debt.outstanding)}</span>
       </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Este apartamento no tiene deudas con saldo.</p>}
     </CardContent></Card>
