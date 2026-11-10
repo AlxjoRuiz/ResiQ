@@ -8,6 +8,7 @@ import { ReportCharts } from "@/components/maintenance/report-charts";
 import { Button } from "@/components/ui/button";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { loadReport, readReportFilters } from "@/lib/maintenance/report";
+import { greetingWithName } from "@/lib/time-zone";
 
 // Inicio del módulo de mantenimiento. Admin (28/10/2026): dashboard como el del admin del conjunto,
 // dentro del marco con la barra de secciones (ver layout). Trabajador: tarjetas de sus secciones.
@@ -16,12 +17,13 @@ export default async function MaintenanceHomePage() {
   if (staff.role === "admin") {
     // Gráficas del mes en curso (del 1 a hoy), las mismas del informe en PDF; si fallan, el resto se muestra igual.
     const month = readReportFilters({});
-    const [{ data, error }, report] = await Promise.all([supabase.rpc("get_maintenance_dashboard"), loadReport(month).catch(() => null)]);
+    const [{ data, error }, report, { data: adminProfile }] = await Promise.all([supabase.rpc("get_maintenance_dashboard"), loadReport(month).catch(() => null),
+      supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle()]);
     const dashboard = error ? null : (data as MaintenanceDashboard);
     return <>
       <section className={styles.welcome}>
-        <p className={styles.eyebrow}>Equipo de mantenimiento ResiQ</p>
-        <div className={styles.welcomeMain}><span className={styles.welcomeIcon}><Wrench size={29} aria-hidden="true" /></span><div><h1>Panel de mantenimiento</h1></div></div>
+        {/* Saludo según la hora (10/11/2026), igual que en el inicio del conjunto. */}
+        <div className={styles.welcomeMain}><span className={styles.welcomeIcon}><Wrench size={29} aria-hidden="true" /></span><div><h1>{greetingWithName(adminProfile?.display_name)}</h1><p>Panel de mantenimiento</p></div></div>
       </section>
       <section aria-label="Resumen del equipo" className={styles.metrics}>
         <MetricCard label="Trabajadores activos" value={dashboard?.active_workers ?? "—"} />
@@ -44,7 +46,7 @@ export default async function MaintenanceHomePage() {
       <div className="flex items-center gap-3"><span className="flex size-10 items-center justify-center rounded-xl bg-primary text-white"><Wrench size={20} aria-hidden="true" /></span><div><p className="font-semibold">Mantenimiento ResiQ</p><p className="text-xs text-muted-foreground">Trabajador de mantenimiento</p></div></div>
       <div className="flex flex-wrap gap-2"><form action={signOut}><Button variant="ghost" size="sm"><LogOut size={15} />Salir</Button></form></div>
     </header>
-    <section className="py-7"><p className="text-sm text-muted-foreground">Hola,</p><h1 className="mt-1 text-3xl font-semibold tracking-tight">{profile?.display_name ?? "Equipo de mantenimiento"}</h1></section>
+    <section className="py-7"><h1 className="text-3xl font-semibold tracking-tight">{greetingWithName(profile?.display_name)}</h1><p className="mt-1 text-sm text-muted-foreground">Panel del trabajador de mantenimiento</p></section>
     <section aria-label="Secciones" className="grid gap-3 sm:grid-cols-2">
       {sections.map(({ title, description, icon: Icon, href }) => <Link key={title} href={href} className="rounded-2xl border bg-white p-5 transition-colors hover:border-primary/40 hover:bg-secondary/40">
         <div className="flex items-start justify-between gap-3"><span className="flex size-10 items-center justify-center rounded-full bg-primary/12 text-primary"><Icon size={20} aria-hidden="true" /></span><ArrowRight size={18} className="text-muted-foreground" aria-hidden="true" /></div>

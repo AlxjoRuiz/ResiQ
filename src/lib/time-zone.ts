@@ -6,6 +6,12 @@ export function greetingFor(date: Date, timeZone: string) {
   return hour >= 5 && hour < 12 ? "Buenos días" : hour >= 12 && hour < 19 ? "Buenas tardes" : "Buenas noches";
 }
 
+/** Saludo con el primer nombre de la cuenta: «Buenas tardes, Laura» (o solo «Buenas tardes» si no hay nombre). */
+export function greetingWithName(displayName: string | null | undefined, timeZone: string = COLOMBIA_TIME_ZONE, date = new Date()) {
+  const firstName = displayName?.trim().split(/\s+/)[0] ?? "";
+  return `${greetingFor(date, timeZone)}${firstName ? `, ${firstName}` : ""}`;
+}
+
 export function dateTimeFormatter(timeZone: string) {
   return new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone });
 }

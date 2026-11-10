@@ -3,6 +3,7 @@ import { Building2, ShieldCheck, UsersRound } from "lucide-react";
 import { PlatformPage } from "@/components/dashboard/platform-page";
 import { MetricCard } from "@/components/dashboard/role-dashboard";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
+import { greetingWithName } from "@/lib/time-zone";
 import { loadTestScope } from "./test-scope";
 
 type PropertyRow = { property_id: string; property_name: string; property_status: string; administrator_count: number };
@@ -14,14 +15,15 @@ type Attention = { label: string; detail: string; href: string; urgent: boolean 
 // Inicio del superadmin (30/10/2026): cifras clave y «Por atender» (invitaciones sin aceptar o vencidas,
 // conjuntos sin administrador y conjuntos suspendidos), cada uno con enlace a donde se resuelve.
 export default async function PlatformHomePage() {
-  const { supabase } = await requirePlatformAdmin();
-  const [scope, { data: userData, error: userError }, { data: propertyData, error: propertyError }, { data: adminData, error: adminError }, { data: maintenanceData, error: maintenanceError }, { data: legalData, error: legalError }] = await Promise.all([
+  const { supabase, user } = await requirePlatformAdmin();
+  const [scope, { data: userData, error: userError }, { data: propertyData, error: propertyError }, { data: adminData, error: adminError }, { data: maintenanceData, error: maintenanceError }, { data: legalData, error: legalError }, { data: profile }] = await Promise.all([
     loadTestScope(supabase),
     supabase.rpc("platform_list_users"),
     supabase.rpc("platform_list_properties"),
     supabase.rpc("platform_list_administrators"),
     supabase.rpc("platform_list_maintenance_admins"),
     supabase.rpc("platform_list_legal"),
+    supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
   ]);
   if (userError || propertyError || adminError || maintenanceError || legalError) throw new Error("No se pudo cargar el inicio de la plataforma.");
   // Pruebas ResiQ (31/10/2026): las cifras y «Por atender» cuentan solo lo de producción.
@@ -41,7 +43,8 @@ export default async function PlatformHomePage() {
     ...legal.filter((row) => row.invitation_id).map((row) => ({ label: row.member_status === "expired" ? "Invitación vencida · jurídica" : "Invitación sin aceptar · jurídica", detail: row.email, href: "/plataforma/equipos#juridica", urgent: row.member_status === "expired" })),
   ];
 
-  return <PlatformPage eyebrow="ResiQ SaaS" title="Panel de plataforma" description="Resumen de los conjuntos y lo que requiere tu atención.">
+  // Saludo según la hora (10/11/2026), igual que en el inicio del conjunto.
+  return <PlatformPage eyebrow="ResiQ SaaS" title={greetingWithName(profile?.display_name)} description="Panel de plataforma: resumen de los conjuntos y lo que requiere tu atención.">
     <section aria-label="Cifras de la plataforma" className="grid gap-4 sm:grid-cols-3">
       <MetricCard label="Conjuntos" value={properties.filter((row) => row.property_status !== "archived").length} />
       <MetricCard label="Usuarios" value={users.length} />

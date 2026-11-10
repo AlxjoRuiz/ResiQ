@@ -9,7 +9,7 @@ import { AdminOverview, type AdminDashboard } from "@/components/dashboard/admin
 import { ResidentOverview, type ResidentDashboard } from "@/components/dashboard/resident-overview";
 import { ConciergeOverview, type ConciergeDashboard } from "@/components/dashboard/concierge-overview";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
-import { greetingFor } from "@/lib/time-zone";
+import { greetingWithName } from "@/lib/time-zone";
 
 import { visitStatusLabel } from "@/lib/visitors/constants";
 import { packageStatusLabel, receivedItemLabel } from "@/lib/packages/constants";
@@ -49,8 +49,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
   ]);
   // Saludo (10/11/2026): según la hora del conjunto y con el primer nombre con que se registró la cuenta.
-  const firstName = profile?.display_name?.trim().split(/\s+/)[0] ?? "";
-  const greeting = `${greetingFor(new Date(), property.timezone)}${firstName ? `, ${firstName}` : ""}`;
+  const greeting = greetingWithName(profile?.display_name, property.timezone);
   // Secciones con algo nuevo sin ver: punto en la barra lateral.
   const unseen = new Set(Array.isArray(unseenResult.data) ? unseenResult.data.map(String) : []);
   const base = `/panel/propiedades/${propertyId}`;
