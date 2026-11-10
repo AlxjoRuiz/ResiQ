@@ -21,7 +21,7 @@ export function MaintenanceOverview({ data }: { data: MaintenanceDashboard }) {
     <article aria-labelledby="por-atender" className="rounded-2xl border bg-white p-5">
       <h2 id="por-atender" className="text-lg font-semibold">Por atender</h2>
       {items.length ? <ul className="mt-3 grid gap-2">{items.map((item) => <li key={item.label}><Link href={item.href} className="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors hover:bg-secondary">
-        <span className="flex items-center gap-2 font-medium">{item.urgent && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full bg-red-500" />}{item.label}</span>
+        <span className="flex items-center gap-2 font-medium">{item.urgent && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full bg-urgent" />}{item.label}</span>
         <span className="shrink-0 rounded-full bg-primary/12 px-2.5 py-0.5 text-sm font-semibold text-primary">{item.count}</span>
       </Link></li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Todo al día: no hay pendientes por atender.</p>}
     </article>

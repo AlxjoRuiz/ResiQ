@@ -33,7 +33,7 @@ export function ResidentOverview({ propertyId, timeZone, data }: { propertyId: s
   const finance = data.finance;
   return <div className="mb-6 grid gap-4 lg:grid-cols-2">
     <Card title="Mi cartera" icon={Wallet} href={`${base}/cartera`} linkLabel="Ver cartera">
-      <div className="flex flex-wrap items-end gap-6"><div><p className="text-2xl font-semibold">{cop(finance.balance)}</p><p className="text-xs text-muted-foreground">Saldo pendiente</p></div>{finance.overdue > 0 && <div><p className="text-lg font-semibold text-red-700">{cop(finance.overdue)}</p><p className="text-xs text-muted-foreground">Vencido</p></div>}</div>
+      <div className="flex flex-wrap items-end gap-6"><div><p className="text-2xl font-semibold">{cop(finance.balance)}</p><p className="text-xs text-muted-foreground">Saldo pendiente</p></div>{finance.overdue > 0 && <div><p className="text-lg font-semibold text-urgent">{cop(finance.overdue)}</p><p className="text-xs text-muted-foreground">Vencido</p></div>}</div>
       {finance.next_due ? <p className="mt-3 text-sm">Próximo pago: <strong>{finance.next_due.concept}</strong> · {cop(finance.next_due.amount)} · vence el {day.format(new Date(`${finance.next_due.due_on}T12:00:00Z`))}</p> : <p className="mt-3 text-sm text-muted-foreground">Estás al día.</p>}
       {finance.balance > 0 && finance.unit_id && <Link href={`${base}/cartera/${finance.unit_id}`} className="mt-4 inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-white hover:bg-primary/90">Subir comprobante</Link>}
     </Card>

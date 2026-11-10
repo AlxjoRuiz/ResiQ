@@ -71,7 +71,7 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
         <span className="min-w-0"><span className="flex flex-wrap items-center gap-2 font-medium">{row.building_name} · {row.unit_code}{row.agreement_active && <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">Acuerdo de pago</span>}</span>
           <span className="block truncate text-muted-foreground">{row.owner_name ?? "Sin nombre en el censo"}</span>
           <span className="block text-xs text-muted-foreground">Último pago: {formatDay(row.last_payment_on)}</span></span>
-        <span className="sm:text-right"><span className={`block font-semibold ${row.in_arrears ? "text-red-700" : ""}`}>{formatCop(row.in_arrears ? row.overdue : row.outstanding)}</span>
+        <span className="sm:text-right"><span className={`block font-semibold ${row.in_arrears ? "text-urgent" : ""}`}>{formatCop(row.in_arrears ? row.overdue : row.outstanding)}</span>
           <span className="block text-xs text-muted-foreground">{row.days_overdue > 0 ? `${row.days_overdue} días de mora` : row.outstanding > 0 ? "Saldo sin vencer" : "Sin saldo"}</span></span>
       </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">{tab === "mora" ? (minDays > 1 ? `Ningún apartamento lleva ${minDays} días o más en mora.` : "Ningún apartamento está en mora.") : "No hay apartamentos al día."}</p>}
     </section>}

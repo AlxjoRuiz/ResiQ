@@ -50,7 +50,7 @@ export default async function PlatformHomePage() {
     <section aria-labelledby="por-atender" className="rounded-2xl border bg-white p-5">
       <h2 id="por-atender" className="text-lg font-semibold">Por atender</h2>
       {items.length ? <ul className="mt-3 grid gap-2">{items.map((item, index) => <li key={`${item.href}-${index}`}><Link href={item.href} className="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors hover:bg-secondary">
-        <span className="min-w-0"><span className="flex items-center gap-2 font-medium">{item.urgent && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full bg-red-500" />}{item.label}</span><span className="block truncate text-sm text-muted-foreground">{item.detail}</span></span>
+        <span className="min-w-0"><span className="flex items-center gap-2 font-medium">{item.urgent && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full bg-urgent" />}{item.label}</span><span className="block truncate text-sm text-muted-foreground">{item.detail}</span></span>
         <span aria-hidden="true" className="shrink-0 text-muted-foreground">→</span>
       </Link></li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Todo al día: no hay pendientes por atender.</p>}
     </section>

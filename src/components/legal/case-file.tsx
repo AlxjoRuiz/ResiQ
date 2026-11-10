@@ -49,7 +49,7 @@ function OpenCase({ propertyId, unitId, caseFile }: { propertyId: string; unitId
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className={`rounded-full px-3 py-1 text-xs font-medium ${caseStatusTones[caseFile.status] ?? "bg-secondary"}`}>{caseStatusLabels[caseFile.status] ?? caseFile.status}</span>
       <span className="text-muted-foreground">Abierto el {formatDay(caseFile.opened_at)}</span>
-      {caseFile.next_follow_up && <span className={`rounded-full px-3 py-1 text-xs font-medium ${late ? "bg-red-100 text-red-800" : "bg-secondary"}`}>{late ? (caseFile.next_follow_up === caseFile.today ? "Seguimiento hoy" : "Seguimiento vencido") : "Próximo seguimiento"} · {formatDay(caseFile.next_follow_up)}</span>}
+      {caseFile.next_follow_up && <span className={`rounded-full px-3 py-1 text-xs font-medium ${late ? "bg-urgent/10 text-urgent" : "bg-secondary"}`}>{late ? (caseFile.next_follow_up === caseFile.today ? "Seguimiento hoy" : "Seguimiento vencido") : "Próximo seguimiento"} · {formatDay(caseFile.next_follow_up)}</span>}
     </div>
 
     <form onSubmit={caseAction} className="grid gap-3 rounded-xl border p-4"><Ids propertyId={propertyId} unitId={unitId} /><input type="hidden" name="caseId" value={caseFile.id} />
@@ -94,10 +94,10 @@ function OpenCase({ propertyId, unitId, caseFile }: { propertyId: string; unitId
 function CommitmentRow({ propertyId, unitId, item, today }: { propertyId: string; unitId: string; item: CaseFile["commitments"][number]; today: string }) {
   const [state, action, pending] = useFormActionState(setLegalCommitmentStatus, undefined as CollectionNoticeState);
   const late = item.status === "pending" && item.due_on < today;
-  return <li className={`grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center ${item.status === "broken" || late ? "border-red-300 bg-red-50" : item.status === "met" ? "border-primary/40 bg-primary/5" : ""}`}>
+  return <li className={`grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center ${item.status === "broken" || late ? "border-urgent/40 bg-urgent/5" : item.status === "met" ? "border-primary/40 bg-primary/5" : ""}`}>
     <div><p className="font-medium">{formatCop(item.amount)} · {formatDay(item.due_on)}{late ? " · vencido" : ""}</p>{item.note && <p className="text-muted-foreground">{item.note}</p>}</div>
     {item.status === "pending" ? <form onSubmit={action} className="flex flex-wrap items-center gap-2"><Ids propertyId={propertyId} unitId={unitId} /><input type="hidden" name="commitmentId" value={item.id} />
       <Button size="sm" variant="outline" name="status" value="met" disabled={pending}>Cumplido</Button><Button size="sm" variant="outline" name="status" value="broken" disabled={pending}>Incumplido</Button><Result state={state} /></form>
-      : <span className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${item.status === "met" ? "bg-primary/12 text-primary" : "bg-red-100 text-red-800"}`}>{commitmentLabels[item.status]}</span>}
+      : <span className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${item.status === "met" ? "bg-primary/12 text-primary" : "bg-urgent/10 text-urgent"}`}>{commitmentLabels[item.status]}</span>}
   </li>;
 }
