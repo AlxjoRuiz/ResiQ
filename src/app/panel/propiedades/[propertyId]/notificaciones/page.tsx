@@ -6,7 +6,7 @@ import { dateInputValue } from "@/lib/time-zone";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { readDateFilter } from "@/lib/date-range";
 import { noticeCategories, noticeCategoryLabel } from "@/lib/notifications/constants";
-import { markNotificationRead } from "./actions";
+import { markAllNotificationsRead, markNotificationRead } from "./actions";
 
 const pageSize = 20;
 
@@ -30,7 +30,12 @@ export default async function NotificationsPage({ params, searchParams }: {
   // Filtro de fechas (29/10/2026): fecha del aviso, en la hora del conjunto.
   const dateFilter = readDateFilter({ desde, hasta }, property.timezone); const today = dateInputValue(new Date(), property.timezone);
   if (dateFilter) query = query.gte("occurred_at", dateFilter.start).lt("occurred_at", dateFilter.end);
-  const { data, count, error } = await query.order("occurred_at", { ascending: false }).order("id", { ascending: false }).range((pageNumber - 1) * pageSize, pageNumber * pageSize - 1);
+  // Avisos sin leer de la cuenta, sin importar los filtros: para el botón «Marcar todo como leído» (10/11/2026).
+  const [{ data, count, error }, { count: unreadCount }] = await Promise.all([
+    query.order("occurred_at", { ascending: false }).order("id", { ascending: false }).range((pageNumber - 1) * pageSize, pageNumber * pageSize - 1),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("property_id", propertyId).eq("recipient_member_id", membership.id).is("read_at", null),
+  ]);
+  const unread = unreadCount ?? 0;
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / pageSize));
   const makeHref = (page: number) => {
     const query = new URLSearchParams();
@@ -46,6 +51,7 @@ export default async function NotificationsPage({ params, searchParams }: {
   return <main className="mx-auto min-h-screen max-w-5xl px-5 py-8 sm:px-10">
     <header className="border-b pb-6"><Link href={`/panel/propiedades/${propertyId}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground">← Volver al inicio</Link><p className="mt-5 text-xs font-semibold tracking-wider text-primary uppercase">Tu actividad</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Notificaciones</h1><p className="mt-2 text-sm text-muted-foreground">Avisos asociados a tu cuenta en esta comunidad.</p></header>
     <form method="get" className="mt-6 flex flex-wrap items-end gap-3">{dateFilter && <><input type="hidden" name="desde" value={dateFilter.from} /><input type="hidden" name="hasta" value={dateFilter.to} /></>}<DateRangeFilter from={dateFilter?.from} to={dateFilter?.to} today={today} /><label className="grid gap-1 text-sm font-medium">Estado<select name="estado" defaultValue={stateFilter} className="h-11 rounded-lg border bg-background px-3"><option value="todas">Todas</option><option value="sin-leer">Sin leer</option><option value="leidas">Leídas</option></select></label><label className="grid gap-1 text-sm font-medium">Tipo<select name="tipo" defaultValue={typeFilter ?? ""} className="h-11 rounded-lg border bg-background px-3"><option value="">Todos</option>{noticeCategories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><Button type="submit" variant="outline">Filtrar</Button></form>
+    {unread > 0 && <form action={markAllNotificationsRead.bind(null, propertyId)} className="mt-4 flex justify-end"><Button type="submit" variant="outline">Marcar todo como leído ({unread})</Button></form>}
     <section aria-label="Lista de notificaciones" className="mt-6 grid gap-3">{error ? <p role="alert" className="rounded-xl border bg-card p-5 text-sm">No pudimos cargar los avisos. Inténtalo de nuevo.</p> : !data?.length ? <p className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">No hay avisos con estos filtros.</p> : data.map((notice) => {
       const detailPath = `/panel/propiedades/${propertyId}/notificaciones/${notice.id}`;
       const expired = notice.type === "reservation_expired";

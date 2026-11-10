@@ -19,3 +19,17 @@ export async function markNotificationRead(propertyId: string, notificationId: s
   revalidatePath(`/panel/propiedades/${propertyId}/notificaciones/${notificationId}`);
   revalidatePath(`/panel/propiedades/${propertyId}/dashboard`);
 }
+
+// «Marcar todo como leído» (10/11/2026): solo los avisos sin leer de esta cuenta en este conjunto.
+export async function markAllNotificationsRead(propertyId: string) {
+  if (!uuidPattern.test(propertyId)) return;
+  const { supabase, membership } = await requirePropertyMember(propertyId);
+  const { error } = await supabase.from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("property_id", propertyId)
+    .eq("recipient_member_id", membership.id)
+    .is("read_at", null);
+  if (error) throw new Error("No se pudieron marcar los avisos como leídos.");
+  revalidatePath(`/panel/propiedades/${propertyId}/notificaciones`, "layout");
+  revalidatePath(`/panel/propiedades/${propertyId}/dashboard`);
+}
