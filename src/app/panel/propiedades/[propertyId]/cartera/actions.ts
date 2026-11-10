@@ -19,6 +19,8 @@ function friendlyError(message?: string) {
   if (message?.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
   if (message?.includes("duplicate_reference")) return "Ya existe una obligación con una de esas referencias.";
   if (message?.includes("duplicate_payment")) return "El pago ya fue registrado.";
+  // Pagos sin sobrante (10/11/2026): un pago no puede ser mayor que lo que debe el apartamento.
+  if (message?.includes("payment_exceeds_debt")) return "El pago es mayor que lo que debe el apartamento. Registra como máximo el saldo pendiente.";
   if (message?.includes("payment_overallocated")) return "La distribución supera el valor del pago.";
   if (message?.includes("receivable_has_active_payment")) return "Anula primero los pagos aplicados antes de anular esta obligación.";
   if (message?.includes("receivable_overallocated")) return "La distribución supera el saldo de una obligación.";
