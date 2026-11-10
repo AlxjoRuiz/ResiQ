@@ -146,7 +146,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
         <span className="min-w-0"><span className="block font-medium">{debt.concept}{agreementDebtIds && (agreementDebtIds.has(debt.id) ? <span className="ml-2 inline-block rounded-full border border-primary/40 bg-white px-2 py-0.5 text-xs font-medium text-primary">En el acuerdo de pago</span> : <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>)}</span><span className={`block text-xs ${debt.overdue ? "text-red-700" : "text-amber-900"}`}>{debt.overdue ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`} · {formatDay(debt.due_on)}</span></span>
         <span className={`font-semibold ${debt.overdue ? "text-red-700" : ""}`}>{formatCop(debt.outstanding)}</span>
       </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Este apartamento no tiene deudas con saldo.</p>}
-      {agreements.length > 0 && <section aria-label="Acuerdo de pago vigente" className="mt-6"><h3 className="text-sm font-semibold">Acuerdo de pago vigente</h3>{agreementCards}</section>}
+      {agreements.length > 0 && <section aria-label="Acuerdo de pago vigente" className="mt-6"><h2 className="text-lg font-semibold">Acuerdo de pago vigente</h2>{agreementCards}</section>}
     </CardContent></Card>
 
     <Card><CardContent>
