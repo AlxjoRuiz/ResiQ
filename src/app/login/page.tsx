@@ -1,6 +1,5 @@
 import { Building2, ShieldCheck } from "lucide-react";
 import { Instrument_Serif } from "next/font/google";
-import Image from "next/image";
 import Link from "next/link";
 import styles from "./login.module.css";
 import { LoginForm } from "./login-form";
@@ -39,7 +38,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className={`${styles.chip} ${styles.rise} ${styles.delay1}`}><span className={styles.chipTag}><span className={styles.pulse} />En línea</span>Un espacio para tu comunidad</p>
           <p className={styles.headline}>{headline.map((line, lineIndex) => <span key={lineIndex} className="block">{line.map(({ word, delay, accent }) => <span key={word} className={`${styles.word} ${accent ? `${styles.serif} ${serif.className} pr-1` : ""}`} style={{ animationDelay: `${delay}s` }}>{word}{" "}</span>)}</span>)}</p>
           <p className={`${styles.description} ${styles.rise} ${styles.delay2}`}>Las novedades de tu conjunto, tus solicitudes y lo que necesitas para tu día a día, en un solo lugar.</p>
-          <Image src="/images/conjunto-resiq.webp" alt="" width={1402} height={1122} priority sizes="440px" className={styles.image} />
         </section>
         <section className={`${styles.card} ${styles.rise} ${styles.delay3}`} aria-labelledby="login-title">
           <div className={styles.cardBrand}><span className={styles.brandIcon}><Building2 size={24} strokeWidth={1.7} /></span><div><p className="font-semibold">ResiQ</p><p className={styles.subtitle}>Acceso de la comunidad</p></div></div>

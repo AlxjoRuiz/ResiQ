@@ -39,11 +39,10 @@
 @keyframes blurIn { to { opacity: 1; filter: blur(0); transform: translateY(0); } }
 .serif { font-style: italic; font-weight: 400; letter-spacing: -.01em; color: #1d4ed8; }
 .description { margin-top: 22px; max-width: 420px; color: #475569; line-height: 1.7; font-size: 16px; }
-.image { width: min(100%, 440px); margin-top: 26px; mix-blend-mode: multiply; animation: settle 1.6s cubic-bezier(.22, 1, .36, 1) .4s both, float 8s ease-in-out 2s infinite;
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
-  -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent); mask-composite: intersect; }
-@keyframes settle { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: scale(1); } }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+/* Detrás de la tarjeta (11/11/2026): anillos y una luz azul suave para que se note el vidrio. */
+.ambient::after { content: ""; position: absolute; width: min(62vw, 760px); aspect-ratio: 1; top: -18%; right: -10%; border-radius: 50%;
+  background: radial-gradient(circle at 45% 55%, rgb(59 130 246 / 34%), rgb(147 197 253 / 18%) 38%, transparent 66%);
+  border: 1px solid rgb(29 78 216 / 10%); box-shadow: 0 0 0 80px rgb(29 78 216 / 3%), 0 0 0 160px rgb(29 78 216 / 2%); }
 
 /* Entrada en cascada. */
 /* «backwards»: oculto mientras espera su turno y libre al terminar (así el efecto al pasar el cursor funciona). */
@@ -53,8 +52,13 @@
 .delay3 { animation-delay: .25s; }
 @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Tarjeta del formulario: blanca, con sombra azul suave. */
-.card { position: relative; padding: 40px; border-radius: 32px; background: #ffffff; border: 1px solid rgb(29 78 216 / 10%); box-shadow: 0 1px 2px rgb(15 23 42 / 4%), 0 30px 80px rgb(29 78 216 / 14%); }
+/* Tarjeta del formulario con efecto de vidrio (11/11/2026): blanca translúcida y difuminada, borde claro y brillo arriba. */
+.card { position: relative; padding: 40px; border-radius: 32px;
+  background: linear-gradient(145deg, rgb(255 255 255 / 68%), rgb(255 255 255 / 38%));
+  backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid rgb(255 255 255 / 80%);
+  box-shadow: 0 30px 80px rgb(29 78 216 / 16%), 0 1px 2px rgb(15 23 42 / 4%), inset 0 1px 0 rgb(255 255 255 / 95%); }
+@supports not (backdrop-filter: blur(1px)) { .card { background: rgb(255 255 255 / 94%); } }
 .card::before { content: ""; position: absolute; inset: 0 24px auto; height: 3px; border-radius: 0 0 9999px 9999px; background: linear-gradient(90deg, transparent, #1d4ed8, transparent); opacity: .7; }
 .cardBrand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
 .brandIcon { display: inline-flex; flex: none; width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: 9999px; color: #fff; background: #1d4ed8; box-shadow: 0 8px 20px rgb(29 78 216 / 28%); }
@@ -64,7 +68,7 @@
 
 /* Campos y botones del formulario (mismo formulario, otro aspecto). */
 .card label { color: #0f172a; }
-.card input:not([type="hidden"]) { height: 50px; border-radius: 14px; border-color: #dbe3f0; background: #f8fafd; color: #0f172a; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
+.card input:not([type="hidden"]) { height: 50px; border-radius: 14px; border-color: rgb(29 78 216 / 14%); background: rgb(255 255 255 / 72%); color: #0f172a; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
 .card input:not([type="hidden"]):hover { border-color: #b9c8e4; }
 .card input:not([type="hidden"]):focus-visible, .card input:not([type="hidden"]):focus { border-color: #1d4ed8; background: #fff; box-shadow: 0 0 0 4px rgb(29 78 216 / 12%); --tw-ring-shadow: 0 0 #0000; }
 /* Botones fluidos (11/11/2026): se elevan con suavidad al pasar el cursor, se hunden un poco al presionar y
@@ -108,7 +112,7 @@
   .title { font-size: 26px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .word, .rise, .image, .card form > * { animation: none; opacity: 1; filter: none; transform: none; }
+  .word, .rise, .card form > * { animation: none; opacity: 1; filter: none; transform: none; }
   .pulse::after { animation: none; }
   .card input, .card button, .card button::after, .back { transition: none; }
   .card button:hover:not(:disabled), .card button:active:not(:disabled) { transform: none; }
