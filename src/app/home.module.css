@@ -70,6 +70,7 @@
 
 /* Aparición al bajar por la página (la activa reveal.tsx). */
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s cubic-bezier(.22, 1, .36, 1); }
+.reveal[data-from="top"] { transform: translateY(-28px); }
 .reveal[data-visible="true"] { opacity: 1; transform: translateY(0); }
 @media (scripting: none) { .reveal, .notice { opacity: 1; transform: none; } }
 
@@ -79,6 +80,6 @@
 @media (prefers-reduced-motion: reduce) {
   .heroImage, .pulse::after, .marqueeTrack { animation: none; }
   .rise, .word { animation: none; opacity: 1; filter: none; transform: none; }
-  .reveal, .notice { opacity: 1; transform: none; transition: none; }
+  .reveal, .reveal[data-from="top"], .notice { opacity: 1; transform: none; transition: none; }
   .pillArrow, .textLink svg { transition: none; }
 }
