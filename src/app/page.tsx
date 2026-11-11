@@ -1,4 +1,5 @@
 import { ArrowRight, Bell, Building2, CalendarDays, CheckCircle2, ClipboardList, KeyRound, Mail, Megaphone, MessageSquareText, Package, Scale, ShieldCheck, UserRound, UsersRound, Vote, Wallet, Wrench } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import styles from "./home.module.css";
 import { Reveal } from "./reveal";
@@ -67,17 +68,10 @@ export default function HomePage() {
               <p className={`${styles.rise} ${styles.delay4} mt-6 flex items-center gap-2 text-sm text-muted-foreground`}><ShieldCheck size={17} className="text-primary" aria-hidden="true" />Acceso por invitación de la administración de tu conjunto.</p>
             </div>
 
-            <div aria-hidden="true" className={`${styles.scene} ${styles.rise} ${styles.delay2} mx-auto w-full max-w-md`}>
-              <div className="rounded-[28px] border border-white/70 bg-white/60 p-6 shadow-2xl shadow-primary/15 backdrop-blur-md sm:p-8">
-                <div className="flex h-64 items-end justify-center gap-3 border-b-2 border-primary/15">
-                  {[4, 6, 5].map((floors, index) => <div key={index} className={`${styles.building} grid flex-1 grid-cols-2 gap-2 rounded-t-xl border border-primary/15 bg-white p-3`}>{Array.from({ length: floors * 2 }, (_, i) => <span key={i} className={`${styles.window} h-4 rounded-sm`} />)}</div>)}
-                </div>
-                <p className="mt-6 text-sm font-semibold">Conjunto en línea</p>
-                <div className="mt-3 flex gap-2">{["Cartera", "Visitas", "Reservas"].map((tag) => <span key={tag} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{tag}</span>)}</div>
-              </div>
-              <div className={`${styles.floatCard} ${styles.floatOne}`}><span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary"><Package size={16} /></span><span><b className="block font-semibold">Paquete recibido</b><span className="text-xs text-muted-foreground">Portería · hace 2 min</span></span></div>
-              <div className={`${styles.floatCard} ${styles.floatTwo}`}><span className="flex size-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 size={16} /></span><span><b className="block font-semibold">Pago registrado</b><span className="text-xs text-muted-foreground">¡Estás al día!</span></span></div>
-              <div className={`${styles.floatCard} ${styles.floatThree}`}><span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary"><CalendarDays size={16} /></span><span><b className="block font-semibold">Reserva aprobada</b><span className="text-xs text-muted-foreground">Salón social · sábado</span></span></div>
+            {/* Imagen del conjunto (10/11/2026): entra con la cascada, flota despacio y sus bordes se funden con el fondo. */}
+            <div className={`${styles.rise} ${styles.delay2} relative mx-auto w-full max-w-xl`}>
+              <div aria-hidden="true" className={styles.heroGlow} />
+              <Image src="/images/conjunto-resiq.webp" alt="Conjunto residencial con tres torres, piscina y zonas verdes, junto a íconos de paquetes, reservas y pagos al día" width={1402} height={1122} priority sizes="(min-width: 1024px) 560px, 100vw" className={`${styles.heroImage} h-auto w-full`} />
             </div>
           </div>
         </section>

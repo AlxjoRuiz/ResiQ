@@ -23,23 +23,14 @@
 .gradientText { background: linear-gradient(90deg, #1d4ed8, #3b82f6, #1e40af, #1d4ed8); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 8s linear infinite; }
 @keyframes shine { to { background-position: 300% 0; } }
 
-/* Ilustración: edificios con ventanas que se encienden y tarjetas flotando. */
-.scene { position: relative; }
-.building { opacity: 0; transform-origin: bottom; animation: grow .9s cubic-bezier(.2, .7, .2, 1) forwards; }
-.building:nth-child(2) { animation-delay: .15s; }
-.building:nth-child(3) { animation-delay: .3s; }
-@keyframes grow { from { opacity: 0; transform: scaleY(.4); } to { opacity: 1; transform: scaleY(1); } }
-.window { background-color: #dbe4f3; animation: glow 4s ease-in-out infinite; }
-.window:nth-child(3n) { animation-delay: -1.3s; }
-.window:nth-child(4n + 1) { animation-delay: -2.6s; }
-.window:nth-child(5n + 2) { animation-delay: -3.4s; }
-@keyframes glow { 0%, 100% { background-color: #dbe4f3; } 45%, 60% { background-color: #fde68a; box-shadow: 0 0 10px #fcd34d99; } }
-.floatCard { position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid #dbe4f3; border-radius: 16px; background: rgb(255 255 255 / 88%); box-shadow: 0 14px 40px rgb(29 78 216 / 14%); backdrop-filter: blur(10px); font-size: 13px; white-space: nowrap; animation: float 6s ease-in-out infinite, pop .7s cubic-bezier(.2, .7, .2, 1) backwards; }
-.floatOne { top: 6%; left: -6%; animation-delay: 0s, .6s; }
-.floatTwo { top: 38%; right: -8%; animation-delay: -2s, .85s; }
-.floatThree { bottom: -7%; right: 4%; animation-delay: -4s, 1.1s; }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-@keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+/* Imagen del conjunto: flota despacio, con un halo azul detrás y los bordes fundidos con el fondo. */
+/* multiply: el fondo casi blanco de la imagen toma el color del fondo de la página, sin borde visible. */
+.heroImage { position: relative; mix-blend-mode: multiply; animation: float 7s ease-in-out infinite;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
+  -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent), linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent); mask-composite: intersect; }
+.heroGlow { position: absolute; inset: 12% 10%; border-radius: 9999px; background: radial-gradient(circle, rgb(59 130 246 / 30%), transparent 70%); filter: blur(40px); animation: breathe 7s ease-in-out infinite; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes breathe { 0%, 100% { opacity: .6; transform: scale(.95); } 50% { opacity: 1; transform: scale(1.05); } }
 .pulse { position: relative; }
 .pulse::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: inherit; animation: ping 2s cubic-bezier(0, 0, .2, 1) infinite; }
 @keyframes ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
@@ -66,8 +57,8 @@
 .topbar { backdrop-filter: blur(14px); background: rgb(255 255 255 / 78%); }
 
 @media (prefers-reduced-motion: reduce) {
-  .blob, .gradientText, .window, .floatCard, .pulse::after, .cta::before, .shineButton::after { animation: none; }
-  .rise, .building { animation: none; opacity: 1; transform: none; }
+  .blob, .gradientText, .heroImage, .heroGlow, .pulse::after, .cta::before, .shineButton::after { animation: none; }
+  .rise { animation: none; opacity: 1; transform: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .module, .moduleIcon { transition: none; }
   .module:hover, .module:hover .moduleIcon { transform: none; }
