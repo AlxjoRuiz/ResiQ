@@ -100,6 +100,9 @@
 @media print {
   .panelSurface, .panelSurface:has(> main:not(.canvas)) { height: auto; min-height: 0; overflow: visible; padding: 0; }
   .panelSurface > main:not(.canvas) { height: auto; overflow: visible; border: 0; border-radius: 0; }
+  /* Informes dentro del marco con barra (jurídica, 11/11/2026): solo se imprime el contenido. */
+  .canvas, .shell, .content { height: auto !important; overflow: visible !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; display: block !important; }
+  .sidebar, .topbar { display: none !important; }
 }
 /* Tarjetas del panel del superadmin: vidrio azul claro con borde marcado, como la tarjeta del login;
    al pasar el cursor crecen un poco (27/10/2026). */
