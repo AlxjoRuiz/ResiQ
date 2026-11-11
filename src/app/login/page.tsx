@@ -1,5 +1,6 @@
-import { Building2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Instrument_Serif } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 import styles from "./login.module.css";
 import { LoginForm } from "./login-form";
@@ -34,7 +35,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div className={`${styles.glow} ${styles.glowOne}`} aria-hidden="true" />
       <div className={`${styles.glow} ${styles.glowTwo}`} aria-hidden="true" />
       <div className={`${styles.glow} ${styles.glowThree}`} aria-hidden="true" />
-      <Link href="/" className={`${styles.back} ${styles.rise}`}><span className={styles.backIcon}><Building2 size={17} aria-hidden="true" /></span>ResiQ</Link>
+      <Link href="/" className={`${styles.back} ${styles.rise}`}><Image src="/images/resiq-mark.webp" alt="" width={256} height={256} priority className={styles.backIcon} /><span>Resi<span className="text-primary">Q</span></span></Link>
       <div className={styles.layout}>
         {/* Presentación (11/11/2026): mismo estilo de la portada; el título entra palabra por palabra. */}
         <section className={styles.introduction} aria-label="ResiQ, tu comunidad">
@@ -43,7 +44,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className={`${styles.description} ${styles.rise} ${styles.delay2}`}>Las novedades de tu conjunto, tus solicitudes y lo que necesitas para tu día a día, en un solo lugar.</p>
         </section>
         <section className={`${styles.card} ${styles.rise} ${styles.delay3}`} aria-labelledby="login-title">
-          <div className={styles.cardBrand}><span className={styles.brandIcon}><Building2 size={24} strokeWidth={1.7} /></span><div><p className="font-semibold">ResiQ</p><p className={styles.subtitle}>Acceso de la comunidad</p></div></div>
+          <div className={styles.cardBrand}><Image src="/images/resiq-mark.webp" alt="" width={256} height={256} priority className={styles.brandIcon} /><div><p className="text-lg font-bold tracking-tight">Resi<span className="text-primary">Q</span></p><p className={styles.subtitle}>Acceso de la comunidad</p></div></div>
           <h1 id="login-title" className={styles.title}>Bienvenido de nuevo</h1>
           <p className={styles.welcome}>Ingresa con la cuenta asociada a tu invitación.</p>
           {params.error && <p role="alert" className={styles.error}>{accessErrorMessages[params.error] ?? "No pudimos completar el acceso. Intenta nuevamente."}</p>}

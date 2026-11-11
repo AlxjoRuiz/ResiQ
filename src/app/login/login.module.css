@@ -24,7 +24,8 @@
 .back { position: absolute; top: 24px; left: 28px; display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px 6px 6px; border-radius: 9999px; background: rgb(255 255 255 / 80%); border: 1px solid rgb(29 78 216 / 10%); box-shadow: 0 8px 24px rgb(29 78 216 / 8%); backdrop-filter: blur(14px); font-size: 14px; font-weight: 600; transition: transform .2s ease, box-shadow .2s ease; }
 .back:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgb(29 78 216 / 14%); }
 .back:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 3px; }
-.backIcon { display: flex; width: 32px; height: 32px; align-items: center; justify-content: center; border-radius: 9999px; background: #1d4ed8; color: #fff; }
+/* Logo de ResiQ (la «R», 11/11/2026) en la píldora para volver a la portada. */
+.backIcon { width: 32px; height: 32px; object-fit: contain; }
 
 .layout { width: min(100%, 1120px); margin: auto; display: grid; grid-template-columns: 1fr 460px; gap: 72px; align-items: center; }
 
@@ -63,12 +64,12 @@
   border: 1px solid rgb(255 255 255 / 70%);
   box-shadow: 0 24px 80px rgb(29 78 216 / 20%), inset 0 1px 0 rgb(255 255 255 / 90%), inset 0 -1px 0 rgb(255 255 255 / 30%); }
 @supports not (backdrop-filter: blur(1px)) { .card { background: rgb(255 255 255 / 94%); } }
-/* El ícono de la tarjeta brilla suave, como el logo del login de referencia. */
+/* El logo de la tarjeta brilla suave, como el logo del login de referencia. */
 .cardBrand .brandIcon { animation: iconGlow 2.6s ease-in-out infinite; }
-@keyframes iconGlow { 0%, 100% { box-shadow: 0 6px 16px rgb(29 78 216 / 28%); } 50% { box-shadow: 0 0 0 6px rgb(29 78 216 / 12%), 0 10px 28px rgb(29 78 216 / 45%); } }
+@keyframes iconGlow { 0%, 100% { filter: drop-shadow(0 2px 4px rgb(29 78 216 / 25%)); } 50% { filter: drop-shadow(0 0 12px rgb(14 165 233 / 60%)); } }
 .card::before { content: ""; position: absolute; inset: 0 24px auto; height: 3px; border-radius: 0 0 9999px 9999px; background: linear-gradient(90deg, transparent, #1d4ed8, transparent); opacity: .7; }
 .cardBrand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
-.brandIcon { display: inline-flex; flex: none; width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: 9999px; color: #fff; background: #1d4ed8; box-shadow: 0 8px 20px rgb(29 78 216 / 28%); }
+.brandIcon { flex: none; width: 52px; height: 52px; object-fit: contain; }
 .subtitle { color: #64748b; font-size: 12px; margin-top: 2px; }
 .title { font-size: 30px; font-weight: 500; letter-spacing: -0.035em; line-height: 1.15; color: #020617; }
 .welcome { margin: 10px 0 28px; color: #64748b; font-size: 14px; line-height: 1.6; }
