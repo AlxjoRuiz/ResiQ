@@ -60,7 +60,7 @@ export default function HomePage() {
             <a href="#perfiles" className="transition-colors hover:text-primary">Para quién</a>
             <a href="#como-funciona" className="transition-colors hover:text-primary">Cómo funciona</a>
           </nav>
-          <a href="/login" className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90">Ingresar</a>
+          <a href="/login" className={`${styles.pillButton} ${styles.pillButtonSmall}`}>Ingresar<span className={styles.pillArrow}><ArrowRight size={15} aria-hidden="true" /></span></a>
         </div>
       </header>
 
@@ -80,7 +80,6 @@ export default function HomePage() {
               </h1>
               <p className={`${styles.rise} ${styles.delay3} mt-7 max-w-[30rem] text-[17px] leading-relaxed text-slate-600`}>ResiQ reúne a la administración, los residentes y la portería de tu conjunto en un solo lugar: la cartera clara, cada solicitud con seguimiento y cada novedad a tiempo.</p>
               <div className={`${styles.rise} ${styles.delay4} mt-9 flex flex-wrap items-center gap-6`}>
-                <a href="/login" className={styles.pillButton}>Ingresar a ResiQ<span className={styles.pillArrow}><ArrowRight size={17} aria-hidden="true" /></span></a>
                 <a href="#tu-dia" className={styles.textLink}>Ver cómo se vive<ArrowDown size={16} className="text-primary" aria-hidden="true" /></a>
               </div>
               <p className={`${styles.rise} ${styles.delay5} mt-8 flex items-center gap-2 text-sm text-slate-500`}><ShieldCheck size={17} className="text-primary" aria-hidden="true" />Acceso por invitación de la administración de tu conjunto.</p>

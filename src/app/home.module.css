@@ -43,6 +43,9 @@
 /* Botón en píldora con la flecha dentro de un círculo que gira al pasar el cursor. */
 .pillButton { display: inline-flex; align-items: center; gap: 12px; border-radius: 9999px; padding: 8px 8px 8px 24px; background: #1d4ed8; color: #fff; font-size: 15px; font-weight: 500; box-shadow: 0 1px 2px rgb(5 26 36 / 10%), 0 8px 24px rgb(29 78 216 / 28%); transition: background-color .2s cubic-bezier(.4, 0, .2, 1), transform .2s cubic-bezier(.4, 0, .2, 1); }
 .pillButton:hover { background: #1e40af; }
+/* Versión de la barra flotante (11/11/2026): el único botón para ingresar, un poco más compacto. */
+.pillButtonSmall { gap: 10px; padding: 5px 5px 5px 18px; font-size: 14px; }
+.pillButtonSmall .pillArrow { width: 30px; height: 30px; }
 .pillButton:active { transform: scale(.97); }
 .pillArrow { display: flex; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: 9999px; background: #fff; color: #1d4ed8; transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
 .pillButton:hover .pillArrow, .pillButton:focus-visible .pillArrow { transform: rotate(-45deg); }
