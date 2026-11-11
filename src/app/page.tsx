@@ -53,7 +53,7 @@ export default function HomePage() {
       {/* Barra flotante en píldora. */}
       <header className={`${styles.rise} sticky top-3 z-40 px-4 sm:top-4 sm:px-6`}>
         <div className={`${styles.navPill} mx-auto flex max-w-5xl items-center justify-between gap-4 rounded-full py-2 pr-2 pl-4`}>
-          <a href="#inicio" className="flex items-center gap-2.5 font-semibold"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-white"><Building2 size={19} aria-hidden="true" /></span><span className="text-[17px] tracking-tight">ResiQ</span></a>
+          <a href="#inicio" className="flex items-center gap-2 font-semibold">{/* Logo de ResiQ (11/11/2026): la «R» del logo oficial. */}<Image src="/images/resiq-mark.webp" alt="" width={256} height={256} priority className="size-10 shrink-0 object-contain" /><span className="text-[19px] font-bold tracking-tight">Resi<span className="text-primary">Q</span></span></a>
           <nav aria-label="Secciones" className="hidden items-center gap-7 text-sm font-medium text-slate-600 md:flex">
             <a href="#tu-dia" className="transition-colors hover:text-primary">Tu día</a>
             <a href="#modulos" className="transition-colors hover:text-primary">Módulos</a>
