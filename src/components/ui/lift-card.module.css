@@ -1,0 +1,13 @@
+/* Tarjeta que se levanta al pasar el cursor (11/11/2026): la de los módulos de la portada, reutilizada en
+   Mis comunidades y en los conjuntos de jurídica. Solo mueve con transform y cambia colores: es liviana. */
+.card { border: 1px solid var(--border); background-color: #ffffff; transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease, background-color .25s ease; }
+.card:hover, a:focus-visible > .card { transform: translateY(-6px); border-color: rgb(29 78 216 / 45%); background-color: #f5f8ff; box-shadow: 0 18px 40px rgb(29 78 216 / 14%); }
+
+/* Ícono en cuadro azul claro: al pasar el cursor gira un poco y se vuelve azul. */
+.icon { display: flex; align-items: center; justify-content: center; border-radius: 12px; background-color: rgb(29 78 216 / 10%); color: #1d4ed8; transition: transform .35s cubic-bezier(.2, .7, .2, 1), background-color .25s ease, color .25s ease; }
+.card:hover .icon, a:focus-visible > .card .icon { transform: rotate(-8deg) scale(1.08); background-color: #1d4ed8; color: #ffffff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .icon { transition: none; }
+  .card:hover, a:focus-visible > .card, .card:hover .icon, a:focus-visible > .card .icon { transform: none; }
+}
