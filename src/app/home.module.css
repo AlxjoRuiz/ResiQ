@@ -46,9 +46,7 @@
 .moduleIcon { transition: transform .35s cubic-bezier(.2, .7, .2, 1), background-color .25s ease, color .25s ease; }
 .module:hover .moduleIcon { transform: rotate(-8deg) scale(1.08); background-color: #1d4ed8; color: #ffffff; }
 
-/* Banda final azul con brillo que cruza. */
-.cta { position: relative; overflow: hidden; isolation: isolate; background: linear-gradient(135deg, #1e40af, #1d4ed8 45%, #2563eb); }
-.cta::before { content: ""; position: absolute; inset: -50%; z-index: -1; background: radial-gradient(circle at 30% 30%, rgb(255 255 255 / 18%), transparent 40%), radial-gradient(circle at 75% 70%, rgb(147 197 253 / 25%), transparent 45%); animation: drift 16s ease-in-out infinite alternate; }
+/* Brillo que cruza el botón principal. */
 .shineButton { position: relative; overflow: hidden; }
 .shineButton::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 45%), transparent); transform: skewX(-20deg); animation: sweep 3.5s ease-in-out infinite; }
 @keyframes sweep { 0%, 60% { left: -60%; } 100% { left: 130%; } }
@@ -57,7 +55,7 @@
 .topbar { backdrop-filter: blur(14px); background: rgb(255 255 255 / 78%); }
 
 @media (prefers-reduced-motion: reduce) {
-  .blob, .gradientText, .heroImage, .heroGlow, .pulse::after, .cta::before, .shineButton::after { animation: none; }
+  .blob, .gradientText, .heroImage, .heroGlow, .pulse::after, .shineButton::after { animation: none; }
   .rise { animation: none; opacity: 1; transform: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .module, .moduleIcon { transition: none; }

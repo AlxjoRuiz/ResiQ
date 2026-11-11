@@ -1,4 +1,4 @@
-import { ArrowRight, Bell, Building2, CalendarDays, CheckCircle2, ClipboardList, KeyRound, Mail, Megaphone, MessageSquareText, Package, Scale, ShieldCheck, UserRound, UsersRound, Vote, Wallet, Wrench } from "lucide-react";
+import { ArrowRight, Bell, Building2, CalendarDays, CheckCircle2, KeyRound, Mail, Megaphone, MessageSquareText, Package, ShieldCheck, UserRound, UsersRound, Vote, Wallet } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import styles from "./home.module.css";
@@ -23,10 +23,6 @@ const profiles = [
   { icon: KeyRound, title: "Portería", points: ["Registro de paquetes y servicios", "Control de visitas autorizadas", "Todo desde el celular"] },
 ] as const;
 
-const teams = [
-  { icon: Scale, title: "Cobro jurídico", description: "La abogada ve la cartera en vivo y envía requerimientos de pago." },
-  { icon: Wrench, title: "Mantenimiento", description: "Asistencia con foto, tareas con evidencia e informes del equipo." },
-] as const;
 
 const steps = [
   { icon: Mail, title: "Recibes tu invitación", description: "La administración de tu conjunto te invita con tu correo." },
@@ -110,14 +106,6 @@ export default function HomePage() {
                 </article>
               </Reveal>)}
             </div>
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
-              {teams.map(({ icon: Icon, title, description }, index) => <Reveal key={title} delay={index as 0 | 1}>
-                <article className={`${styles.module} flex h-full items-center gap-5 rounded-2xl border bg-white p-6`}>
-                  <span className={`${styles.moduleIcon} flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary`}><Icon size={22} aria-hidden="true" /></span>
-                  <div><h3 className="font-semibold">{title}</h3><p className="mt-1 text-sm text-muted-foreground">{description}</p></div>
-                </article>
-              </Reveal>)}
-            </div>
           </div>
         </section>
 
@@ -136,15 +124,6 @@ export default function HomePage() {
               </Reveal>)}
             </ol>
           </div>
-        </section>
-
-        <section className="px-6 py-20 sm:px-10 sm:py-24">
-          <Reveal className={`${styles.cta} mx-auto max-w-6xl rounded-[32px] px-8 py-14 text-center text-white shadow-2xl shadow-primary/30 sm:px-16 sm:py-20`}>
-            <ClipboardList size={36} className="mx-auto opacity-90" aria-hidden="true" />
-            <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Un mejor lugar para vivir empieza con estar conectados.</h2>
-            <p className="mx-auto mt-4 max-w-xl text-white/85">Si tu conjunto ya usa ResiQ, ingresa con el correo con el que te invitaron.</p>
-            <Button asChild variant="outline" className={`h-12 px-6 ${styles.shineButton} mt-8 border-white bg-white text-primary hover:bg-white/90`}><a href="/login">Ingresar a ResiQ <ArrowRight size={17} aria-hidden="true" /></a></Button>
-          </Reveal>
         </section>
       </main>
 
