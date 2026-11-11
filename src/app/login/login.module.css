@@ -46,7 +46,8 @@
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
 /* Entrada en cascada. */
-.rise { opacity: 0; animation: rise .8s cubic-bezier(.22, 1, .36, 1) forwards; }
+/* «backwards»: oculto mientras espera su turno y libre al terminar (así el efecto al pasar el cursor funciona). */
+.rise { animation: rise .8s cubic-bezier(.22, 1, .36, 1) backwards; }
 .delay1 { animation-delay: .1s; }
 .delay2 { animation-delay: .55s; }
 .delay3 { animation-delay: .25s; }
@@ -66,14 +67,23 @@
 .card input:not([type="hidden"]) { height: 50px; border-radius: 14px; border-color: #dbe3f0; background: #f8fafd; color: #0f172a; transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
 .card input:not([type="hidden"]):hover { border-color: #b9c8e4; }
 .card input:not([type="hidden"]):focus-visible, .card input:not([type="hidden"]):focus { border-color: #1d4ed8; background: #fff; box-shadow: 0 0 0 4px rgb(29 78 216 / 12%); --tw-ring-shadow: 0 0 #0000; }
-.card button { min-height: 50px; border-radius: 9999px; font-weight: 500; transition: background-color .2s ease, transform .15s ease, box-shadow .2s ease; }
-.card button:active { transform: scale(.98); }
-.card button[type="submit"]:not(:global(.login-alternative)) { background: #1d4ed8; color: #fff; box-shadow: 0 8px 22px rgb(29 78 216 / 28%); }
-.card button[type="submit"]:not(:global(.login-alternative)):hover { background: #1e40af; }
-.card :global(.login-alternative) { background: #fff; color: #0f172a; border-color: #dbe3f0; }
-.card :global(.login-alternative):hover { background: #f5f8ff; border-color: rgb(29 78 216 / 40%); }
+/* Botones fluidos (11/11/2026): se elevan con suavidad al pasar el cursor, se hunden un poco al presionar y
+   «Ingresar» muestra una flecha que se desliza. Movimiento con transform (liviano). */
+.card button { position: relative; min-height: 50px; border-radius: 9999px; font-weight: 500; will-change: transform; transition: transform .45s cubic-bezier(.22, 1, .36, 1), box-shadow .45s cubic-bezier(.22, 1, .36, 1), background-color .3s ease, border-color .3s ease, color .3s ease; }
+/* Sin el «agrandar» general de los botones: aquí el movimiento es elevarse. */
+.card button, .card button:hover { scale: 1; }
+.card button:hover:not(:disabled) { transform: translateY(-2px); }
+.card button:active:not(:disabled) { transform: translateY(0) scale(.98); transition-duration: .12s; }
+.card button:focus-visible { outline: none; box-shadow: 0 0 0 4px rgb(29 78 216 / 20%); }
+.card :global(.login-primary) { background: #1d4ed8; color: #fff; box-shadow: 0 8px 22px rgb(29 78 216 / 28%); }
+.card :global(.login-primary):hover:not(:disabled) { background: #1e40af; box-shadow: 0 14px 32px rgb(29 78 216 / 36%); }
+.card :global(.login-primary)::after { content: "→"; display: inline-block; width: 0; overflow: hidden; opacity: 0; transform: translateX(-8px); transition: width .45s cubic-bezier(.22, 1, .36, 1), opacity .3s ease, transform .45s cubic-bezier(.22, 1, .36, 1); }
+.card :global(.login-primary):hover:not(:disabled)::after { width: 1em; opacity: 1; transform: translateX(0); }
+.card :global(.login-alternative) { background: #fff; color: #0f172a; border-color: #dbe3f0; box-shadow: 0 1px 2px rgb(15 23 42 / 5%); }
+.card :global(.login-alternative):hover:not(:disabled) { background: #f5f8ff; color: #1d4ed8; border-color: rgb(29 78 216 / 40%); box-shadow: 0 12px 26px rgb(29 78 216 / 14%); }
 /* Los campos aparecen uno tras otro al cargar. */
-.card form > * { animation: rise .7s cubic-bezier(.22, 1, .36, 1) both; }
+/* «backwards»: al terminar, la animación suelta el elemento para que el botón pueda elevarse al pasar el cursor. */
+.card form > * { animation: rise .7s cubic-bezier(.22, 1, .36, 1) backwards; }
 .card form > *:nth-child(2) { animation-delay: .45s; }
 .card form > *:nth-child(3) { animation-delay: .55s; }
 .card form > *:nth-child(4) { animation-delay: .65s; }
@@ -100,5 +110,6 @@
 @media (prefers-reduced-motion: reduce) {
   .word, .rise, .image, .card form > * { animation: none; opacity: 1; filter: none; transform: none; }
   .pulse::after { animation: none; }
-  .card input, .card button, .back { transition: none; }
+  .card input, .card button, .card button::after, .back { transition: none; }
+  .card button:hover:not(:disabled), .card button:active:not(:disabled) { transform: none; }
 }

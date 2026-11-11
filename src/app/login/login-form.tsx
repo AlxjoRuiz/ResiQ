@@ -23,7 +23,7 @@ export function LoginForm({ next, invitationToken, invitedEmail }: { next: strin
           <input className="mt-2 h-11 w-full rounded-lg border bg-white px-3 outline-none focus:ring-2 focus:ring-ring" name="password" type="password" autoComplete="current-password" minLength={8} required />
         </label>
         {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
-        <Button className="w-full" disabled={pending}>{pending ? "Ingresando…" : "Ingresar"}</Button>
+        <Button className="w-full login-primary" disabled={pending}>{pending ? "Ingresando…" : "Ingresar"}</Button>
       </form>
       <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />o<span className="h-px flex-1 bg-border" /></div>
       <form action={signInWithGoogle}>
