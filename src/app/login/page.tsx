@@ -1,10 +1,18 @@
 import { Building2, ShieldCheck } from "lucide-react";
+import { Instrument_Serif } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 import styles from "./login.module.css";
 import { LoginForm } from "./login-form";
 import { safeNext } from "@/lib/auth/safe-next";
 import { accessErrorMessages } from "@/lib/auth/app-access";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+// Cursiva serif del acento, la misma de la portada (se sirve desde la misma web).
+const serif = Instrument_Serif({ weight: "400", style: "italic", subsets: ["latin"], display: "swap" });
+// «Tu comunidad. Más cerca.»: cada palabra entra con desenfoque, 100 ms después de la anterior.
+const headline = [["Tu", "comunidad."], ["Más", "cerca."]].map((line, lineIndex) =>
+  line.map((word, index) => ({ word, delay: 0.2 + 0.1 * (lineIndex * 2 + index), accent: lineIndex === 1 })));
 
 // Correo al que se envió la invitación (04/11/2026), para dejarlo fijo en «Crear cuenta con invitación».
 // null = la invitación venció o no existe; undefined = no se pudo consultar (el formulario sigue igual).
@@ -24,15 +32,16 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className={styles.page}>
       <div className={styles.ambient} aria-hidden="true" />
+      <Link href="/" className={`${styles.back} ${styles.rise}`}><span className={styles.backIcon}><Building2 size={17} aria-hidden="true" /></span>ResiQ</Link>
       <div className={styles.layout}>
+        {/* Presentación (11/11/2026): mismo estilo de la portada; el título entra palabra por palabra. */}
         <section className={styles.introduction} aria-label="ResiQ, tu comunidad">
-          <div className={styles.brand}><span className={styles.brandIcon}><Building2 size={25} strokeWidth={1.7} /></span><span>ResiQ</span></div>
-          <p className={styles.eyebrow}>UN ESPACIO PARA TU COMUNIDAD</p>
-          <p className={styles.headline}>Tu comunidad.<br /><span>Más cerca.</span></p>
-          <p className={styles.description}>Las novedades de tu conjunto, tus solicitudes y lo que necesitas para tu día a día, en un solo lugar.</p>
-          <div className={styles.community}><span className={styles.dot} />Conectados con tu hogar.</div>
+          <p className={`${styles.chip} ${styles.rise} ${styles.delay1}`}><span className={styles.chipTag}><span className={styles.pulse} />En línea</span>Un espacio para tu comunidad</p>
+          <p className={styles.headline}>{headline.map((line, lineIndex) => <span key={lineIndex} className="block">{line.map(({ word, delay, accent }) => <span key={word} className={`${styles.word} ${accent ? `${styles.serif} ${serif.className} pr-1` : ""}`} style={{ animationDelay: `${delay}s` }}>{word}{" "}</span>)}</span>)}</p>
+          <p className={`${styles.description} ${styles.rise} ${styles.delay2}`}>Las novedades de tu conjunto, tus solicitudes y lo que necesitas para tu día a día, en un solo lugar.</p>
+          <Image src="/images/conjunto-resiq.webp" alt="" width={1402} height={1122} priority sizes="440px" className={styles.image} />
         </section>
-        <section className={styles.card} aria-labelledby="login-title">
+        <section className={`${styles.card} ${styles.rise} ${styles.delay3}`} aria-labelledby="login-title">
           <div className={styles.cardBrand}><span className={styles.brandIcon}><Building2 size={24} strokeWidth={1.7} /></span><div><p className="font-semibold">ResiQ</p><p className={styles.subtitle}>Acceso de la comunidad</p></div></div>
           <h1 id="login-title" className={styles.title}>Bienvenido de nuevo</h1>
           <p className={styles.welcome}>Ingresa con la cuenta asociada a tu invitación.</p>
