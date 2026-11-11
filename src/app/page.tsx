@@ -1,51 +1,165 @@
-import { ArrowDown, Building2, CalendarDays, MessageSquareText, Package, ShieldCheck } from "lucide-react";
+import { ArrowRight, Bell, Building2, CalendarDays, CheckCircle2, ClipboardList, KeyRound, Mail, Megaphone, MessageSquareText, Package, Scale, ShieldCheck, UserRound, UsersRound, Vote, Wallet, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { siteConfig } from "@/config/site";
+import styles from "./home.module.css";
+import { Reveal } from "./reveal";
 
-const features = [
-  { icon: MessageSquareText, title: "Una comunicación más cercana", description: "Solicitudes, respuestas y novedades de tu comunidad en un mismo lugar." },
-  { icon: Package, title: "Tu día a día, más sencillo", description: "Paquetes y visitas organizados para residentes y portería." },
-  { icon: CalendarDays, title: "Espacios para compartir", description: "Consulta las zonas comunes y organiza tus próximas reservas." },
-];
+// Portada pública de ResiQ (10/11/2026, pedido de Alejandro): diseño en azul y blanco con animaciones suaves.
+// Solo describe lo que la plataforma ya hace; el acceso sigue siendo por invitación.
+const modules = [
+  { icon: Wallet, title: "Cartera", description: "Estado de cuenta, comprobantes de pago y acuerdos de pago, claros para todos." },
+  { icon: MessageSquareText, title: "PQRS", description: "Peticiones, quejas y reclamos con su seguimiento de principio a fin." },
+  { icon: Package, title: "Paquetes", description: "Portería registra la llegada y el residente recibe el aviso al instante." },
+  { icon: UsersRound, title: "Visitas", description: "Autoriza a tus visitantes y portería controla su entrada y salida." },
+  { icon: CalendarDays, title: "Reservas", description: "Zonas comunes con su disponibilidad y reservas en pocos pasos." },
+  { icon: Vote, title: "Asambleas", description: "Convocatorias, asistencia y votaciones en vivo de la comunidad." },
+  { icon: Megaphone, title: "Comunicados", description: "Mensajes de la administración con archivos adjuntos para todos." },
+  { icon: Bell, title: "Notificaciones", description: "Cada novedad de tu apartamento llega a tu bandeja de avisos." },
+] as const;
+
+const profiles = [
+  { icon: Building2, title: "Administración", points: ["Cartera, mora y acuerdos de pago", "Censo y residentes del conjunto", "Comunicados, asambleas y llamados"] },
+  { icon: UserRound, title: "Residentes", points: ["Tu estado de cuenta y comprobantes", "Paquetes, visitas y reservas", "Avisos de lo que pasa en tu comunidad"] },
+  { icon: KeyRound, title: "Portería", points: ["Registro de paquetes y servicios", "Control de visitas autorizadas", "Todo desde el celular"] },
+] as const;
+
+const teams = [
+  { icon: Scale, title: "Cobro jurídico", description: "La abogada ve la cartera en vivo y envía requerimientos de pago." },
+  { icon: Wrench, title: "Mantenimiento", description: "Asistencia con foto, tareas con evidencia e informes del equipo." },
+] as const;
+
+const steps = [
+  { icon: Mail, title: "Recibes tu invitación", description: "La administración de tu conjunto te invita con tu correo." },
+  { icon: ShieldCheck, title: "Creas tu acceso", description: "Entras con el mismo correo y quedas ligado a tu apartamento." },
+  { icon: CheckCircle2, title: "Tu comunidad, en un lugar", description: "Cartera, solicitudes, paquetes y avisos desde cualquier dispositivo." },
+] as const;
 
 export default function HomePage() {
   return (
     <>
-      <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:z-20 focus:bg-white focus:p-4">Saltar al contenido</a>
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-5 sm:px-10">
-          <span className="flex items-center gap-3 text-sm font-semibold sm:text-base"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white"><Building2 size={22} aria-hidden="true" /></span>{siteConfig.name}</span>
-          <Button asChild variant="outline" size="sm"><a href="/login">Ingresar</a></Button>
+      <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-4">Saltar al contenido</a>
+      <header className={`${styles.topbar} sticky top-0 z-40 border-b border-white/60`}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 sm:px-10">
+          <a href="#inicio" className="flex items-center gap-3 font-semibold"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/30"><Building2 size={22} aria-hidden="true" /></span><span className="text-lg tracking-tight">ResiQ</span></a>
+          <nav aria-label="Secciones" className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex">
+            <a href="#modulos" className="transition-colors hover:text-primary">Módulos</a>
+            <a href="#perfiles" className="transition-colors hover:text-primary">Para quién</a>
+            <a href="#como-funciona" className="transition-colors hover:text-primary">Cómo funciona</a>
+          </nav>
+          <Button asChild size="sm"><a href="/login">Ingresar <ArrowRight size={15} aria-hidden="true" /></a></Button>
         </div>
       </header>
-      <main id="contenido" className="mx-auto max-w-6xl px-6 sm:px-10">
-        <section className="grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-[1.3fr_1fr]">
-          <div>
-            <p className="mb-5 text-xs font-semibold tracking-[0.2em] text-primary uppercase">Tu comunidad, conectada</p>
-            <h1 className="max-w-2xl text-4xl leading-[1.12] font-semibold tracking-tight sm:text-6xl">Un mejor lugar<br />para vivir empieza<br /><span className="text-primary">con estar conectados.</span></h1>
-            <p className="mt-6 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">Un espacio compartido para residentes, portería y administración. Más claridad en cada solicitud y más tranquilidad en el día a día.</p>
-            <Button asChild className="mt-8"><a href="#comunidad">Conoce el espacio <ArrowDown size={16} aria-hidden="true" /></a></Button>
-          </div>
-          <Card className="overflow-hidden bg-[#edf2fa]">
-            <CardContent className="p-8 sm:p-10">
-              <div className="mb-10 flex items-center gap-2 text-xs font-medium text-primary"><span className="size-2 rounded-full bg-primary" />Estamos construyendo tu próximo espacio</div>
-              <div aria-hidden="true" className="flex h-44 items-end justify-center gap-3 border-b border-[#bccbe0] pb-0">
-                {[3, 5, 4].map((floors, index) => <div key={index} className="grid min-w-0 flex-1 grid-cols-2 gap-2 rounded-t-lg border border-[#bccbe0] bg-white/80 p-2 sm:gap-3 sm:p-4">{Array.from({ length: floors * 2 }, (_, i) => <span key={i} className="h-4 w-full rounded-sm bg-[#c4d2e6]" />)}</div>)}
+
+      <main id="contenido">
+        <section id="inicio" className={styles.hero}>
+          <div aria-hidden="true" className={styles.grid} />
+          <div aria-hidden="true" className={`${styles.blob} ${styles.blobOne}`} />
+          <div aria-hidden="true" className={`${styles.blob} ${styles.blobTwo}`} />
+          <div aria-hidden="true" className={`${styles.blob} ${styles.blobThree}`} />
+          <div className="mx-auto grid max-w-6xl items-center gap-14 px-6 pt-14 pb-20 sm:px-10 sm:pt-20 sm:pb-28 lg:grid-cols-[1.15fr_1fr]">
+            <div>
+              <p className={`${styles.rise} inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/70 px-3 py-1.5 text-xs font-semibold text-primary`}><span className={`${styles.pulse} size-2 rounded-full bg-primary`} />Plataforma para propiedad horizontal en Colombia</p>
+              <h1 className={`${styles.rise} ${styles.delay1} mt-6 text-4xl leading-[1.08] font-semibold tracking-tight sm:text-6xl`}>Tu conjunto,<br />en orden y <span className={styles.gradientText}>conectado.</span></h1>
+              <p className={`${styles.rise} ${styles.delay2} mt-6 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg`}>ResiQ reúne a la administración, los residentes y la portería en un solo lugar: cartera clara, solicitudes con seguimiento y cada novedad a tiempo.</p>
+              <div className={`${styles.rise} ${styles.delay3} mt-9 flex flex-wrap items-center gap-3`}>
+                <Button asChild className={`h-12 px-6 ${styles.shineButton} shadow-lg shadow-primary/25`}><a href="/login">Ingresar a ResiQ <ArrowRight size={17} aria-hidden="true" /></a></Button>
+                <Button asChild variant="outline" className="h-12 bg-white/80 px-6"><a href="#modulos">Ver los módulos</a></Button>
               </div>
-              <h2 className="mt-8 text-xl font-semibold">Todo empieza en comunidad.</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">Estamos preparando la plataforma. El acceso por invitación estará disponible próximamente.</p>
-              <div className="mt-6 flex items-center gap-2 text-xs text-primary"><ShieldCheck size={17} aria-hidden="true" />Acceso previsto para miembros autorizados</div>
-            </CardContent>
-          </Card>
+              <p className={`${styles.rise} ${styles.delay4} mt-6 flex items-center gap-2 text-sm text-muted-foreground`}><ShieldCheck size={17} className="text-primary" aria-hidden="true" />Acceso por invitación de la administración de tu conjunto.</p>
+            </div>
+
+            <div aria-hidden="true" className={`${styles.scene} ${styles.rise} ${styles.delay2} mx-auto w-full max-w-md`}>
+              <div className="rounded-[28px] border border-white/70 bg-white/60 p-6 shadow-2xl shadow-primary/15 backdrop-blur-md sm:p-8">
+                <div className="flex h-64 items-end justify-center gap-3 border-b-2 border-primary/15">
+                  {[4, 6, 5].map((floors, index) => <div key={index} className={`${styles.building} grid flex-1 grid-cols-2 gap-2 rounded-t-xl border border-primary/15 bg-white p-3`}>{Array.from({ length: floors * 2 }, (_, i) => <span key={i} className={`${styles.window} h-4 rounded-sm`} />)}</div>)}
+                </div>
+                <p className="mt-6 text-sm font-semibold">Conjunto en línea</p>
+                <div className="mt-3 flex gap-2">{["Cartera", "Visitas", "Reservas"].map((tag) => <span key={tag} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">{tag}</span>)}</div>
+              </div>
+              <div className={`${styles.floatCard} ${styles.floatOne}`}><span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary"><Package size={16} /></span><span><b className="block font-semibold">Paquete recibido</b><span className="text-xs text-muted-foreground">Portería · hace 2 min</span></span></div>
+              <div className={`${styles.floatCard} ${styles.floatTwo}`}><span className="flex size-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><CheckCircle2 size={16} /></span><span><b className="block font-semibold">Pago registrado</b><span className="text-xs text-muted-foreground">¡Estás al día!</span></span></div>
+              <div className={`${styles.floatCard} ${styles.floatThree}`}><span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary"><CalendarDays size={16} /></span><span><b className="block font-semibold">Reserva aprobada</b><span className="text-xs text-muted-foreground">Salón social · sábado</span></span></div>
+            </div>
+          </div>
         </section>
-        <section id="comunidad" className="scroll-mt-8 border-t py-12 sm:py-16">
-          <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">Lo que viene</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Menos trámites. Más comunidad.</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">{features.map(({ icon: Icon, title, description }) => <Card key={title}><CardContent><Icon className="mb-6 text-primary" size={24} aria-hidden="true" /><h3 className="font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p></CardContent></Card>)}</div>
+
+        <section id="modulos" className="scroll-mt-20 bg-white py-20 sm:py-28">
+          <div className="mx-auto max-w-6xl px-6 sm:px-10">
+            <Reveal className="max-w-2xl">
+              <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">Todo en un lugar</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Menos trámites. Más comunidad.</h2>
+              <p className="mt-4 text-muted-foreground">Cada módulo está pensado para el día a día de un conjunto residencial.</p>
+            </Reveal>
+            <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {modules.map(({ icon: Icon, title, description }, index) => <Reveal as="li" key={title} delay={(index % 4) as 0 | 1 | 2 | 3} className="h-full">
+                <article className={`${styles.module} h-full rounded-2xl border bg-white p-6`}>
+                  <span className={`${styles.moduleIcon} flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary`}><Icon size={22} aria-hidden="true" /></span>
+                  <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+                </article>
+              </Reveal>)}
+            </ul>
+          </div>
+        </section>
+
+        <section id="perfiles" className="scroll-mt-20 py-20 sm:py-28">
+          <div className="mx-auto max-w-6xl px-6 sm:px-10">
+            <Reveal className="max-w-2xl">
+              <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">Para cada persona del conjunto</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Cada quien ve lo que necesita.</h2>
+            </Reveal>
+            <div className="mt-12 grid gap-5 md:grid-cols-3">
+              {profiles.map(({ icon: Icon, title, points }, index) => <Reveal key={title} delay={index as 0 | 1 | 2}>
+                <article className={`${styles.module} h-full rounded-2xl border bg-white p-7`}>
+                  <span className={`${styles.moduleIcon} flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary`}><Icon size={22} aria-hidden="true" /></span>
+                  <h3 className="mt-5 text-xl font-semibold">{title}</h3>
+                  <ul className="mt-4 grid gap-3 text-sm text-muted-foreground">{points.map((point) => <li key={point} className="flex items-start gap-2"><CheckCircle2 size={17} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{point}</li>)}</ul>
+                </article>
+              </Reveal>)}
+            </div>
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              {teams.map(({ icon: Icon, title, description }, index) => <Reveal key={title} delay={index as 0 | 1}>
+                <article className={`${styles.module} flex h-full items-center gap-5 rounded-2xl border bg-white p-6`}>
+                  <span className={`${styles.moduleIcon} flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary`}><Icon size={22} aria-hidden="true" /></span>
+                  <div><h3 className="font-semibold">{title}</h3><p className="mt-1 text-sm text-muted-foreground">{description}</p></div>
+                </article>
+              </Reveal>)}
+            </div>
+          </div>
+        </section>
+
+        <section id="como-funciona" className="scroll-mt-20 bg-white py-20 sm:py-28">
+          <div className="mx-auto max-w-6xl px-6 sm:px-10">
+            <Reveal className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-semibold tracking-[0.18em] text-primary uppercase">Cómo funciona</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Empezar es muy sencillo.</h2>
+            </Reveal>
+            <ol className="relative mt-14 grid gap-10 md:grid-cols-3">
+              <span aria-hidden="true" className="absolute top-7 right-[16%] left-[16%] hidden h-0.5 bg-gradient-to-r from-primary/10 via-primary/40 to-primary/10 md:block" />
+              {steps.map(({ icon: Icon, title, description }, index) => <Reveal as="li" key={title} delay={index as 0 | 1 | 2} className="relative text-center">
+                <span className="relative mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/30"><Icon size={24} aria-hidden="true" /><span className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-white text-xs font-bold text-primary shadow">{index + 1}</span></span>
+                <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+                <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">{description}</p>
+              </Reveal>)}
+            </ol>
+          </div>
+        </section>
+
+        <section className="px-6 py-20 sm:px-10 sm:py-24">
+          <Reveal className={`${styles.cta} mx-auto max-w-6xl rounded-[32px] px-8 py-14 text-center text-white shadow-2xl shadow-primary/30 sm:px-16 sm:py-20`}>
+            <ClipboardList size={36} className="mx-auto opacity-90" aria-hidden="true" />
+            <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Un mejor lugar para vivir empieza con estar conectados.</h2>
+            <p className="mx-auto mt-4 max-w-xl text-white/85">Si tu conjunto ya usa ResiQ, ingresa con el correo con el que te invitaron.</p>
+            <Button asChild variant="outline" className={`h-12 px-6 ${styles.shineButton} mt-8 border-white bg-white text-primary hover:bg-white/90`}><a href="/login">Ingresar a ResiQ <ArrowRight size={17} aria-hidden="true" /></a></Button>
+          </Reveal>
         </section>
       </main>
-      <footer className="border-t px-6 py-6 text-center text-xs text-muted-foreground">Propiedad Horizontal · Una comunidad mejor conectada</footer>
+
+      <footer className="border-t bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground sm:px-10">
+          <span className="flex items-center gap-2 font-semibold text-foreground"><span className="flex size-8 items-center justify-center rounded-lg bg-primary text-white"><Building2 size={17} aria-hidden="true" /></span>ResiQ</span>
+          <span>Una comunidad mejor conectada · {new Date().getFullYear()}</span>
+        </div>
+      </footer>
     </>
   );
 }
