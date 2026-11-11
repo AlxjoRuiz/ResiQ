@@ -39,10 +39,13 @@
 @keyframes blurIn { to { opacity: 1; filter: blur(0); transform: translateY(0); } }
 .serif { font-style: italic; font-weight: 400; letter-spacing: -.01em; color: #1d4ed8; }
 .description { margin-top: 22px; max-width: 420px; color: #475569; line-height: 1.7; font-size: 16px; }
-/* Detrás de la tarjeta (11/11/2026): anillos y una luz azul suave para que se note el vidrio. */
-.ambient::after { content: ""; position: absolute; width: min(62vw, 760px); aspect-ratio: 1; top: -18%; right: -10%; border-radius: 50%;
-  background: radial-gradient(circle at 45% 55%, rgb(59 130 246 / 34%), rgb(147 197 253 / 18%) 38%, transparent 66%);
-  border: 1px solid rgb(29 78 216 / 10%); box-shadow: 0 0 0 80px rgb(29 78 216 / 3%), 0 0 0 160px rgb(29 78 216 / 2%); }
+/* Detrás de la tarjeta (11/11/2026, como el login de vidrio de Alejandro): dos luces de color muy difuminadas que
+   flotan despacio, una azul y una celeste; a través del vidrio se ven moverse. */
+.glow { position: absolute; z-index: -1; border-radius: 9999px; pointer-events: none; animation: float 9s ease-in-out infinite; }
+.glowOne { top: 18%; right: 14%; width: 360px; height: 360px; background: rgb(29 78 216 / 32%); filter: blur(110px); }
+.glowTwo { bottom: 12%; right: 30%; width: 320px; height: 320px; background: rgb(56 189 248 / 30%); filter: blur(120px); animation-duration: 11s; animation-delay: -4s; }
+.glowThree { top: 30%; left: 8%; width: 260px; height: 260px; background: rgb(96 165 250 / 20%); filter: blur(110px); animation-duration: 13s; animation-delay: -7s; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
 
 /* Entrada en cascada. */
 /* «backwards»: oculto mientras espera su turno y libre al terminar (así el efecto al pasar el cursor funciona). */
@@ -52,13 +55,17 @@
 .delay3 { animation-delay: .25s; }
 @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Tarjeta del formulario con efecto de vidrio (11/11/2026): blanca translúcida y difuminada, borde claro y brillo arriba. */
-.card { position: relative; padding: 40px; border-radius: 32px;
-  background: linear-gradient(145deg, rgb(255 255 255 / 68%), rgb(255 255 255 / 38%));
-  backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
-  border: 1px solid rgb(255 255 255 / 80%);
-  box-shadow: 0 30px 80px rgb(29 78 216 / 16%), 0 1px 2px rgb(15 23 42 / 4%), inset 0 1px 0 rgb(255 255 255 / 95%); }
+/* Tarjeta del formulario con efecto de vidrio (11/11/2026, como el login de vidrio de Alejandro): muy translúcida,
+   difuminada con fuerza, borde fino claro y sombra grande; deja ver las luces de color que flotan detrás. */
+.card { position: relative; padding: 40px; border-radius: 28px;
+  background: linear-gradient(150deg, rgb(255 255 255 / 52%), rgb(255 255 255 / 22%));
+  backdrop-filter: blur(40px) saturate(170%); -webkit-backdrop-filter: blur(40px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 70%);
+  box-shadow: 0 24px 80px rgb(29 78 216 / 20%), inset 0 1px 0 rgb(255 255 255 / 90%), inset 0 -1px 0 rgb(255 255 255 / 30%); }
 @supports not (backdrop-filter: blur(1px)) { .card { background: rgb(255 255 255 / 94%); } }
+/* El ícono de la tarjeta brilla suave, como el logo del login de referencia. */
+.cardBrand .brandIcon { animation: iconGlow 2.6s ease-in-out infinite; }
+@keyframes iconGlow { 0%, 100% { box-shadow: 0 6px 16px rgb(29 78 216 / 28%); } 50% { box-shadow: 0 0 0 6px rgb(29 78 216 / 12%), 0 10px 28px rgb(29 78 216 / 45%); } }
 .card::before { content: ""; position: absolute; inset: 0 24px auto; height: 3px; border-radius: 0 0 9999px 9999px; background: linear-gradient(90deg, transparent, #1d4ed8, transparent); opacity: .7; }
 .cardBrand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
 .brandIcon { display: inline-flex; flex: none; width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: 9999px; color: #fff; background: #1d4ed8; box-shadow: 0 8px 20px rgb(29 78 216 / 28%); }
@@ -113,7 +120,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .word, .rise, .card form > * { animation: none; opacity: 1; filter: none; transform: none; }
-  .pulse::after { animation: none; }
+  .pulse::after, .glow, .cardBrand .brandIcon { animation: none; }
   .card input, .card button, .card button::after, .back { transition: none; }
   .card button:hover:not(:disabled), .card button:active:not(:disabled) { transform: none; }
 }

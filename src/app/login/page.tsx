@@ -31,6 +31,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className={styles.page}>
       <div className={styles.ambient} aria-hidden="true" />
+      <div className={`${styles.glow} ${styles.glowOne}`} aria-hidden="true" />
+      <div className={`${styles.glow} ${styles.glowTwo}`} aria-hidden="true" />
+      <div className={`${styles.glow} ${styles.glowThree}`} aria-hidden="true" />
       <Link href="/" className={`${styles.back} ${styles.rise}`}><span className={styles.backIcon}><Building2 size={17} aria-hidden="true" /></span>ResiQ</Link>
       <div className={styles.layout}>
         {/* Presentación (11/11/2026): mismo estilo de la portada; el título entra palabra por palabra. */}
