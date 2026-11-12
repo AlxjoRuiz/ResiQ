@@ -7,6 +7,7 @@ import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { formatDay, formatMoment, newsLabels, uuidPattern, type LegalAccount, type LegalNews, type LegalProperty } from "../legal-data";
 import { MarkPropertySeen } from "../mark-seen";
 import { LegalTowers, type LegalTower } from "./legal-towers";
+import { caseStatusLabels, caseStatusTones } from "@/lib/legal/case-labels";
 
 // Sin «Al día» (13/11/2026): la abogada solo ve apartamentos con más de 60 días de mora.
 const LEGAL_MIN_DAYS = 60;
@@ -27,13 +28,16 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   if (!uuidPattern.test(propertyId)) notFound();
   const tab: Tab = tabs.find((item) => item.id === rawTab)?.id ?? "mora";
   const { supabase } = await requireLegalStaff();
-  const [{ data: propertyData, error: propertyError }, { data: accountData, error: accountError }, { data: newsData, error: newsError }, { data: threadData }] = await Promise.all([
+  const [{ data: propertyData, error: propertyError }, { data: accountData, error: accountError }, { data: newsData, error: newsError }, { data: threadData }, { data: caseData }] = await Promise.all([
     supabase.rpc("legal_list_properties"),
     // Todos los apartamentos, de 1.000 en 1.000 (Supabase corta en 1.000; 13/11/2026).
     fetchAllRows<LegalAccount>((from, to) => supabase.rpc("legal_property_accounts", { target_property_id: propertyId }).order("unit_id").range(from, to)),
     supabase.rpc("legal_property_news", { target_property_id: propertyId }),
     supabase.rpc("legal_list_threads"),
+    // Estado del expediente de cada apartamento (13/11/2026); si falla, la lista sale sin etiquetas.
+    fetchAllRows<{ unit_id: string; status: string }>((from, to) => supabase.rpc("legal_property_cases", { target_property_id: propertyId }).order("unit_id").range(from, to)),
   ]);
+  const caseByUnit = new Map(((caseData ?? []) as { unit_id: string; status: string }[]).filter((row) => row.status !== "closed").map((row) => [row.unit_id, row.status]));
   if (accountError?.message.includes("not_authorized") || newsError?.message.includes("not_authorized")) notFound();
   if (propertyError || accountError || newsError) throw new Error("No se pudo cargar la cartera del conjunto.");
   const property = ((propertyData ?? []) as LegalProperty[]).find((row) => row.property_id === propertyId);
@@ -53,7 +57,8 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
     .sort((a, b) => byName(a.building_name, b.building_name) || byName(a.unit_code, b.unit_code));
   const towerGroups: LegalTower[] = [...rows.reduce((map, row) => map.set(row.building_name, [...(map.get(row.building_name) ?? []), row]), new Map<string, LegalAccount[]>())]
     .map(([name, list]) => ({ name, units: list.map((row) => ({ id: row.unit_id, code: row.unit_code, owner: row.owner_name, amount: Number(row.in_arrears ? row.overdue : row.outstanding), days: row.days_overdue,
-      lastPayment: formatDay(row.last_payment_on), agreement: row.agreement_active, inArrears: row.in_arrears, outstanding: Number(row.outstanding) })) }));
+      lastPayment: formatDay(row.last_payment_on), agreement: row.agreement_active, inArrears: row.in_arrears, outstanding: Number(row.outstanding),
+      caseLabel: caseByUnit.has(row.unit_id) ? `Expediente: ${caseStatusLabels[caseByUnit.get(row.unit_id)!] ?? caseByUnit.get(row.unit_id)}` : null, caseTone: caseStatusTones[caseByUnit.get(row.unit_id) ?? ""] ?? null })) }));
   const tabTotal = arrears.length;
   const filtering = minDays > 1 || Boolean(towerFilter) || Boolean(unitFilter);
   const fieldClass = "h-9 rounded-lg border bg-white px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring";

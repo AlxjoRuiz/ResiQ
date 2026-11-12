@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PlatformPage } from "@/components/dashboard/platform-page";
 import { CollectionNoticeForm } from "@/components/legal/collection-notice-form";
+import { CaseFilePanel, type CaseFile } from "@/components/legal/case-file";
+import { caseStatusLabels, caseStatusTones } from "@/lib/legal/case-labels";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
 import { formatCop } from "@/lib/finance/constants";
@@ -23,7 +25,8 @@ const tableHead = "bg-primary text-left text-primary-foreground";
 const tableClass = "w-full min-w-[560px] table-fixed text-sm";
 const columns = <colgroup><col /><col className="w-32" /><col className="w-36" /><col className="w-32" /></colgroup>;
 type Notice = { notice_id: string; created_at: string; recipient_email: string; recipient_name: string | null; subject: string; total: number; debt_count: number; delivery_status: string; replies?: number };
-const tabs = [{ id: "requerimiento", label: "Requerimiento de pago" }, { id: "cartera", label: "Cartera" }] as const;
+// Expediente de vuelta como primera pestaña (13/11/2026, pedido de Alejandro).
+const tabs = [{ id: "expediente", label: "Expediente" }, { id: "requerimiento", label: "Requerimiento de pago" }, { id: "cartera", label: "Cartera" }] as const;
 type Tab = (typeof tabs)[number]["id"];
 
 // Detalle de un apartamento para la abogada (31/10/2026), en solo lectura (cada consulta queda en auditoría).
@@ -31,14 +34,17 @@ type Tab = (typeof tabs)[number]["id"];
 // vencer, el formulario, los enviados y los contactos) y «Cartera» (todos los cobros, pagos y acuerdos).
 export default async function LegalUnitPage({ params, searchParams }: { params: Promise<{ propertyId: string; unitId: string }>; searchParams: Promise<{ seccion?: string }> }) {
   const [{ propertyId, unitId }, { seccion }] = await Promise.all([params, searchParams]);
-  const tab: Tab = tabs.find((item) => item.id === seccion)?.id ?? "requerimiento";
+  const tab: Tab = tabs.find((item) => item.id === seccion)?.id ?? "expediente";
   if (!uuidPattern.test(propertyId) || !uuidPattern.test(unitId)) notFound();
   const { supabase } = await requireLegalStaff();
-  const [{ data, error }, { data: recipientData, error: recipientError }, { data: noticeData, error: noticeError }] = await Promise.all([
+  const [{ data, error }, { data: recipientData, error: recipientError }, { data: noticeData, error: noticeError }, { data: caseData, error: caseError }] = await Promise.all([
     supabase.rpc("legal_unit_detail", { target_property_id: propertyId, target_unit_id: unitId }),
     supabase.rpc("legal_unit_recipients", { target_property_id: propertyId, target_unit_id: unitId }),
     supabase.rpc("legal_unit_notices", { target_property_id: propertyId, target_unit_id: unitId }),
+    supabase.rpc("legal_unit_case", { target_property_id: propertyId, target_unit_id: unitId }),
   ]);
+  const caseFile = caseError ? null : (caseData ?? null) as CaseFile | null;
+  const openCase = caseFile && caseFile.status !== "closed" ? caseFile : null;
   if (error?.message.includes("not_authorized") || error?.message.includes("unit_not_found")) notFound();
   if (error || !data) throw new Error("No se pudo cargar el apartamento.");
   const detail = data as Detail;
@@ -53,7 +59,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
   const notices = (noticeData ?? []) as Notice[];
   const debts = active.filter((row) => Number(row.outstanding) > 0).sort((a, b) => a.due_on.localeCompare(b.due_on)).map((row) => ({ id: row.id, concept: row.concept, due_on: row.due_on, outstanding: Number(row.outstanding), overdue: row.due_on < detail.today }));
   const days = oldest ? Math.round((Date.parse(`${detail.today}T12:00:00Z`) - Date.parse(`${oldest}T12:00:00Z`)) / 86400000) : 0;
-  const counts: Record<Tab, number> = { requerimiento: debts.length, cartera: detail.receivables.filter((row) => row.status === "active").length };
+  const counts: Record<Tab, number> = { expediente: openCase?.actions.length ?? 0, requerimiento: debts.length, cartera: detail.receivables.filter((row) => row.status === "active").length };
   // Días que faltan o que lleva vencida cada deuda con saldo.
   const dayDiff = (due: string) => Math.round((Date.parse(`${due}T12:00:00Z`) - Date.parse(`${detail.today}T12:00:00Z`)) / 86400000);
   const base = `/juridica/${propertyId}/${unitId}`;
@@ -130,16 +136,21 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
 
   return <PlatformPage eyebrow={detail.property} title={`${detail.unit.building} · ${detail.unit.code}`} description="Cartera en solo lectura. Los cambios los hace la administración del conjunto."
     back={<Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>}
-    actions={<span className="flex flex-wrap gap-2">{oldest ? <span className="rounded-full bg-urgent/10 px-3 py-1 text-xs font-medium text-urgent">En mora · {days} días</span> : <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">Al día</span>}</span>}>
+    actions={<span className="flex flex-wrap gap-2">{oldest ? <span className="rounded-full bg-urgent/10 px-3 py-1 text-xs font-medium text-urgent">En mora · {days} días</span> : <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">Al día</span>}
+      {openCase && <span className={`rounded-full px-3 py-1 text-xs font-medium ${caseStatusTones[openCase.status] ?? "bg-secondary"}`}>Expediente: {caseStatusLabels[openCase.status] ?? openCase.status}</span>}</span>}>
     <section aria-label="Saldo" className="grid gap-4 sm:grid-cols-3">
       <Card><CardContent><p className="text-2xl font-semibold">{formatCop(outstanding)}</p><p className="mt-1 text-sm text-muted-foreground">Saldo pendiente</p></CardContent></Card>
       <Card><CardContent><p className="text-2xl font-semibold text-urgent">{formatCop(overdue)}</p><p className="mt-1 text-sm text-muted-foreground">Vencido</p></CardContent></Card>
       <Card><CardContent><p className="text-2xl font-semibold">{days}</p><p className="mt-1 text-sm text-muted-foreground">Días desde la deuda más antigua sin pagar</p></CardContent></Card>
     </section>
 
-    <nav aria-label="Secciones del apartamento" className="flex flex-wrap gap-2">{tabs.map((item) => <Link key={item.id} href={item.id === "requerimiento" ? base : `${base}?seccion=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
+    <nav aria-label="Secciones del apartamento" className="flex flex-wrap gap-2">{tabs.map((item) => <Link key={item.id} href={item.id === "expediente" ? base : `${base}?seccion=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
       className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
 
+    {tab === "expediente" && <>
+      <h2 className="text-lg font-semibold">Expediente prejurídico</h2>
+      {caseError ? <p className="text-sm text-muted-foreground">El expediente todavía no está disponible.</p> : <CaseFilePanel propertyId={propertyId} unitId={unitId} caseFile={caseFile} />}
+    </>}
     {tab === "requerimiento" && <>
     <Card><CardContent><h2 className="text-lg font-semibold">Cobros vencidos y próximos a vencer</h2>
       {debts.length ? <ul className="mt-3 grid gap-2">{debts.map((debt) => { const diff = dayDiff(debt.due_on); return <li key={debt.id} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${debt.overdue ? "border-urgent/40 bg-urgent/5" : "border-amber-200 bg-amber-50"}`}>
