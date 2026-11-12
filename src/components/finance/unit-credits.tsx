@@ -9,8 +9,8 @@ import { formatCop } from "@/lib/finance/constants";
 import { displayDate } from "@/lib/finance/receivable-date";
 
 // Saldos a favor del apartamento (13/11/2026, pedido de Alejandro). Entran por el Excel de cartera (valor negativo)
-// o con «Registrar saldo a favor». La administración decide cuándo aplicarlos a una obligación con saldo; el
-// residente solo los ve.
+// o con «Registrar saldo a favor». La administración o el residente (13/11/2026) lo aplican a una obligación con
+// saldo; registrar y anular es solo de la administración.
 export type UnitCredit = { id: string; concept: string; amount: number; remaining: number; issued_on: string; source: string; status: string; void_reason: string | null };
 type OpenDebt = { id: string; concept: string; dueOn: string; outstanding: number };
 
@@ -67,10 +67,10 @@ export function UnitCreditsCard({ propertyId, unitId, credits, debts, admin, tod
   if (!admin && !active.length) return null;
   return <section className="mt-7 rounded-2xl border bg-card p-5 sm:p-6" aria-labelledby="saldo-a-favor">
     <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="saldo-a-favor" className="text-lg font-semibold">Saldo a favor</h2><p className="text-2xl font-semibold text-primary">{formatCop(available)}</p></div>
-    <p className="mt-1 text-sm text-muted-foreground">{admin ? "La administración decide cuándo aplicarlo a una obligación con saldo. Al aplicarlo queda como un abono a esa obligación." : "Dinero a favor de tu apartamento. La administración lo aplica a tus obligaciones."}</p>
+    <p className="mt-1 text-sm text-muted-foreground">{admin ? "Se aplica a una obligación con saldo y queda como un abono a esa obligación. El residente también puede aplicarlo desde su cuenta." : "Dinero a favor de tu apartamento. Puedes usarlo para pagar una de tus deudas: elige la deuda y el valor, y se descuenta de una vez."}</p>
     {active.length > 0 && <div className="mt-4 grid gap-3">{active.map((credit) => <article key={credit.id} className="rounded-xl border p-4">
       <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-medium">{credit.concept}</p><p className="text-xs text-muted-foreground">{displayDate(credit.issued_on)} · {credit.source === "import" ? "Cargado desde Excel" : "Registrado a mano"} · valor inicial {formatCop(credit.amount)}</p></div><p className="text-sm">Disponible <strong>{formatCop(credit.remaining)}</strong></p></div>
-      {admin && Number(credit.remaining) > 0 && <ApplyForm propertyId={propertyId} unitId={unitId} credit={{ ...credit, remaining: Number(credit.remaining) }} debts={debts} />}
+      {Number(credit.remaining) > 0 && <ApplyForm propertyId={propertyId} unitId={unitId} credit={{ ...credit, remaining: Number(credit.remaining) }} debts={debts} />}
       {admin && Number(credit.remaining) === Number(credit.amount) && <VoidForm propertyId={propertyId} unitId={unitId} creditId={credit.id} />}
     </article>)}</div>}
     {admin && <CreateForm propertyId={propertyId} unitId={unitId} today={today} />}

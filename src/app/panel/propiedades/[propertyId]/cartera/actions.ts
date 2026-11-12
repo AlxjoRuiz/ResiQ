@@ -161,7 +161,8 @@ export async function createUnitCredit(_: FinanceState, data: FormData): Promise
 export async function applyUnitCredit(_: FinanceState, data: FormData): Promise<FinanceState> {
   const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),creditId=field(data,"creditId"),receivableId=field(data,"receivableId"),amount=Number(field(data,"amount"));
   if(![propertyId,unitId,creditId,receivableId].every((value)=>uuidPattern.test(value))||!Number.isFinite(amount)||amount<=0)return{error:"Elige la obligación y el valor a aplicar."};
-  const { supabase } = await requirePropertyAdmin(propertyId);
+  // También el residente con acceso a la cartera del apartamento (13/11/2026); la base de datos valida el permiso.
+  const supabase=await createClient();
   const result=await supabase.rpc("apply_unit_credit",{target_property_id:propertyId,target_credit_id:creditId,target_receivable_id:receivableId,target_amount:amount,target_idempotency_key:crypto.randomUUID()});
   if(result.error)return{error:friendlyError(result.error.message)};
   refreshFinance(propertyId,unitId);return{success:"Saldo a favor aplicado."};
