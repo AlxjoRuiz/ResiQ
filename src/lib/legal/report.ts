@@ -65,7 +65,8 @@ export function buildReport(raw: ReportData) {
   const buildings = current.buildings.map((building) => {
     const items = debtors.filter((unit) => unit.building === building.name);
     return { name: building.name, units: toNumber(building.units), debtors: items.length, amount: items.reduce((sum, unit) => sum + unit.overdue, 0) };
-  });
+  // Torres en orden natural (13/11/2026): Torre 1, 2, 3… 10, no 1, 10, 11. También en el Excel y en los filtros.
+  }).sort((a, b) => a.name.localeCompare(b.name, "es", { numeric: true }));
   const byState = (["agreement", "notice", "none"] as const).map((state) => { const items = debtors.filter((unit) => unit.state === state); return { state, label: caseStateLabels[state], count: items.length, amount: items.reduce((sum, unit) => sum + unit.overdue, 0) }; });
   const critical = [...debtors].sort((a, b) => b.days - a.days || b.overdue - a.overdue).slice(0, 5);
   return {
