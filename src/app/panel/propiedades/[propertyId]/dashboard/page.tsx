@@ -17,7 +17,21 @@ import { statusLabel } from "@/lib/pqrs/constants";
 
 import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
+import type { createClient } from "@/lib/supabase/server";
 type FinanceSummary = { unit_id: string; building_name: string; unit_code: string; outstanding_balance: number | string; overdue_balance: number | string; account_status: string };
+type FinanceDashboard = { accounts: number; outstanding: number | string; overdue: number | string; top: FinanceSummary[] };
+
+// Resumen de cartera del Inicio (13/11/2026): totales y las 3 primeras cuentas calculados en la base de datos con una
+// sola pasada (finance_dashboard_summary). Si esa función todavía no existe (migración sin aplicar), se calcula como
+// antes con la lista completa.
+async function loadFinanceSummary(supabase: Awaited<ReturnType<typeof createClient>>, propertyId: string): Promise<{ data: FinanceDashboard | null; error: { message: string } | null }> {
+  const quick = await supabase.rpc("finance_dashboard_summary", { target_property_id: propertyId });
+  if (!quick.error) return { data: quick.data as FinanceDashboard, error: null };
+  const full = await fetchAllRows((from, to) => supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }).range(from, to));
+  if (full.error) return { data: null, error: full.error };
+  const rows = (full.data ?? []) as FinanceSummary[];
+  return { data: { accounts: rows.length, outstanding: rows.reduce((sum, row) => sum + Number(row.outstanding_balance), 0), overdue: rows.reduce((sum, row) => sum + Number(row.overdue_balance), 0), top: rows.slice(0, 3) }, error: null };
+}
 type View = "residente" | "porteria" | "administracion";
 export default async function PropertyDashboardPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ vista?: string }> }) {
   const { propertyId } = await params;
@@ -42,7 +56,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     supabase.from("packages").select("id,kind,utility_service,recipient_name,status").eq("property_id", propertyId).order("received_at", { ascending: false }).limit(3),
     view !== "porteria" ? supabase.from("pqrs").select("id,subject,status").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(3) : Promise.resolve({ data: [], error: null }),
     supabase.from("notifications").select("id,subject,body,read_at,occurred_at").eq("property_id", propertyId).eq("recipient_member_id", membership.id).order("occurred_at", { ascending: false }).limit(3),
-    view !== "porteria" ? fetchAllRows((from, to) => supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }).order("unit_id").range(from, to)) : Promise.resolve({ data: [], error: null }),
+    view !== "porteria" ? loadFinanceSummary(supabase, propertyId) : Promise.resolve({ data: { accounts: 0, outstanding: 0, overdue: 0, top: [] }, error: null }),
     supabase.rpc("get_unseen_sections", { target_property_id: propertyId }),
     isAdmin ? supabase.rpc("get_admin_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
     view === "residente" ? supabase.rpc("get_resident_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
@@ -60,9 +74,10 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     { title: view === "residente" ? "Mis paquetes" : "Paquetes recientes", path: "paquetes", error: packageSummary.error, rows: (packageSummary.data ?? []).map((item) => ({ id: item.id, title: `${receivedItemLabel(item.kind, item.utility_service)} · ${item.recipient_name}`, status: packageStatusLabel(item.status) })) },
     ...(view !== "porteria" ? [{ title: view === "residente" ? "Estado de mis solicitudes" : "PQRS recientes", path: "pqrs", error: requestSummary.error, rows: (requestSummary.data ?? []).map((item) => ({ id: item.id, title: item.subject, status: statusLabel(item.status) })) }] : []),
   ];
-  const financeAccounts = (financeSummary.data ?? []) as FinanceSummary[];
-  const visibleBalance = financeAccounts.reduce((total, account) => total + Number(account.outstanding_balance), 0);
-  const visibleOverdue = financeAccounts.reduce((total, account) => total + Number(account.overdue_balance), 0);
+  const financeCount = Number(financeSummary.data?.accounts ?? 0);
+  const financeAccounts = financeSummary.data?.top ?? [];
+  const visibleBalance = Number(financeSummary.data?.outstanding ?? 0);
+  const visibleOverdue = Number(financeSummary.data?.overdue ?? 0);
   const units = ownUnits ?? [];
   const modules = view === "administracion" ? adminModules(propertyId) : view === "porteria" ? conciergeModules(propertyId) : residentModules(propertyId);
   const viewLabel = view === "administracion" ? "Administración" : view === "porteria" ? "Portería" : "Residente";
@@ -101,7 +116,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
         {view === "residente" && units.length > 0 && <section className={styles.units}><h2>Tus apartamentos</h2><div>{units.map((unit, index) => { const related = Array.isArray(unit.units) ? unit.units[0] : unit.units as { code?: string } | null; return <span key={`${related?.code}-${index}`}>{related?.code ?? "Unidad"} · {unit.relationship === "owner" ? "Propietario" : "Residente"}</span>; })}</div></section>}
         <section className={styles.summaries} aria-label="Novedades y cartera">
           <article className={styles.summary}><header><h2>Novedades</h2><Link href={`/panel/propiedades/${propertyId}/notificaciones`} className="inline-flex min-h-10 items-center sm:min-h-0">Ver todo →</Link></header>{notificationSummary.error ? <p role="status" className={styles.empty}>No pudimos cargar tus novedades.</p> : !notificationSummary.data?.length ? <p className={styles.empty}>No tienes novedades recientes.</p> : <ul>{notificationSummary.data.map((notice) => <li key={notice.id} className={styles.notice}><div><h3>{notice.subject}</h3><span className={styles.status}>{notice.read_at ? "Leída" : "Sin leer"}</span></div><p>{notice.body}</p><time dateTime={notice.occurred_at}>{new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: property.timezone }).format(new Date(notice.occurred_at))}</time></li>)}</ul>}</article>
-          {view !== "porteria" && <article className={styles.summary}><header><h2>{view === "residente" ? "Mi cartera" : "Resumen de cartera"}</h2><Link href={`/panel/propiedades/${propertyId}/cartera`}>Ver cartera →</Link></header>{financeSummary.error ? <p role="status" className={styles.empty}>No pudimos cargar la cartera. Abre el módulo para consultarla.</p> : !financeAccounts.length ? <p className={styles.empty}>{view === "residente" ? "No tienes acceso financiero habilitado para ningún apartamento." : "No hay cuentas visibles."}</p> : <><div className={styles.balance}><div><p>Saldo pendiente visible</p><strong>{formatCop(visibleBalance)}</strong></div><div><p>Saldo vencido</p><strong>{formatCop(visibleOverdue)}</strong></div></div><ul>{financeAccounts.slice(0, 3).map((account) => <li key={account.unit_id}><Link href={`/panel/propiedades/${propertyId}/cartera/${account.unit_id}`}><span>{account.building_name} · {account.unit_code}<small className={styles.accountBalance}>{formatCop(account.outstanding_balance)}</small></span><span className={styles.status}>{accountStatusLabel(account.account_status)}</span></Link></li>)}</ul>{financeAccounts.length > 3 && <p className={styles.empty}>Mostrando 3 de {financeAccounts.length} cuentas visibles.</p>}</>}</article>}
+          {view !== "porteria" && <article className={styles.summary}><header><h2>{view === "residente" ? "Mi cartera" : "Resumen de cartera"}</h2><Link href={`/panel/propiedades/${propertyId}/cartera`}>Ver cartera →</Link></header>{financeSummary.error ? <p role="status" className={styles.empty}>No pudimos cargar la cartera. Abre el módulo para consultarla.</p> : !financeCount ? <p className={styles.empty}>{view === "residente" ? "No tienes acceso financiero habilitado para ningún apartamento." : "No hay cuentas visibles."}</p> : <><div className={styles.balance}><div><p>Saldo pendiente visible</p><strong>{formatCop(visibleBalance)}</strong></div><div><p>Saldo vencido</p><strong>{formatCop(visibleOverdue)}</strong></div></div><ul>{financeAccounts.slice(0, 3).map((account) => <li key={account.unit_id}><Link href={`/panel/propiedades/${propertyId}/cartera/${account.unit_id}`}><span>{account.building_name} · {account.unit_code}<small className={styles.accountBalance}>{formatCop(account.outstanding_balance)}</small></span><span className={styles.status}>{accountStatusLabel(account.account_status)}</span></Link></li>)}</ul>{financeCount > 3 && <p className={styles.empty}>Mostrando 3 de {financeCount} cuentas visibles.</p>}</>}</article>}
         </section>
         <section className={`${styles.summaries} ${styles.activitySummaries}`} aria-label="Actividad reciente">{summaries.map((summary) => <article key={summary.path} className={styles.summary}><header><h2>{summary.title}</h2><Link href={`/panel/propiedades/${propertyId}/${summary.path}`} className="inline-flex min-h-10 items-center sm:min-h-0">Ver todo →</Link></header>{summary.error ? <p role="status" className={styles.empty}>No pudimos cargar este resumen. Puedes abrir el módulo para consultarlo.</p> : summary.rows.length === 0 ? <p className={styles.empty}>No hay registros visibles para tu cuenta.</p> : <ul>{summary.rows.map((row) => <li key={row.id}><Link href={`/panel/propiedades/${propertyId}/${summary.path}/${row.id}`}><span>{row.title}</span><span className={styles.status}>{row.status}</span></Link></li>)}</ul>}</article>)}</section>
       </div>
