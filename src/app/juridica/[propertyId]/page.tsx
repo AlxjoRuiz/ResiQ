@@ -6,6 +6,7 @@ import { formatCop } from "@/lib/finance/constants";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { formatDay, formatMoment, newsLabels, uuidPattern, type LegalAccount, type LegalNews, type LegalProperty } from "../legal-data";
 import { MarkPropertySeen } from "../mark-seen";
+import { LegalTowers, type LegalTower } from "./legal-towers";
 
 const tabs = [{ id: "mora", label: "En mora" }, { id: "aldia", label: "Al día" }, { id: "novedades", label: "Novedades" }, { id: "respuestas", label: "Respuestas" }] as const;
 type Thread = { notice_id: string; property_id: string; unit_label: string; recipient_email: string; recipient_name: string | null; last_message: string; last_author: string; last_at: string; unread: number };
@@ -44,8 +45,13 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   // En mora de menos a más días (01/11/2026).
   const towers = [...new Set(accounts.map((row) => row.building_name))].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
   const matches = (row: LegalAccount) => (!towerFilter || row.building_name === towerFilter) && (!unitFilter || row.unit_code.toLowerCase().includes(unitFilter));
-  const rows = (tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays).sort((a, b) => a.days_overdue - b.days_overdue || Number(a.overdue) - Number(b.overdue))
-    : current.slice().sort((a, b) => a.building_name.localeCompare(b.building_name, "es", { numeric: true }) || a.unit_code.localeCompare(b.unit_code, "es", { numeric: true }))).filter(matches);
+  // Por torre y apartamento, de menor a mayor (13/11/2026), en En mora y en Al día.
+  const byName = (a: string, b: string) => a.localeCompare(b, "es", { numeric: true });
+  const rows = (tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays) : current).filter(matches)
+    .sort((a, b) => byName(a.building_name, b.building_name) || byName(a.unit_code, b.unit_code));
+  const towerGroups: LegalTower[] = [...rows.reduce((map, row) => map.set(row.building_name, [...(map.get(row.building_name) ?? []), row]), new Map<string, LegalAccount[]>())]
+    .map(([name, list]) => ({ name, units: list.map((row) => ({ id: row.unit_id, code: row.unit_code, owner: row.owner_name, amount: Number(row.in_arrears ? row.overdue : row.outstanding), days: row.days_overdue,
+      lastPayment: formatDay(row.last_payment_on), agreement: row.agreement_active, inArrears: row.in_arrears, outstanding: Number(row.outstanding) })) }));
   const tabTotal = tab === "mora" ? arrears.length : current.length;
   const filtering = minDays > 1 || Boolean(towerFilter) || Boolean(unitFilter);
   const fieldClass = "h-9 rounded-lg border bg-white px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring";
@@ -79,13 +85,8 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
         <button className="h-9 rounded-lg border bg-white px-3 text-sm font-medium hover:bg-secondary">Ver</button>
         {filtering && <Link href={`/juridica/${propertyId}?tab=${tab}`} className="flex h-9 items-center rounded-lg px-3 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">Borrar filtros</Link>}
         <span className="ml-auto text-xs text-muted-foreground">{rows.length} de {tabTotal}</span></form>}
-      {rows.length ? <ul className="grid gap-2">{rows.map((row) => <li key={row.unit_id}><Link href={`/juridica/${propertyId}/${row.unit_id}`} className="grid gap-2 rounded-xl border p-3 text-sm transition-colors hover:bg-secondary sm:grid-cols-[1fr_auto] sm:items-center">
-        <span className="min-w-0"><span className="flex flex-wrap items-center gap-2 font-medium">{row.building_name} · {row.unit_code}{row.agreement_active && <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">Acuerdo de pago</span>}</span>
-          <span className="block truncate text-muted-foreground">{row.owner_name ?? "Sin nombre en el censo"}</span>
-          <span className="block text-xs text-muted-foreground">Último pago: {formatDay(row.last_payment_on)}</span></span>
-        <span className="sm:text-right"><span className={`block font-semibold ${row.in_arrears ? "text-urgent" : ""}`}>{formatCop(row.in_arrears ? row.overdue : row.outstanding)}</span>
-          <span className="block text-xs text-muted-foreground">{row.days_overdue > 0 ? `${row.days_overdue} días de mora` : row.outstanding > 0 ? "Saldo sin vencer" : "Sin saldo"}</span></span>
-      </Link></li>)}</ul> : <p className="text-sm text-muted-foreground">{filtering && tabTotal > 0 ? "Ningún apartamento coincide con los filtros." : tab === "mora" ? "Ningún apartamento está en mora." : "No hay apartamentos al día."}</p>}
+      {rows.length ? <LegalTowers towers={towerGroups} propertyId={propertyId} arrears={tab === "mora"} />
+        : <p className="text-sm text-muted-foreground">{filtering && tabTotal > 0 ? "Ningún apartamento coincide con los filtros." : tab === "mora" ? "Ningún apartamento está en mora." : "No hay apartamentos al día."}</p>}
     </section>}
   </PlatformPage>;
 }
