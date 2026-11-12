@@ -98,7 +98,8 @@ function emailContent(job: EmailJob, appUrl: string) {
   }
   if (["receivable_created", "receivable_voided", "payment_recorded", "payment_voided", "delinquency_notice"].includes(job.template_key)) {
     const headings: Record<string, string> = { receivable_created: "Cartera actualizada en ResiQ", receivable_voided: "Obligación anulada", payment_recorded: "Pago registrado en ResiQ", payment_voided: "Pago anulado", delinquency_notice: "Aviso de mora en ResiQ" };
-    const heading = headings[job.template_key] ?? "Actualización de cartera";
+    // «heading» en los datos: título propio, por ejemplo el recordatorio de pago semanal (12/11/2026).
+    const heading = (typeof job.template_data.heading === "string" ? job.template_data.heading : null) ?? headings[job.template_key] ?? "Actualización de cartera";
     const amount = typeof job.template_data.amount === "number" ? new Intl.NumberFormat("es-CO", { style: "currency", currency: job.template_data.currency ?? "COP" }).format(job.template_data.amount) : "";
     const details = [job.template_data.unit_label ? `Apartamento: ${job.template_data.unit_label}` : "", job.template_data.concept ? `Concepto: ${job.template_data.concept}` : "", amount ? `Valor: ${amount}` : "", job.template_data.due_on ? `Vencimiento: ${job.template_data.due_on}` : "", job.template_data.paid_on ? `Fecha de pago: ${job.template_data.paid_on}` : ""].filter(Boolean).join("\n");
     const path = job.template_data.property_id && job.template_data.unit_id ? `/panel/propiedades/${job.template_data.property_id}/cartera/${job.template_data.unit_id}` : "/panel";
