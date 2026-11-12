@@ -93,11 +93,11 @@ export function CreditRequestCard({ propertyId, unitId, request }: { propertyId:
   </article>;
 }
 
-export function UnitCreditsCard({ propertyId, unitId, credits, requests, debts, admin, today }: { propertyId: string; unitId: string; credits: UnitCredit[]; requests: CreditRequest[]; debts: OpenDebt[]; admin: boolean; today: string }) {
+export function UnitCreditsCard({ propertyId, unitId, credits, requests, debts, admin, today, className = "mt-7" }: { propertyId: string; unitId: string; credits: UnitCredit[]; requests: CreditRequest[]; debts: OpenDebt[]; admin: boolean; today: string; className?: string }) {
   const active = credits.filter((credit) => credit.status === "active");
   const total = active.reduce((sum, credit) => sum + available(credit), 0);
   if (!admin && !active.length) return null;
-  return <section className="mt-7 rounded-2xl border bg-card p-5 sm:p-6" aria-labelledby="saldo-a-favor">
+  return <section className={`${className} rounded-2xl border bg-card p-5 sm:p-6`} aria-labelledby="saldo-a-favor">
     <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="saldo-a-favor" className="text-lg font-semibold">Saldo a favor</h2><p className="text-2xl font-semibold text-primary">{formatCop(total)}</p></div>
     <p className="mt-1 text-sm text-muted-foreground">{admin ? "Se aplica a una deuda con saldo y queda como un abono a esa deuda. Las solicitudes del residente llegan a «Comprobantes de pago»." : "Dinero a favor de tu apartamento. Elige la deuda y el valor, y envía la solicitud: la administración la revisa y, al registrarla, se descuenta de tu deuda."}</p>
     {active.length > 0 && <div className="mt-4 grid gap-3">{active.map((credit) => <article key={credit.id} className="rounded-xl border p-4">
