@@ -16,6 +16,7 @@ export type ReportData = {
   generated_at: string; timezone: string; started_on: string | null; first_month: string | null; prepared_by: string | null;
   note: { body: string; updated_at: string } | null; current: State; previous: State;
   // Fase 2 (12/11/2026): cierre que se está mostrando (null = cálculo con fechas), tendencia de 6 meses e historial.
+  range?: { from: string; to: string } | null;
   closure?: { version: number; closed_at: string; automatic: boolean; reason: string | null; closed_by: string | null } | null;
   trend?: { month: string; arrears: number; debtors: number; collected: number; closed: boolean }[];
   month_closed?: boolean; can_close?: boolean;
@@ -89,23 +90,35 @@ export const formatMonth = (value: string) => { const text = monthTitle.format(a
 export const formatGenerated = (value: string, timeZone: string) => new Intl.DateTimeFormat("es-CO", { dateStyle: "long", timeStyle: "short", timeZone }).format(new Date(value));
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
-// Variación frente al mes anterior, en texto: «sube 12 %», «baja 5 %», «igual».
-export function change(now: number, before: number) {
-  if (!before && !now) return { text: "Sin cambio", direction: 0 };
-  if (!before) return { text: "Nuevo este mes", direction: 1 };
-  const delta = (now - before) / before;
-  if (Math.abs(delta) < 0.0005) return { text: "Igual que el mes anterior", direction: 0 };
-  return { text: `${delta > 0 ? "Sube" : "Baja"} ${formatPercent(Math.abs(delta))} frente al mes anterior`, direction: delta > 0 ? 1 : -1 };
+// Periodo del informe (12/11/2026): un mes, o un rango de fechas (de un día a otro o de un mes a otro).
+// title = «Octubre 2026» o «1 de octubre de 2026 al 15 de noviembre de 2026»; inText = para usar dentro de frases.
+export function periodInfo(raw: ReportData) {
+  if (!raw.range) { const title = formatMonth(raw.month); return { isRange: false, title, inText: `en ${title.toLowerCase()}`, previous: "mes anterior", unit: "el mes" }; }
+  const { from, to } = raw.range;
+  const fullMonths = from.slice(8, 10) === "01" && new Date(Date.parse(`${to}T12:00:00Z`) + 86400000).getUTCDate() === 1;
+  const title = fullMonths ? (from.slice(0, 7) === to.slice(0, 7) ? formatMonth(from) : `${formatMonth(from)} a ${formatMonth(to).toLowerCase()}`) : `${formatLong(from)} al ${formatLong(to)}`;
+  return { isRange: true, title, inText: `entre el ${formatLong(from)} y el ${formatLong(to)}`, previous: "periodo anterior", unit: "el periodo" };
 }
 
-// Texto del resumen ejecutivo, redactado con las cifras del mes.
+// Variación frente al mes (o periodo) anterior, en texto: «sube 12 %», «baja 5 %», «igual».
+export function change(now: number, before: number, previous = "mes anterior") {
+  if (!before && !now) return { text: "Sin cambio", direction: 0 };
+  if (!before) return { text: `Nuevo frente al ${previous}`, direction: 1 };
+  const delta = (now - before) / before;
+  if (Math.abs(delta) < 0.0005) return { text: `Igual que el ${previous}`, direction: 0 };
+  return { text: `${delta > 0 ? "Sube" : "Baja"} ${formatPercent(Math.abs(delta))} frente al ${previous}`, direction: delta > 0 ? 1 : -1 };
+}
+
+// Texto del resumen ejecutivo, redactado con las cifras del periodo.
 export function summaryText(report: Report) {
   const { raw, current, debtors, arrears, previousArrears } = report;
-  const cut = raw.partial ? `con corte parcial al ${formatLong(raw.as_of)}` : `al cierre del ${formatLong(raw.month_end)}`;
-  if (!debtors.length) return [`${raw.property.name} no tiene apartamentos en mora ${cut}. Durante ${formatMonth(raw.month).toLowerCase()} se recaudaron ${formatCop(current.collected_month)}.`];
+  const period = periodInfo(raw);
+  const cut = raw.partial ? `con corte parcial al ${formatLong(raw.as_of)}` : `al ${formatLong(raw.month_end)}`;
+  const inText = period.inText.charAt(0).toUpperCase() + period.inText.slice(1);
+  if (!debtors.length) return [`${raw.property.name} no tiene apartamentos en mora ${cut}. ${inText} se recaudaron ${formatCop(current.collected_month)}.`];
   const paragraphs = [
     `${raw.property.name} tiene ${plural(debtors.length, "apartamento", "apartamentos")} en mora ${cut}, por un total vencido de ${formatCop(arrears)}. Esto equivale al ${formatPercent(report.debtorShare)} de los ${current.units_total} apartamentos del conjunto y al ${formatPercent(report.billedShare)} de lo facturado.`,
-    `En ${formatMonth(raw.month).toLowerCase()} se recaudaron ${formatCop(current.collected_month)}${current.expected_month ? ` de ${formatCop(current.expected_month)} que vencían en el mes (${formatPercent(report.collectedShare)})` : ""}. La cartera vencida ${previousArrears ? change(arrears, previousArrears).text.toLowerCase() : "no tiene comparación con el mes anterior"}.`,
+    `${inText} se recaudaron ${formatCop(current.collected_month)}${current.expected_month ? ` de ${formatCop(current.expected_month)} que vencían en ${period.unit} (${formatPercent(report.collectedShare)})` : ""}. La cartera vencida ${previousArrears ? change(arrears, previousArrears, period.previous).text.toLowerCase() : `no tiene comparación con el ${period.previous}`}.`,
   ];
   const critical = debtors.filter((unit) => unit.severity.key === "critical" || unit.severity.key === "veryHigh");
   if (critical.length) paragraphs.push(`Requieren atención inmediata ${plural(critical.length, "apartamento", "apartamentos")} con más de 90 días de mora, que suman ${formatCop(critical.reduce((sum, unit) => sum + unit.overdue, 0))}.`);
@@ -118,10 +131,23 @@ export function parseMonth(value: string | undefined, todayIso: string) {
   return `${todayIso.slice(0, 7)}-01`;
 }
 
-// Nombre de archivo claro: Informe-Juridico_ConjuntoBonavento_2026-10 (y _v2 si es una corrección del cierre).
-export function reportFileName(propertyName: string, month: string, version?: number | null) {
+// Nombre de archivo claro: Informe-Juridico_ConjuntoBonavento_2026-10 (mes), …_2026-10-01_a_2026-11-15 (rango) y _v2
+// si es una corrección del cierre.
+export function reportFileName(propertyName: string, month: string, version?: number | null, range?: { from: string; to: string } | null) {
   const name = propertyName.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, " ").trim().split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join("");
-  return `Informe-Juridico_${name || "Conjunto"}_${month.slice(0, 7)}${version && version > 1 ? `_v${version}` : ""}`;
+  return `Informe-Juridico_${name || "Conjunto"}_${range ? `${range.from}_a_${range.to}` : month.slice(0, 7)}${version && version > 1 ? `_v${version}` : ""}`;
+}
+
+// Rango de fechas pedido en la dirección (?desde=AAAA-MM-DD&hasta=AAAA-MM-DD). Si es exactamente un mes completo
+// se trata como ese mes (así conserva su cierre). null = no hay rango válido.
+const isDay = (value?: string) => !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+export function parseRange(params: { desde?: string; hasta?: string }, todayIso: string): { month: string } | { from: string; to: string } | null {
+  if (!isDay(params.desde) || !isDay(params.hasta)) return null;
+  const [from, to] = params.desde! <= params.hasta! ? [params.desde!, params.hasta!] : [params.hasta!, params.desde!];
+  if (from > todayIso) return null;
+  const nextDay = new Date(Date.parse(`${to}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
+  if (from.slice(8) === "01" && from.slice(0, 7) === to.slice(0, 7) && nextDay.slice(8) === "01") return { month: from };
+  return { from, to };
 }
 
 // Parámetros del informe en la dirección: ?mes=2026-10&version=2&actual=1 (versión de cierre o datos actuales).

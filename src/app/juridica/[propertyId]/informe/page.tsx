@@ -4,11 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, CalendarRange, CircleCheck, FileSpreadsheet, Gavel, Scale, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
-import { buildReport, caseStateLabels, change, formatCop, formatGenerated, formatLong, formatMonth, formatPercent, formatShort, parseMonth, reportFileName, reportQuery, summaryText, trendPoints, type ReportData } from "@/lib/legal/report";
+import { buildReport, caseStateLabels, change, formatCop, formatGenerated, formatLong, formatMonth, formatPercent, formatShort, parseMonth, parseRange, periodInfo, reportFileName, reportQuery, summaryText, trendPoints, type ReportData } from "@/lib/legal/report";
 import { CloseMonth } from "./close-month";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { uuidPattern } from "../../legal-data";
 import { DebtorsTable } from "./debtors-table";
+import { PeriodPicker } from "./period-picker";
 import { PrintButton } from "./print-button";
 
 // Informe jurídico por mes, fase 1 (12/11/2026, pedido de Alejandro). De lo general a lo detallado:
@@ -17,7 +18,8 @@ import { PrintButton } from "./print-button";
 // un corte parcial a hoy). Descarga en PDF (impresión del navegador, con encabezado y páginas) y en Excel.
 // Fase 2 (12/11/2026): si el mes tiene cierre se muestra la foto guardada (o la versión elegida); con ?actual=1, los
 // datos de hoy. Además: botón para cerrar el mes o corregirlo, evolución de 6 meses e historial de cierres.
-type Props = { params: Promise<{ propertyId: string }>; searchParams: Promise<{ mes?: string; version?: string; actual?: string }> };
+// Rango (12/11/2026): con ?desde=AAAA-MM-DD&hasta=AAAA-MM-DD el informe es de un día a otro o de un mes a otro.
+type Props = { params: Promise<{ propertyId: string }>; searchParams: Promise<{ mes?: string; version?: string; actual?: string; desde?: string; hasta?: string }> };
 
 // Una sola consulta por solicitud aunque la usen el título del documento y la página.
 const loadReport = cache(async (propertyId: string, month: string, version: number | null, live: boolean) => {
@@ -25,21 +27,30 @@ const loadReport = cache(async (propertyId: string, month: string, version: numb
   const { data, error } = await supabase.rpc("legal_report_view", { target_property_id: propertyId, target_month: month, target_version: version, live });
   return { data: data as ReportData | null, error: error?.message ?? null };
 });
+const loadPeriod = cache(async (propertyId: string, from: string, to: string) => {
+  const { supabase } = await requireLegalStaff();
+  const { data, error } = await supabase.rpc("legal_report_period", { target_property_id: propertyId, period_from: from, period_to: to });
+  return { data: data as ReportData | null, error: error?.message ?? null };
+});
+const lastDayOf = (month: string) => { const date = new Date(`${month.slice(0, 7)}-01T12:00:00Z`); date.setUTCMonth(date.getUTCMonth() + 1, 0); return date.toISOString().slice(0, 10); };
 
 async function resolve({ params, searchParams }: Props) {
   const { propertyId } = await params;
   if (!uuidPattern.test(propertyId)) notFound();
   const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
   const query = await searchParams;
-  const month = parseMonth(query.mes, today);
+  const parsed = parseRange(query, today);
+  const range = parsed && "from" in parsed ? parsed : null;
+  const month = parsed && "month" in parsed ? parsed.month : parseMonth(query.mes, today);
   const { version, live } = reportQuery(query);
-  return { propertyId, month, today, version, live, ...(await loadReport(propertyId, month, version, live)) };
+  if (range) return { propertyId, month: range.from, range, today, version: null, live: false, ...(await loadPeriod(propertyId, range.from, range.to)) };
+  return { propertyId, month, range: null, today, version, live, ...(await loadReport(propertyId, month, version, live)) };
 }
 
 // El título del documento es el nombre con que el navegador guarda el PDF.
 export async function generateMetadata(props: Props): Promise<Metadata> {
-  const { data, month } = await resolve(props);
-  return { title: data ? reportFileName(data.property.name, month, data.closure?.version) : "Informe jurídico" };
+  const { data, month, range } = await resolve(props);
+  return { title: data ? reportFileName(data.property.name, month, data.closure?.version, range) : "Informe jurídico" };
 }
 
 const card = "rounded-2xl border border-slate-200 bg-white p-5 break-inside-avoid";
@@ -53,26 +64,33 @@ function Trend({ direction, good }: { direction: number; good: "up" | "down" }) 
 const number = (index: number) => <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">{index}</span>;
 
 export default async function LegalReportPage(props: Props) {
-  const { propertyId, month, today, live, data, error } = await resolve(props);
+  const { propertyId, month, range, today, live, data, error } = await resolve(props);
   if (error?.includes("not_authorized")) notFound();
   const monthParam = month.slice(0, 7);
-  const excelHref = `/api/legal/report/${propertyId}?mes=${monthParam}${data?.closure ? `&version=${data.closure.version}` : live ? "&actual=1" : ""}`;
+  const excelHref = range ? `/api/legal/report/${propertyId}?desde=${range.from}&hasta=${range.to}`
+    : `/api/legal/report/${propertyId}?mes=${monthParam}${data?.closure ? `&version=${data.closure.version}` : live ? "&actual=1" : ""}`;
+  // Selector: «Mes a mes» si el rango va de inicio a fin de mes, «Día a día» si no, «Un mes» sin rango.
+  const pickerFrom = range?.from ?? month;
+  const pickerTo = range?.to ?? lastDayOf(month);
+  const pickerMode = !range ? "month" as const : range.from.endsWith("-01") && range.to === lastDayOf(range.to) ? "months" as const : "days" as const;
+  const pickerLabel = data ? periodInfo({ ...data, range: range ?? data.range ?? null }).title : range ? `${formatShort(range.from)} al ${formatShort(range.to)}` : formatMonth(month);
   const controls = (raw: ReportData | null) => <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
     <Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>
     <div className="flex flex-wrap items-end gap-2">
-      <form method="get" className="flex items-end gap-2"><label className="grid gap-1 text-xs font-medium text-slate-600">Periodo<input type="month" name="mes" defaultValue={month.slice(0, 7)} max={today.slice(0, 7)} min={raw?.first_month?.slice(0, 7)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label><button className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary">Ver</button></form>
+      <PeriodPicker key={`${pickerFrom}_${pickerTo}`} label={pickerLabel} today={today} firstMonth={raw?.first_month ?? null} initialMode={pickerMode} from={pickerFrom} to={pickerTo} />
       {raw && <><PrintButton /><a href={excelHref} className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary"><FileSpreadsheet size={16} aria-hidden="true" />Descargar Excel</a></>}
     </div>
   </div>;
-  if (!data) return <div className="mx-auto w-full max-w-6xl">{controls(null)}<p role="status" className="mt-8 rounded-2xl border bg-white p-6 text-sm text-slate-600">No pudimos generar el informe de {formatMonth(month)}. Revisa el periodo elegido o inténtalo de nuevo en unos minutos.</p></div>;
+  if (!data) return <div className="mx-auto w-full max-w-6xl">{controls(null)}<p role="status" className="mt-8 rounded-2xl border bg-white p-6 text-sm text-slate-600">No pudimos generar el informe de {pickerLabel}. Revisa el periodo elegido o inténtalo de nuevo en unos minutos.</p></div>;
 
   const raw = data;
   const report = buildReport(raw);
   const { current, debtors } = report;
-  const arrearsChange = change(report.arrears, report.previousArrears);
-  const collectedChange = change(current.collected_month, report.previous.collected_month);
-  const debtorsChange = change(debtors.length, report.previous.units.filter((unit) => Number(unit.overdue) > 0).length);
-  const cut = raw.partial ? `Corte parcial al ${formatLong(raw.as_of)}` : `Cierre del mes: ${formatLong(raw.month_end)}`;
+  const period = periodInfo(raw);
+  const arrearsChange = change(report.arrears, report.previousArrears, period.previous);
+  const collectedChange = change(current.collected_month, report.previous.collected_month, period.previous);
+  const debtorsChange = change(debtors.length, report.previous.units.filter((unit) => Number(unit.overdue) > 0).length, period.previous);
+  const cut = raw.partial ? `Corte parcial al ${formatLong(raw.as_of)}` : `${period.isRange ? "Fin del periodo" : "Cierre del mes"}: ${formatLong(raw.month_end)}`;
   const generated = formatGenerated(raw.generated_at, raw.timezone);
   const maxAging = Math.max(...report.aging.map((item) => item.amount), 1);
   const maxBuilding = Math.max(...report.buildings.map((item) => item.amount), 1);
@@ -84,7 +102,7 @@ export default async function LegalReportPage(props: Props) {
 
   return <div className="mx-auto w-full max-w-6xl print:max-w-none">
     {/* Página impresa: márgenes, encabezado con el conjunto y el periodo, y números de página. */}
-    <style>{`@page { size: A4; margin: 18mm 14mm 16mm; @top-left { content: ${JSON.stringify(`${raw.property.name} · Informe jurídico · ${formatMonth(raw.month)}`)}; font-size: 9px; color: #475569; } @bottom-left { content: "Documento confidencial · uso exclusivo de la administración"; font-size: 8px; color: #64748b; } @bottom-right { content: "Página " counter(page) " de " counter(pages); font-size: 9px; color: #475569; } } @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }`}</style>
+    <style>{`@page { size: A4; margin: 18mm 14mm 16mm; @top-left { content: ${JSON.stringify(`${raw.property.name} · Informe jurídico · ${period.title}`)}; font-size: 9px; color: #475569; } @bottom-left { content: "Documento confidencial · uso exclusivo de la administración"; font-size: 8px; color: #64748b; } @bottom-right { content: "Página " counter(page) " de " counter(pages); font-size: 9px; color: #475569; } } @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }`}</style>
     {controls(raw)}
 
     {/* 11 · Datos del informe (al inicio, como membrete). */}
@@ -92,11 +110,12 @@ export default async function LegalReportPage(props: Props) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">Informe de gestión de cartera · Cobro jurídico</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{raw.property.name}</h1><p className="mt-1 text-sm text-slate-600">{[raw.property.address, raw.property.city].filter(Boolean).join(" · ")}</p></div>
         {closure ? <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">Mes cerrado</span>
-          : raw.partial ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Corte parcial · mes en curso</span>
+          : raw.partial ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Corte parcial · {period.isRange ? "periodo en curso" : "mes en curso"}</span>
+          : period.isRange ? <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">Periodo completo</span>
           : <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">{raw.month_closed ? "Datos actuales · no es el cierre" : "Mes completo · sin cierre todavía"}</span>}
       </div>
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-        <div><dt className="text-xs text-slate-500">Periodo</dt><dd className="font-medium">{formatMonth(raw.month)}</dd></div>
+        <div><dt className="text-xs text-slate-500">Periodo</dt><dd className="font-medium">{period.title}</dd></div>
         <div><dt className="text-xs text-slate-500">Corte</dt><dd className="font-medium">{cut}</dd></div>
         <div><dt className="text-xs text-slate-500">Generado</dt><dd className="font-medium">{generated}</dd></div>
         <div><dt className="text-xs text-slate-500">Elaborado por</dt><dd className="font-medium">{raw.prepared_by ?? "Abogada de cobros"}</dd></div>
@@ -118,7 +137,7 @@ export default async function LegalReportPage(props: Props) {
         <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-urgent/10 text-urgent"><Wallet size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Cartera vencida</p><p className="text-2xl font-semibold tracking-tight">{formatCop(report.arrears)}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Trend direction={arrearsChange.direction} good="down" />{arrearsChange.text}</p></div>
         <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Scale size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Apartamentos en mora</p><p className="text-2xl font-semibold tracking-tight">{debtors.length} <span className="text-sm font-normal text-slate-500">de {current.units_total}</span></p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Trend direction={debtorsChange.direction} good="down" />{formatPercent(report.debtorShare)} del conjunto · {debtorsChange.text.toLowerCase()}</p></div>
         <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><AlertTriangle size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Morosidad sobre lo facturado</p><p className="text-2xl font-semibold tracking-tight">{formatPercent(report.billedShare)}</p><p className="mt-1 text-xs text-slate-500">Facturado a la fecha: {formatCop(current.billed_total)}</p></div>
-        <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><CircleCheck size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Recaudo del mes</p><p className="text-2xl font-semibold tracking-tight">{formatCop(current.collected_month)}</p><p className="mt-1 text-xs text-slate-500">{current.expected_month ? `${formatPercent(report.collectedShare)} de ${formatCop(current.expected_month)} esperado` : "Sin vencimientos en el mes"}</p><p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500"><Trend direction={collectedChange.direction} good="up" />{collectedChange.text}</p></div>
+        <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><CircleCheck size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Recaudo {period.isRange ? "del periodo" : "del mes"}</p><p className="text-2xl font-semibold tracking-tight">{formatCop(current.collected_month)}</p><p className="mt-1 text-xs text-slate-500">{current.expected_month ? `${formatPercent(report.collectedShare)} de ${formatCop(current.expected_month)} esperado` : `Sin vencimientos en ${period.unit}`}</p><p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500"><Trend direction={collectedChange.direction} good="up" />{collectedChange.text}</p></div>
       </div>
       {report.critical.length > 0 && <div className={`${card} mt-3`}><p className="flex items-center gap-2 text-sm font-semibold"><AlertTriangle size={16} className="text-urgent" aria-hidden="true" />Casos que requieren atención inmediata</p>
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{report.critical.map((item) => <li key={item.unit_id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm"><span><span className="font-medium">{item.building} · {item.code}</span><span className="block text-xs text-slate-500">{item.severity.label} · {item.days} días · {caseStateLabels[item.state]}</span></span><span className="font-semibold text-urgent">{formatCop(item.overdue)}</span></li>)}</ul>
@@ -162,7 +181,7 @@ export default async function LegalReportPage(props: Props) {
 
     {/* 6 · Gestión realizada en el periodo. */}
     <section className={`${card} mt-6`} aria-labelledby="gestion">
-      <h2 id="gestion" className={sectionTitle}>{number(6)}Gestión realizada en {formatMonth(raw.month).toLowerCase()}</h2>
+      <h2 id="gestion" className={sectionTitle}>{number(6)}Gestión realizada {period.isRange ? "en el periodo" : `en ${period.title.toLowerCase()}`}</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
         {[{ icon: Gavel, label: "Requerimientos enviados", value: current.notices_month.length }, { icon: Wallet, label: "Pagos registrados", value: current.payments_month }, { icon: CalendarRange, label: "Acuerdos de pago creados", value: current.agreements_month }, { icon: CircleCheck, label: "Se pusieron al día", value: report.caughtUp }].map(({ icon: Icon, label, value }) => <div key={label} className="flex items-center gap-3 rounded-xl bg-slate-50 p-4"><Icon size={18} className="text-primary" aria-hidden="true" /><div><p className="text-xl font-semibold">{value}</p><p className="text-xs text-slate-500">{label}</p></div></div>)}
       </div>

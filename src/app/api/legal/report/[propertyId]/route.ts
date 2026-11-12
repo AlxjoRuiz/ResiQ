@@ -1,5 +1,5 @@
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
-import { buildReport, caseStateLabels, formatGenerated, formatMonth, parseMonth, reportFileName, reportQuery, trendPoints, type ReportData } from "@/lib/legal/report";
+import { buildReport, caseStateLabels, formatGenerated, formatMonth, parseMonth, parseRange, periodInfo, reportFileName, reportQuery, trendPoints, type ReportData } from "@/lib/legal/report";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { writeWorkbook } from "@/lib/xlsx/write-workbook";
 
@@ -12,10 +12,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ prop
   if (!uuidPattern.test(propertyId)) return new Response("No encontrado.", { status: 404 });
   const { supabase } = await requireLegalStaff();
   const search = new URL(request.url).searchParams;
-  const month = parseMonth(search.get("mes") ?? undefined, dateInputValue(new Date(), COLOMBIA_TIME_ZONE));
+  const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
+  // Rango (?desde&hasta): de un día a otro o de un mes a otro; un mes completo se trata como ese mes.
+  const parsed = parseRange({ desde: search.get("desde") ?? undefined, hasta: search.get("hasta") ?? undefined }, today);
+  const range = parsed && "from" in parsed ? parsed : null;
+  const month = parsed && "month" in parsed ? parsed.month : parseMonth(search.get("mes") ?? undefined, today);
   // Fase 2: el cierre del mes (o la versión pedida); con actual=1, los datos de hoy.
   const { version, live } = reportQuery({ version: search.get("version") ?? undefined, actual: search.get("actual") ?? undefined });
-  const { data, error } = await supabase.rpc("legal_report_view", { target_property_id: propertyId, target_month: month, target_version: version, live });
+  const { data, error } = range
+    ? await supabase.rpc("legal_report_period", { target_property_id: propertyId, period_from: range.from, period_to: range.to })
+    : await supabase.rpc("legal_report_view", { target_property_id: propertyId, target_month: month, target_version: version, live });
   if (error || !data) return new Response("No se pudo generar el informe.", { status: error?.message.includes("not_authorized") ? 404 : 500 });
   const raw = data as ReportData;
   const report = buildReport(raw);
@@ -26,7 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prop
   const archive = writeWorkbook([
     { name: "Resumen", rows: [
       ["Informe jurídico de cartera", raw.property.name],
-      ["Periodo", formatMonth(raw.month)], ["Corte", cut], ["Generado", formatGenerated(raw.generated_at, raw.timezone)], ["Elaborado por", raw.prepared_by ?? "Abogada de cobros"],
+      ["Periodo", periodInfo(raw).title], ["Corte", cut], ["Generado", formatGenerated(raw.generated_at, raw.timezone)], ["Elaborado por", raw.prepared_by ?? "Abogada de cobros"],
       [],
       ["Indicador", "Valor"],
       ["Cartera vencida (COP)", report.arrears], ["Apartamentos en mora", report.debtors.length], ["Apartamentos del conjunto", report.current.units_total],
@@ -46,7 +52,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prop
   ]);
   return new Response(Buffer.from(archive), { headers: {
     "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "content-disposition": `attachment; filename="${reportFileName(raw.property.name, raw.month, raw.closure?.version)}.xlsx"`,
+    "content-disposition": `attachment; filename="${reportFileName(raw.property.name, raw.month, raw.closure?.version, range)}.xlsx"`,
     "cache-control": "no-store",
   } });
 }
