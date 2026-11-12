@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PaymentCard } from "@/components/finance/payment-card";
 import { CreditRequestCard, type CreditRequest } from "@/components/finance/unit-credits";
 import { formatCop } from "@/lib/finance/constants";
+import { displayDate } from "@/lib/finance/receivable-date";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 
 type PostedPayment = { id: string; label: string };
@@ -36,7 +37,7 @@ function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId:
   </details>;
 }
 
-type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; createdIso: string; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null ; plannedAllocations?: { receivable_id: string; amount: number; concept?: string }[] | null };
+type EvidenceRow = { id: string; receivableId: string; concept: string; originalName: string; uploadedAt: string; createdIso: string; paidOn?: string | null; uploadedDay: string; receivedAt: string | null; periodLabel: string | null; comment: string | null; declaredAmount: number | null; registered: boolean; voidReason: string | null ; plannedAllocations?: { receivable_id: string; amount: number; concept?: string }[] | null };
 
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar pago» llena el formulario
 // con la deuda, el valor y la fecha del comprobante; la administración revisa y pulsa «Registrar pago».
@@ -59,13 +60,13 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
   const inHistory = items.length - shown.length;
   function accept(evidence: EvidenceRow) {
     const outstanding = receivables.find((item) => item.id === evidence.receivableId)?.outstanding ?? 0;
-    setPrefill({ evidenceId: evidence.id, label: evidence.concept, amount: evidence.declaredAmount ?? outstanding, paidOn: evidence.uploadedDay, reference: `Comprobante: ${evidence.originalName}`.slice(0, 120), receivableId: evidence.receivableId, allocations: evidence.plannedAllocations ?? undefined });
+    setPrefill({ evidenceId: evidence.id, label: evidence.concept, amount: evidence.declaredAmount ?? outstanding, paidOn: evidence.paidOn ?? evidence.uploadedDay, reference: `Comprobante: ${evidence.originalName}`.slice(0, 120), receivableId: evidence.receivableId, allocations: evidence.plannedAllocations ?? undefined });
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const evidenceCard = (evidence: EvidenceRow) => <PaymentCard key={evidence.id} title={evidence.concept} kind="Pago con comprobante"
     status={evidence.voidReason !== null ? { label: "Pago anulado", tone: "danger" } : evidence.registered ? { label: "Registrado", tone: "success" } : { label: evidence.receivedAt ? "Recibido" : "Por revisar", tone: "warning" }}
-    facts={[{ label: "Valor", value: evidence.declaredAmount !== null ? formatCop(evidence.declaredAmount) : "Sin indicar" }, { label: "Enviado", value: evidence.uploadedAt }, { label: "Mes que paga", value: evidence.periodLabel ?? "Sin indicar" },
+    facts={[{ label: "Valor", value: evidence.declaredAmount !== null ? formatCop(evidence.declaredAmount) : "Sin indicar" }, { label: "Enviado", value: evidence.uploadedAt }, { label: evidence.paidOn ? "Fecha del pago" : "Mes que paga", value: evidence.paidOn ? displayDate(evidence.paidOn) : evidence.periodLabel ?? "Sin indicar" },
       { label: "Comprobante", value: <a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="break-all text-primary underline underline-offset-2">{evidence.originalName}</a> }]}
     allocations={evidence.plannedAllocations?.length ? evidence.plannedAllocations.map((item) => ({ key: item.receivable_id, concept: item.concept ?? "Obligación", amount: item.amount })) : [{ key: evidence.receivableId, concept: evidence.concept, amount: evidence.declaredAmount }]}>
     {evidence.comment && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-secondary px-3 py-2 text-sm">{evidence.comment}</p>}

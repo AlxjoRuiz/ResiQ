@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MonthPicker } from "@/components/ui/date-picker";
+import { DatePicker } from "@/components/ui/date-picker";
+import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { FilePicker } from "@/components/ui/file-picker";
 import { formatCop } from "@/lib/finance/constants";
 
@@ -28,7 +29,9 @@ export function PaymentEvidenceUpload({ debts, agreementDebtIds = [], agreementR
   const available = debts.filter((item) => !reviewing(item));
   const [debtId, setDebtId] = useState(() => { const open = debts.filter((item) => !item.inReview); return open.length === 1 ? keyOf(open[0]) : ""; });
   const [amount, setAmount] = useState(() => { const open = debts.filter((item) => !item.inReview); return open.length === 1 ? String(Math.round(open[0].outstanding)) : ""; });
-  const [paidMonth, setPaidMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  // Fecha exacta en que pagó (13/11/2026): llena «Fecha del pago» cuando la administración acepta el comprobante.
+  const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
+  const [paidOn, setPaidOn] = useState(today);
   const [comment, setComment] = useState("");
   const debt = available.find((item) => keyOf(item) === debtId);
   // Con una cuota del acuerdo, las deudas que paga (04/11/2026): en el orden en que se marcan, cada una se llena
@@ -50,12 +53,12 @@ export function PaymentEvidenceUpload({ debts, agreementDebtIds = [], agreementR
     if (!(Number(amount) > 0)) { setMessage("Escribe el valor que pagaste."); return; }
     if (Number(amount) > maximum + 0.001) { setMessage(`El valor no puede pasar de ${formatCop(maximum)}, que es lo que ${debt.installment ? "falta del acuerdo" : "debes de esta deuda"}.`); return; }
     if (debt.installment && leftover > 0) { setMessage(`Te faltan ${formatCop(leftover)} por aplicar: marca otra deuda del acuerdo o baja el valor.`); return; }
-    if (!/^\d{4}-\d{2}$/.test(paidMonth)) { setMessage("Indica el mes que estás pagando."); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(paidOn) || paidOn > today) { setMessage("Indica la fecha en que pagaste (no puede ser una fecha futura)."); return; }
     if (!file) { setMessage("Selecciona un comprobante."); return; }
     if (!["application/pdf", "image/jpeg", "image/png"].includes(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) { setMessage("Selecciona un PDF, JPG o PNG de máximo 5 MB."); return; }
     setBusy(true); setMessage("");
     try {
-      const form = new FormData(); form.set(debt.installment ? "installmentId" : "receivableId", debt.id); if (debt.installment && plan.length) form.set("allocations", JSON.stringify(plan.map((row) => ({ id: row.id, amount: row.applied })))); form.set("amount", amount); form.set("file", file); form.set("paidMonth", paidMonth); form.set("comment", comment.trim());
+      const form = new FormData(); form.set(debt.installment ? "installmentId" : "receivableId", debt.id); if (debt.installment && plan.length) form.set("allocations", JSON.stringify(plan.map((row) => ({ id: row.id, amount: row.applied })))); form.set("amount", amount); form.set("file", file); form.set("paidOn", paidOn); form.set("paidMonth", paidOn.slice(0, 7)); form.set("comment", comment.trim());
       const response = await fetch("/api/finance/evidence", { method: "POST", body: form });
       const result = await response.json() as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "No se pudo enviar el comprobante.");
@@ -75,7 +78,7 @@ export function PaymentEvidenceUpload({ debts, agreementDebtIds = [], agreementR
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block text-sm font-medium">{debts.some((item) => item.installment) ? "Cuota o deuda" : "Deuda"}<select className={fieldClass} value={debtId} onChange={(event) => { setDebtId(event.target.value); const next = available.find((item) => keyOf(item) === event.target.value); if (next) setAmount(String(Math.round(next.outstanding))); }} disabled={busy}><option value="">Selecciona</option>{[{ title: "Cuotas del acuerdo de pago", items: debts.filter((item) => item.installment) }, { title: "Deudas", items: debts.filter((item) => !item.installment) }].filter((group) => group.items.length).map((group) => { const options = group.items.map((item) => <option key={keyOf(item)} value={keyOf(item)} disabled={reviewing(item)}>{item.label} · {item.installment ? "valor" : "saldo"} {formatCop(item.outstanding)}{reviewing(item) ? " · comprobante en revisión" : ""}</option>); return debts.some((item) => item.installment) ? <optgroup key={group.title} label={group.title}>{options}</optgroup> : options; })}</select></label>
       <label className="block text-sm font-medium">Valor pagado (COP)<input type="number" min={1} max={maximum || undefined} step={1} className={fieldClass} value={amount} onChange={(event) => setAmount(event.target.value)} disabled={busy} /></label>
-      <label className="block text-sm font-medium">Mes que pagas<MonthPicker className="mt-2" value={paidMonth} onChange={setPaidMonth} disabled={busy} label="Elegir el mes que pagas" /></label>
+      <div className="block text-sm font-medium">Fecha en que pagaste<DatePicker className="mt-2" value={paidOn} onChange={setPaidOn} max={today} disabled={busy} label="Elegir la fecha en que pagaste" required /></div>
       <label className="block text-sm font-medium">Comentario para la administración (opcional)<textarea className="mt-2 block min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={500} rows={2} disabled={busy} placeholder="Ej.: abono de octubre por transferencia" /></label>
     </div>
     {debt?.installment && openDebts.length > 0 && <fieldset className="grid gap-2 rounded-xl border p-3"><legend className="px-1 text-sm font-medium">Deudas que pagas con esta cuota</legend>
