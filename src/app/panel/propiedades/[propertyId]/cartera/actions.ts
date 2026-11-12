@@ -22,6 +22,8 @@ function friendlyError(message?: string) {
   if (message?.includes("credit_insufficient")) return "El saldo a favor no alcanza para ese valor.";
   if (message?.includes("credit_already_applied")) return "Ese saldo a favor ya se usó; para anularlo, primero anula el abono que salió de él.";
   if (message?.includes("credit_not_found")) return "Ese saldo a favor ya no está disponible.";
+  if (message?.includes("request_not_pending")) return "Esa solicitud ya se registró o se rechazó.";
+  if (message?.includes("receivable_overallocated")) return "El valor supera lo que falta por pagar de esa deuda (o ya hay una solicitud por revisar para ella).";
   // Mismo nombre (10/11/2026): solo se bloquea si la obligación anterior con ese nombre o referencia no está pagada.
   if (message?.includes("unpaid_duplicate")) return "Ya hay una obligación con ese nombre sin pagar en este apartamento. Cámbiale el nombre y regístrala con los mismos datos.";
   if (message?.includes("duplicate_payment")) return "El pago ya fue registrado.";
@@ -161,8 +163,7 @@ export async function createUnitCredit(_: FinanceState, data: FormData): Promise
 export async function applyUnitCredit(_: FinanceState, data: FormData): Promise<FinanceState> {
   const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),creditId=field(data,"creditId"),receivableId=field(data,"receivableId"),amount=Number(field(data,"amount"));
   if(![propertyId,unitId,creditId,receivableId].every((value)=>uuidPattern.test(value))||!Number.isFinite(amount)||amount<=0)return{error:"Elige la obligación y el valor a aplicar."};
-  // También el residente con acceso a la cartera del apartamento (13/11/2026); la base de datos valida el permiso.
-  const supabase=await createClient();
+  const { supabase } = await requirePropertyAdmin(propertyId);
   const result=await supabase.rpc("apply_unit_credit",{target_property_id:propertyId,target_credit_id:creditId,target_receivable_id:receivableId,target_amount:amount,target_idempotency_key:crypto.randomUUID()});
   if(result.error)return{error:friendlyError(result.error.message)};
   refreshFinance(propertyId,unitId);return{success:"Saldo a favor aplicado."};
@@ -175,4 +176,33 @@ export async function voidUnitCredit(_: FinanceState, data: FormData): Promise<F
   const result=await supabase.rpc("void_unit_credit",{target_property_id:propertyId,target_credit_id:creditId,target_reason:reason});
   if(result.error)return{error:friendlyError(result.error.message)};
   refreshFinance(propertyId,unitId);return{success:"Saldo a favor anulado."};
+}
+
+// Solicitudes de saldo a favor (13/11/2026): el residente pide usar su saldo a favor en una deuda y la
+// administración la registra o la rechaza, como un comprobante de pago.
+export async function requestUnitCredit(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),creditId=field(data,"creditId"),receivableId=field(data,"receivableId"),amount=Number(field(data,"amount"));
+  if(![propertyId,unitId,creditId,receivableId].every((value)=>uuidPattern.test(value))||!Number.isFinite(amount)||amount<=0)return{error:"Elige la deuda y el valor."};
+  const supabase=await createClient();
+  const result=await supabase.rpc("request_unit_credit",{target_property_id:propertyId,target_credit_id:creditId,target_receivable_id:receivableId,target_amount:amount});
+  if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Solicitud enviada. La administración la revisará y, al registrarla, se descontará de tu deuda."};
+}
+
+export async function registerCreditRequest(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),requestId=field(data,"requestId");
+  if(![propertyId,unitId,requestId].every((value)=>uuidPattern.test(value)))return{error:"Solicitud no válida."};
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  const result=await supabase.rpc("register_credit_request",{target_property_id:propertyId,target_request_id:requestId});
+  if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Saldo a favor registrado en la deuda."};
+}
+
+export async function rejectCreditRequest(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),requestId=field(data,"requestId"),reason=field(data,"reason");
+  if(![propertyId,unitId,requestId].every((value)=>uuidPattern.test(value))||reason.length<3||reason.length>500)return{error:"Escribe un motivo de al menos 3 caracteres."};
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  const result=await supabase.rpc("reject_credit_request",{target_property_id:propertyId,target_request_id:requestId,target_reason:reason});
+  if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Solicitud rechazada."};
 }

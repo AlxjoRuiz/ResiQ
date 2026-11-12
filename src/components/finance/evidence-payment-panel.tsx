@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { voidPayment, voidReceivable, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
 import { PaymentForm, type OpenReceivable, type PaymentPrefill } from "@/components/finance/finance-forms";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,8 @@ type EvidenceRow = { id: string; receivableId: string; concept: string; original
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar pago» llena el formulario
 // con la deuda, el valor y la fecha del comprobante; la administración revisa y pulsa «Registrar pago».
 // El pago queda amarrado al comprobante (no se puede registrar dos veces).
-export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments, voidableReceivables }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[]; voidableReceivables: PostedPayment[] }) {
+// creditRequests (13/11/2026): solicitudes del residente para usar su saldo a favor; van primero, como comprobantes.
+export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments, voidableReceivables, creditRequests = [] }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[]; voidableReceivables: PostedPayment[]; creditRequests?: ReactNode[] }) {
   const [prefill, setPrefill] = useState<PaymentPrefill>();
   const formRef = useRef<HTMLDivElement>(null);
   // Máximo 3 tarjetas: siempre todos los pendientes y, después, los registrados más recientes. Los
@@ -59,6 +60,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
       <h2 className="text-lg font-semibold">Comprobantes de pago</h2>
       <p className="mt-2 text-sm text-muted-foreground">Los comprobantes que sube el residente, con la deuda y el valor que eligió. «Aceptar pago» llena el formulario de al lado para que lo revises y lo registres.</p>
       <div className="mt-5 grid gap-3">
+        {creditRequests}
         {shown.map((evidence) => <article key={evidence.id} className="rounded-xl border p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             {/* Título: lo que se paga; debajo, más pequeño, el mes, el valor y la fecha; luego el archivo. */}
@@ -70,7 +72,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
           {evidence.receivedAt && <p className="mt-2 text-xs text-muted-foreground">Recibido {evidence.receivedAt}</p>}
           {evidence.voidReason && <p className="mt-2 text-xs text-muted-foreground">Motivo de la anulación: {evidence.voidReason}</p>}{!evidence.registered && evidence.voidReason === null && <div className="mt-3 flex flex-wrap gap-2"><Button type="button" size="sm" variant={prefill?.evidenceId === evidence.id ? "outline" : "default"} onClick={() => accept(evidence)}>{prefill?.evidenceId === evidence.id ? "En el formulario →" : "Aceptar pago"}</Button></div>}
         </article>)}
-        {!evidences.length && <p className="text-sm text-muted-foreground">El residente aún no ha subido comprobantes.</p>}
+        {!evidences.length && !creditRequests.length && <p className="text-sm text-muted-foreground">El residente aún no ha subido comprobantes.</p>}
         {inHistory > 0 && <p className="text-xs text-muted-foreground">{inHistory === 1 ? "1 comprobante registrado más está" : `${inHistory} comprobantes registrados más están`} en «Ver historial de pagos».</p>}
       </div>
     </CardContent></Card>
