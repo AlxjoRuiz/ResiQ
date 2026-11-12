@@ -68,23 +68,21 @@ test("cada fila inválida se reporta con su número de fila en Excel y no se car
     valid, // fila 2: válida
     ["Torre 9", "101", "Administración", 1000, "2026-10-01", "2026-10-10", "Obligación"], // 3: apartamento que no existe
     ["Torre 1", "101", "Administración", 0, "2026-10-01", "2026-10-10", "Obligación"], // 4: valor cero
-    ["Torre 1", "101", "Administración", -5, "2026-10-01", "2026-10-10", "Obligación"], // 5: valor negativo
-    ["Torre 1", "101", "Administración", "mil", "2026-10-01", "2026-10-10", "Obligación"], // 6: valor que no es número
-    ["Torre 1", "101", "Administración", 1000, "2026-10-10", "2026-10-01", "Obligación"], // 7: vence antes de emitirse
-    ["Torre 1", "101", "Administración", 1000, "octubre", "2026-10-10", "Obligación"], // 8: fecha que no es fecha
-    ["Torre 1", "101", "A", 1000, "2026-10-01", "2026-10-10", "Obligación"], // 9: concepto muy corto
-    ["Torre 1", "101", "Administración", 1000, "2026-10-01", "2026-10-10", "Abono"], // 10: tipo desconocido
+    ["Torre 1", "101", "Administración", "mil", "2026-10-01", "2026-10-10", "Obligación"], // 5: valor que no es número
+    ["Torre 1", "101", "Administración", 1000, "2026-10-10", "2026-10-01", "Obligación"], // 6: vence antes de emitirse
+    ["Torre 1", "101", "Administración", 1000, "octubre", "2026-10-10", "Obligación"], // 7: fecha que no es fecha
+    ["Torre 1", "101", "A", 1000, "2026-10-01", "2026-10-10", "Obligación"], // 8: concepto muy corto
+    ["Torre 1", "101", "Administración", 1000, "2026-10-01", "2026-10-10", "Abono"], // 9: tipo desconocido
   );
   assert.equal(rows.length, 1);
   assert.deepEqual(rowErrors, [
     "Fila 3: no existe la torre «Torre 9», apartamento «101» en el conjunto",
-    "Fila 4: el valor debe ser mayor que 0 (los saldos a favor no se importan)",
-    "Fila 5: el valor debe ser mayor que 0 (los saldos a favor no se importan)",
-    "Fila 6: el valor no es un número",
-    "Fila 7: vence antes de la fecha de emisión",
-    "Fila 8: la fecha de emisión debe ser DD/MM/AAAA",
-    "Fila 9: el concepto debe tener entre 2 y 180 caracteres",
-    "Fila 10: el tipo debe ser «obligacion» o «saldo_inicial»",
+    "Fila 4: el valor no puede ser 0",
+    "Fila 5: el valor no es un número",
+    "Fila 6: vence antes de la fecha de emisión",
+    "Fila 7: la fecha de emisión debe ser DD/MM/AAAA",
+    "Fila 8: el concepto debe tener entre 2 y 180 caracteres",
+    "Fila 9: el tipo debe ser «obligacion» o «saldo_inicial»",
   ]);
 });
 
@@ -101,4 +99,13 @@ test("si el archivo trae columna referencia se usa esa y se limita a 120 caracte
   assert.equal(ok.rows[0].external_reference, "FAC-001");
   const tooLong = parseReceivableRows([[...valid, "x".repeat(121)]], index, units);
   assert.deepEqual(tooLong.rowErrors, ["Fila 2: la referencia supera 120 caracteres"]);
+});
+
+test("una fila con valor negativo es un saldo a favor, con el valor en positivo y sin exigir vencimiento", () => {
+  const { rows, rowErrors } = parse(["Torre 1", "101", "Saldo a favor octubre", -84147, "01/10/2026", "", "obligacion"]);
+  assert.deepEqual(rowErrors, []);
+  assert.equal(rows[0].kind, "credit");
+  assert.equal(rows[0].amount, 84147);
+  assert.equal(rows[0].issued_on, "2026-10-01");
+  assert.match(rows[0].external_reference, /^AUTO-[0-9a-f]{32}$/);
 });

@@ -18,6 +18,10 @@ const financePath = (propertyId: string) => `/panel/propiedades/${propertyId}/ca
 
 function friendlyError(message?: string) {
   if (message?.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
+  // Saldos a favor (13/11/2026).
+  if (message?.includes("credit_insufficient")) return "El saldo a favor no alcanza para ese valor.";
+  if (message?.includes("credit_already_applied")) return "Ese saldo a favor ya se usó; para anularlo, primero anula el abono que salió de él.";
+  if (message?.includes("credit_not_found")) return "Ese saldo a favor ya no está disponible.";
   // Mismo nombre (10/11/2026): solo se bloquea si la obligación anterior con ese nombre o referencia no está pagada.
   if (message?.includes("unpaid_duplicate")) return "Ya hay una obligación con ese nombre sin pagar en este apartamento. Cámbiale el nombre y regístrala con los mismos datos.";
   if (message?.includes("duplicate_payment")) return "El pago ya fue registrado.";
@@ -142,4 +146,32 @@ export async function importReceivables(_: FinanceState, data: FormData): Promis
     const imported=Number(result.data??0);if(imported===0)return{error:"Todas las obligaciones del archivo ya estaban cargadas; no se agregó nada."};
     refreshFinance(propertyId);redirect(`${financePath(propertyId)}?imported=${imported}&skipped=${parsed.length-imported}`);
   } catch(error) { if(error && typeof error==="object" && "digest" in error)throw error;return{error:"No pudimos leer el archivo. Descarga la plantilla y verifica que sea un .xlsx válido."}; }
+}
+
+// Saldos a favor (13/11/2026): registrar a mano, aplicar a una obligación con saldo y anular si no se ha usado.
+export async function createUnitCredit(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),concept=field(data,"concept"),issuedOn=field(data,"issuedOn"),amount=Number(field(data,"amount"));
+  if(![propertyId,unitId].every((value)=>uuidPattern.test(value))||concept.length<2||concept.length>180||!/^\d{4}-\d{2}-\d{2}$/.test(issuedOn)||!Number.isFinite(amount)||amount<=0)return{error:"Revisa el valor, el concepto y la fecha."};
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  const result=await supabase.rpc("create_unit_credit",{target_property_id:propertyId,target_unit_id:unitId,target_amount:amount,target_concept:concept,target_issued_on:issuedOn});
+  if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Saldo a favor registrado."};
+}
+
+export async function applyUnitCredit(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),creditId=field(data,"creditId"),receivableId=field(data,"receivableId"),amount=Number(field(data,"amount"));
+  if(![propertyId,unitId,creditId,receivableId].every((value)=>uuidPattern.test(value))||!Number.isFinite(amount)||amount<=0)return{error:"Elige la obligación y el valor a aplicar."};
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  const result=await supabase.rpc("apply_unit_credit",{target_property_id:propertyId,target_credit_id:creditId,target_receivable_id:receivableId,target_amount:amount,target_idempotency_key:crypto.randomUUID()});
+  if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Saldo a favor aplicado."};
+}
+
+export async function voidUnitCredit(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),unitId=field(data,"unitId"),creditId=field(data,"creditId"),reason=field(data,"reason");
+  if(![propertyId,unitId,creditId].every((value)=>uuidPattern.test(value))||reason.length<3||reason.length>500)return{error:"Escribe un motivo de al menos 3 caracteres."};
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  const result=await supabase.rpc("void_unit_credit",{target_property_id:propertyId,target_credit_id:creditId,target_reason:reason});
+  if(result.error)return{error:friendlyError(result.error.message)};
+  refreshFinance(propertyId,unitId);return{success:"Saldo a favor anulado."};
 }

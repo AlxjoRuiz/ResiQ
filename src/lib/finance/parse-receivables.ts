@@ -6,13 +6,14 @@ import { dateValue } from "./receivable-date.ts";
 // Lectura del Excel de importación de cartera (plantilla de /api/templates/cartera). Separada de la acción del
 // servidor (cartera/actions.ts) para poder probarla sin Supabase: tests/finance/parse-receivables.test.mjs.
 // 12/11/2026: fechas DD/MM/AAAA, torre y apartamento sin importar tildes, mayúsculas ni espacios, y cada fila con
-// error dice qué tiene mal.
+// error dice qué tiene mal. 13/11/2026: una fila con valor negativo es un saldo a favor (kind «credit»).
 
 type Cell = CellValue | null;
 
 export const RECEIVABLE_REQUIRED_COLUMNS = ["torre", "apartamento", "concepto", "valor", "fecha_emision", "fecha_vencimiento", "tipo"] as const;
 
-export type ParsedReceivable = { unit_id: string; concept: string; amount: number; issued_on: string; due_on: string; external_reference: string; source: string };
+// kind «credit» (13/11/2026): fila con valor negativo = saldo a favor del apartamento; amount va en positivo.
+export type ParsedReceivable = { unit_id: string; concept: string; amount: number; issued_on: string; due_on: string; external_reference: string; source: string; kind?: "credit" };
 
 export { dateValue };
 
@@ -74,15 +75,22 @@ export function parseReceivableRows(dataRows: Cell[][], index: Record<string, nu
     const problems: string[] = [];
     if (!unitId) problems.push(`no existe la torre «${building}», apartamento «${code}» en el conjunto`);
     if (concept.length < 2 || concept.length > 180) problems.push("el concepto debe tener entre 2 y 180 caracteres");
+    const credit = Number.isFinite(amount) && amount < 0;
     if (!Number.isFinite(amount)) problems.push("el valor no es un número");
-    else if (amount <= 0) problems.push("el valor debe ser mayor que 0 (los saldos a favor no se importan)");
+    else if (amount === 0) problems.push("el valor no puede ser 0");
     if (!issued) problems.push("la fecha de emisión debe ser DD/MM/AAAA");
-    if (!due) problems.push("la fecha de vencimiento debe ser DD/MM/AAAA");
-    if (issued && due && due < issued) problems.push("vence antes de la fecha de emisión");
+    // Saldo a favor: la fecha de vencimiento no aplica.
+    if (!credit && !due) problems.push("la fecha de vencimiento debe ser DD/MM/AAAA");
+    if (!credit && issued && due && due < issued) problems.push("vence antes de la fecha de emisión");
     if (reference.length > 120) problems.push("la referencia supera 120 caracteres");
-    if (!source) problems.push("el tipo debe ser «obligacion» o «saldo_inicial»");
+    if (!credit && !source) problems.push("el tipo debe ser «obligacion» o «saldo_inicial»");
     if (problems.length || !unitId) {
       rowErrors.push(`Fila ${line}: ${problems.join(", ")}`);
+      return;
+    }
+    if (credit) {
+      const value = Math.abs(amount);
+      rows.push({ unit_id: unitId, concept, amount: value, issued_on: issued, due_on: due || issued, external_reference: reference || autoReference(unitId, `saldo a favor|${concept}`, issued, value), source: "credit", kind: "credit" });
       return;
     }
     rows.push({ unit_id: unitId, concept, amount, issued_on: issued, due_on: due, external_reference: reference || autoReference(unitId, concept, issued, amount), source });
