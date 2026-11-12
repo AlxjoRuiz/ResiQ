@@ -67,19 +67,18 @@ export function CensusDetail({ headers, cells, propertyId, recordId, residents, 
   const emailIndex = headers.findIndex((header) => normalizeCensusHeader(header) === "correo electronico");
   const emailChanged = emailIndex >= 0 && (draft[emailIndex] ?? "").trim().toLowerCase() !== (cells[emailIndex] ?? "").trim().toLowerCase();
 
-  const startNewInvitation = () => { setDraft(headers.map((header, index) => lockedField(header) ? cells[index] : null)); setActive("Residente"); setEditing(true); };
-
-  // Apartamento libre: solo el mensaje central para invitar; el formulario aparece al pulsar.
-  if (vacant && !editing) return <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
-    <span className="relative flex size-16 items-center justify-center rounded-full bg-secondary text-primary"><UserPlus size={30} aria-hidden="true" /></span>
-    <div><p className="font-semibold">Apartamento sin residente</p><p className="mt-1 text-sm text-muted-foreground">Invita al nuevo propietario o residente para que tenga acceso a ResiQ.</p></div>
-    <Button type="button" onClick={startNewInvitation}><Plus size={16} aria-hidden="true" />Nueva invitación</Button>
-    {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
-    {state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}
-  </div>;
+  // Con los datos a la vista, «Nueva invitación» abre la edición con los datos actuales: al guardar se invita a ese
+  // correo (o al que se escriba).
+  const startNewInvitation = () => { setDraft(cells); setActive("Residente"); setEditing(true); };
 
   // La barra superior queda fuera del formulario de edición: Desvincular tiene su propio formulario.
+  // 12/11/2026 (pedido de Alejandro): los datos del censo se ven siempre, con o sin invitación. Si nadie ha
+  // aceptado la invitación, un aviso lo recuerda; si además no hay invitación vigente, ahí mismo se puede crear una.
   return <div className="relative space-y-6">
+    {!occupied && !editing && <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+      <p className="flex min-w-0 items-start gap-2"><UserPlus size={18} aria-hidden="true" className="mt-0.5 shrink-0" /><span><strong>El residente aún no ha aceptado la invitación.</strong> Sus datos del censo están guardados, pero todavía no tiene acceso a ResiQ.{vacant && " No tiene una invitación vigente."}</span></p>
+      {vacant && <Button type="button" size="sm" onClick={startNewInvitation}><Plus size={16} aria-hidden="true" />Nueva invitación</Button>}
+    </div>}
     <div className="flex flex-wrap items-center justify-between gap-2">
       <nav aria-label="Secciones del censo" className="flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">{sections.map((section) => <button key={section} type="button" aria-pressed={active === section} onClick={() => setActive(section)} className={`shrink-0 rounded-full border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${active === section ? "border-foreground bg-foreground text-background" : "bg-white hover:bg-secondary"}`}>{section}</button>)}</nav>
       {!editing && <div className="flex flex-wrap items-center gap-2"><Button type="button" size="sm" variant="outline" onClick={() => { setDraft(cells); setEditing(true); }}>Editar</Button>{occupied && <UnlinkResidents propertyId={propertyId} residents={residents} />}</div>}

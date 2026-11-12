@@ -54,7 +54,7 @@ function UnitContent({ data, propertyId, unitId }: { data: UnitData; propertyId:
   return <>
     <div className="space-y-4"><h4 className="font-semibold">Información del Excel</h4>
       {records.map((record, index) => <div key={record.id} className="min-w-0 rounded-lg border p-2 sm:p-4">
-        {!vacant && <p className="mb-4 font-medium">{record.name || record.email || `Residente ${index + 1}`}{record.primary && <span className="mt-1 block w-fit rounded-full bg-secondary px-2 py-1 text-xs sm:ml-2 sm:mt-0 sm:inline">Principal para futura invitación · {record.relationship === "owner" ? "Propietario" : "Arrendatario"}</span>}</p>}
+        <p className="mb-4 font-medium">{record.name || record.email || `Residente ${index + 1}`}{record.primary && <span className="mt-1 block w-fit rounded-full bg-secondary px-2 py-1 text-xs sm:ml-2 sm:mt-0 sm:inline">Principal para futura invitación · {record.relationship === "owner" ? "Propietario" : "Arrendatario"}</span>}</p>
         {record.headers.length ? <CensusDetail headers={record.headers} cells={record.cells} propertyId={propertyId} recordId={record.id} residents={residents} vacant={vacant} /> : <p className="text-sm text-muted-foreground">No se pudieron mostrar los encabezados de esta respuesta.</p>}
       </div>)}
       {!records.length && <p className="text-sm text-muted-foreground">Este apartamento no tiene respuestas importadas.</p>}
