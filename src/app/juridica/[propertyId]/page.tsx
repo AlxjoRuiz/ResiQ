@@ -8,7 +8,9 @@ import { formatDay, formatMoment, newsLabels, uuidPattern, type LegalAccount, ty
 import { MarkPropertySeen } from "../mark-seen";
 import { LegalTowers, type LegalTower } from "./legal-towers";
 
-const tabs = [{ id: "mora", label: "En mora" }, { id: "aldia", label: "Al día" }, { id: "novedades", label: "Novedades" }, { id: "respuestas", label: "Respuestas" }] as const;
+// Sin «Al día» (13/11/2026): la abogada solo ve apartamentos con más de 60 días de mora.
+const LEGAL_MIN_DAYS = 60;
+const tabs = [{ id: "mora", label: "En mora" }, { id: "novedades", label: "Novedades" }, { id: "respuestas", label: "Respuestas" }] as const;
 type Thread = { notice_id: string; property_id: string; unit_label: string; recipient_email: string; recipient_name: string | null; last_message: string; last_author: string; last_at: string; unread: number };
 type Tab = (typeof tabs)[number]["id"];
 
@@ -38,25 +40,25 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
   if (!property) notFound();
   const accounts = (accountData ?? []) as LegalAccount[];
   const news = (newsData ?? []) as LegalNews[];
-  const arrears = accounts.filter((row) => row.in_arrears), current = accounts.filter((row) => !row.in_arrears);
+  const arrears = accounts.filter((row) => row.in_arrears && row.days_overdue > LEGAL_MIN_DAYS);
   // Conversaciones de este conjunto; si la consulta falla, la pestaña sale vacía.
   const threads = ((threadData ?? []) as Thread[]).filter((row) => row.property_id === propertyId);
-  const counts: Record<Tab, number> = { mora: arrears.length, aldia: current.length, novedades: news.filter((row) => row.is_new).length, respuestas: threads.filter((row) => row.last_author === "resident").length };
+  const counts: Record<Tab, number> = { mora: arrears.length, novedades: news.filter((row) => row.is_new).length, respuestas: threads.filter((row) => row.last_author === "resident").length };
   // En mora de menos a más días (01/11/2026).
   const towers = [...new Set(accounts.map((row) => row.building_name))].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
   const matches = (row: LegalAccount) => (!towerFilter || row.building_name === towerFilter) && (!unitFilter || row.unit_code.toLowerCase().includes(unitFilter));
   // Por torre y apartamento, de menor a mayor (13/11/2026), en En mora y en Al día.
   const byName = (a: string, b: string) => a.localeCompare(b, "es", { numeric: true });
-  const rows = (tab === "mora" ? arrears.filter((row) => row.days_overdue >= minDays) : current).filter(matches)
+  const rows = arrears.filter((row) => row.days_overdue >= minDays).filter(matches)
     .sort((a, b) => byName(a.building_name, b.building_name) || byName(a.unit_code, b.unit_code));
   const towerGroups: LegalTower[] = [...rows.reduce((map, row) => map.set(row.building_name, [...(map.get(row.building_name) ?? []), row]), new Map<string, LegalAccount[]>())]
     .map(([name, list]) => ({ name, units: list.map((row) => ({ id: row.unit_id, code: row.unit_code, owner: row.owner_name, amount: Number(row.in_arrears ? row.overdue : row.outstanding), days: row.days_overdue,
       lastPayment: formatDay(row.last_payment_on), agreement: row.agreement_active, inArrears: row.in_arrears, outstanding: Number(row.outstanding) })) }));
-  const tabTotal = tab === "mora" ? arrears.length : current.length;
+  const tabTotal = arrears.length;
   const filtering = minDays > 1 || Boolean(towerFilter) || Boolean(unitFilter);
   const fieldClass = "h-9 rounded-lg border bg-white px-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring";
 
-  return <PlatformPage eyebrow="Cobro jurídico" title={property.property_name} description={`${property.city ?? "Sin ciudad"} · en mora desde el primer día de vencida una deuda sin pagar`}
+  return <PlatformPage eyebrow="Cobro jurídico" title={property.property_name} description={`${property.city ?? "Sin ciudad"} · apartamentos con más de ${LEGAL_MIN_DAYS} días de mora`}
     back={<Link href="/juridica" className="text-sm text-muted-foreground hover:text-foreground">← Tus conjuntos</Link>}>
     <nav aria-label="Secciones de la cartera" className="flex flex-wrap gap-2">{tabs.filter((item) => item.id !== "respuestas").map((item) => <Link key={item.id} href={`/juridica/${propertyId}?tab=${item.id}`} aria-current={tab === item.id ? "page" : undefined}
       className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
@@ -77,7 +79,7 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
           : <p className="break-words text-muted-foreground">{item.description}</p>)}<p className="text-xs text-muted-foreground">{formatMoment.format(new Date(item.occurred_at))}</p></div>
         <span className={`font-semibold ${voided ? "text-red-700 line-through" : ""}`}>{formatCop(item.amount)}</span>
       </li>; })}</ul> : <p className="mt-4 text-sm text-muted-foreground">Sin movimientos de cartera en los últimos 60 días.</p>}
-    </section> : <section aria-label={tab === "mora" ? "Apartamentos en mora" : "Apartamentos al día"} className="rounded-2xl border bg-white p-5">
+    </section> : <section aria-label="Apartamentos en mora" className="rounded-2xl border bg-white p-5">
       {tabTotal > 0 && <form action={`/juridica/${propertyId}`} aria-label="Filtrar apartamentos" className="mb-4 flex flex-wrap items-center gap-2 text-sm"><input type="hidden" name="tab" value={tab} />
         <label className="flex items-center gap-2 text-muted-foreground">Torre<select name="torre" defaultValue={towerFilter} className={`${fieldClass} min-w-32`}><option value="">Todas</option>{towers.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
         <label className="flex items-center gap-2 text-muted-foreground">Apartamento<input name="apto" defaultValue={rawUnit ?? ""} maxLength={30} placeholder="Ej.: 402" className={`${fieldClass} w-24`} /></label>
@@ -86,7 +88,7 @@ export default async function LegalPropertyPage({ params, searchParams }: { para
         {filtering && <Link href={`/juridica/${propertyId}?tab=${tab}`} className="flex h-9 items-center rounded-lg px-3 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">Borrar filtros</Link>}
         <span className="ml-auto text-xs text-muted-foreground">{rows.length} de {tabTotal}</span></form>}
       {rows.length ? <LegalTowers towers={towerGroups} propertyId={propertyId} arrears={tab === "mora"} />
-        : <p className="text-sm text-muted-foreground">{filtering && tabTotal > 0 ? "Ningún apartamento coincide con los filtros." : tab === "mora" ? "Ningún apartamento está en mora." : "No hay apartamentos al día."}</p>}
+        : <p className="text-sm text-muted-foreground">{filtering && tabTotal > 0 ? "Ningún apartamento coincide con los filtros." : tab === "mora" ? `Ningún apartamento tiene más de ${LEGAL_MIN_DAYS} días de mora.` : "No hay apartamentos al día."}</p>}
     </section>}
   </PlatformPage>;
 }

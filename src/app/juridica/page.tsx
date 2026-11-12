@@ -30,9 +30,8 @@ export default async function LegalHomePage() {
         </div>
         <h2 className="mt-5 text-lg font-semibold">{property.property_name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{property.city ?? "Sin ciudad"}</p>
-        <dl className="mt-4 grid grid-cols-3 gap-2 text-xs">
-          <div className="rounded-xl bg-secondary/60 px-2.5 py-2"><dt className="text-[11px] text-muted-foreground">En mora</dt><dd className="text-base font-semibold text-urgent">{property.units_in_arrears}</dd></div>
-          <div className="rounded-xl bg-secondary/60 px-2.5 py-2"><dt className="text-[11px] text-muted-foreground">Al día</dt><dd className="text-base font-semibold">{property.units_current}</dd></div>
+        <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded-xl bg-secondary/60 px-2.5 py-2"><dt className="text-[11px] text-muted-foreground">Más de 60 días</dt><dd className="text-base font-semibold text-urgent">{property.units_in_arrears}</dd></div>
           <div className="rounded-xl bg-secondary/60 px-2.5 py-2"><dt className="text-[11px] text-muted-foreground">Deuda en mora</dt><dd className="break-words text-xs font-semibold leading-6">{formatCop(property.arrears_amount)}</dd></div>
         </dl>
       </div>
