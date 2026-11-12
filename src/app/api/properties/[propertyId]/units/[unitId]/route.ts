@@ -26,7 +26,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ propertyId
     supabase.from("census_records").select("id,import_id,full_name,email_normalized,invitation_primary,invitation_relationship,cells").eq("property_id", propertyId).eq("unit_id", unitId),
     // Solo quien tiene un vínculo vigente con ESTE apartamento.
     supabase.from("property_members").select("id,user_id,roles,status,profiles!property_members_user_id_fkey(display_name),unit_memberships!inner(id,relationship)").eq("property_id", propertyId).eq("unit_memberships.unit_id", unitId).is("unit_memberships.valid_to", null),
-    supabase.rpc("get_unit_invitations", { target_property_id: propertyId }),
+    // Solo la de este apartamento: la lista completa se corta en 1.000 filas (12/11/2026).
+    supabase.rpc("get_unit_invitations", { target_property_id: propertyId }).eq("unit_id", unitId),
   ]);
   if (unitResult.error || censusResult.error || memberResult.error || invitationResult.error) return NextResponse.json({ error: "No pudimos cargar el apartamento." }, { status: 500 });
   if (!unitResult.data) return NextResponse.json({ error: "No encontrado." }, { status: 404 });

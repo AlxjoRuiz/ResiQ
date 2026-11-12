@@ -16,6 +16,7 @@ import { packageStatusLabel, receivedItemLabel } from "@/lib/packages/constants"
 import { statusLabel } from "@/lib/pqrs/constants";
 
 import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 type FinanceSummary = { unit_id: string; building_name: string; unit_code: string; outstanding_balance: number | string; overdue_balance: number | string; account_status: string };
 type View = "residente" | "porteria" | "administracion";
 export default async function PropertyDashboardPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ vista?: string }> }) {
@@ -41,7 +42,7 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
     supabase.from("packages").select("id,kind,utility_service,recipient_name,status").eq("property_id", propertyId).order("received_at", { ascending: false }).limit(3),
     view !== "porteria" ? supabase.from("pqrs").select("id,subject,status").eq("property_id", propertyId).order("created_at", { ascending: false }).limit(3) : Promise.resolve({ data: [], error: null }),
     supabase.from("notifications").select("id,subject,body,read_at,occurred_at").eq("property_id", propertyId).eq("recipient_member_id", membership.id).order("occurred_at", { ascending: false }).limit(3),
-    view !== "porteria" ? supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }) : Promise.resolve({ data: [], error: null }),
+    view !== "porteria" ? fetchAllRows((from, to) => supabase.rpc("list_finance_account_summaries", { target_property_id: propertyId }).order("unit_id").range(from, to)) : Promise.resolve({ data: [], error: null }),
     supabase.rpc("get_unseen_sections", { target_property_id: propertyId }),
     isAdmin ? supabase.rpc("get_admin_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),
     view === "residente" ? supabase.rpc("get_resident_dashboard", { target_property_id: propertyId }) : Promise.resolve({ data: null, error: null }),

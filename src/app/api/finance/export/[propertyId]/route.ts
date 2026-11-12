@@ -2,6 +2,7 @@ import { strToU8, zipSync } from "fflate";
 import { NextResponse } from "next/server";
 import { displayDate } from "@/lib/finance/receivable-date";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const headers = ["torre", "apartamento", "concepto", "valor", "fecha_emision", "fecha_vencimiento", "tipo"];
@@ -19,7 +20,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ propertyId
   if (!user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   const { data: member } = await supabase.from("property_members").select("roles").eq("property_id", propertyId).eq("user_id", user.id).eq("status", "active").maybeSingle();
   if (!member || !(member.roles as string[]).includes("administrator")) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
-  const { data, error } = await supabase.from("accounts_receivable").select("concept,amount,issued_on,due_on,source,units(code,buildings(name))").eq("property_id", propertyId).eq("status", "active");
+  const { data, error } = await fetchAllRows((from, to) => supabase.from("accounts_receivable").select("concept,amount,issued_on,due_on,source,units(code,buildings(name))").eq("property_id", propertyId).eq("status", "active").order("id").range(from, to));
   if (error) return NextResponse.json({ error: "No disponible." }, { status: 500 });
   const rows = ((data ?? []) as unknown as Row[]).map((row) => { const unit = one(row.units); return { tower: one(unit?.buildings ?? null)?.name ?? "", unit: unit?.code ?? "", row }; })
     .sort((a, b) => a.tower.localeCompare(b.tower, "es", { numeric: true }) || a.unit.localeCompare(b.unit, "es", { numeric: true }) || a.row.issued_on.localeCompare(b.row.issued_on) || a.row.concept.localeCompare(b.row.concept, "es"));

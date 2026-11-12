@@ -4,6 +4,7 @@ import { AssignRecipientForm, type PackageDirectoryRow } from "@/components/pack
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { packageStatusLabel, receivedItemLabel } from "@/lib/packages/constants";
 import { dateTimeFormatter } from "@/lib/time-zone";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
 function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
@@ -22,7 +23,7 @@ export default async function PackageDetailPage({ params, searchParams }: { para
   const canManage = membership.roles.includes("concierge");
   let unitMembers: PackageDirectoryRow[] = [];
   if (canManage && !item.recipient_member_id && item.status !== "delivered") {
-    const { data } = await supabase.rpc("get_package_registration_directory", { target_property_id: propertyId });
+    const { data } = await fetchAllRows((from, to) => supabase.rpc("get_package_registration_directory", { target_property_id: propertyId }).order("unit_id").order("member_id").range(from, to));
     unitMembers = ((data ?? []) as PackageDirectoryRow[]).filter((row) => row.unit_id === item.unit_id && row.member_id);
   }
   const created = (await searchParams).created === "1";

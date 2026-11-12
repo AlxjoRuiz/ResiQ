@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { readSheet } from "read-excel-file/node";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 import { FINANCE_MAX_FILE_BYTES, FINANCE_MAX_FILE_LABEL, FINANCE_MAX_ROWS, financeXlsxLimits } from "@/lib/finance/import-limits";
@@ -129,7 +130,8 @@ export async function importReceivables(_: FinanceState, data: FormData): Promis
     if(rows.length<2||rows.length>FINANCE_MAX_ROWS+1)return{error:`El archivo debe contener encabezados y entre 1 y ${FINANCE_MAX_ROWS} filas.`};
     const index=receivableColumnIndex(rows[0]);
     if(!index)return{error:`Faltan columnas. Usa la plantilla: ${RECEIVABLE_REQUIRED_COLUMNS.join(", ")}.`};
-    const {data:units,error:unitError}=await supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active");if(unitError)return{error:friendlyError(unitError.message)};
+    // Todos los apartamentos, de 1.000 en 1.000 (Supabase corta en 1.000; 12/11/2026).
+    const {data:units,error:unitError}=await fetchAllRows((from,to)=>supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active").order("id").range(from,to));if(unitError)return{error:friendlyError(unitError.message)};
     const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[unitKey(String(building?.name??""),unit.code),unit.id];}));
     const {rows:parsed,rowErrors}=parseReceivableRows(rows.slice(1),index,unitMap);
     // Cada fila con error dice qué tiene mal (12/11/2026); no se carga nada hasta corregirlas.

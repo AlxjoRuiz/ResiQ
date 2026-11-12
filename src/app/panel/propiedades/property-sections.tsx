@@ -5,6 +5,7 @@ import { CensusUpdateForm } from "@/components/census/census-update-form";
 import { CENSUS_MAX_ROWS } from "@/lib/census/parse";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import { BuildingForm, MemberForm } from "./management-forms";
 import { PropertyUnitExplorer } from "./property-unit-explorer";
 import { ConciergeRegistrationForm } from "./concierge-registration-form";
@@ -48,7 +49,7 @@ export async function PropertyManagementSections({ propertyId, canImport, import
   const [{ data: buildingData, error: buildingError }, { data: memberData, error: memberError }, { data: censusData, error: censusError }, { data: conciergeData, error: conciergeError }, { data: assistantData, error: assistantError }] = await Promise.all([
     supabase.from("buildings").select("id,name,code,active,units(id,building_id,code,floor,status)").eq("property_id", propertyId).order("name"),
     supabase.from("property_members").select("id,user_id,roles,status,profiles!property_members_user_id_fkey(display_name)").eq("property_id", propertyId).contains("roles", ["concierge"]).order("joined_at"),
-    supabase.from("census_records").select("unit_id,user_type").eq("property_id", propertyId).limit(CENSUS_MAX_ROWS),
+    fetchAllRows<{ unit_id: string; user_type: string | null }>((from, to) => supabase.from("census_records").select("unit_id,user_type").eq("property_id", propertyId).order("id").range(from, to), 1000, CENSUS_MAX_ROWS),
     supabase.from("concierge_accounts").select("id,member_id,username,full_name,document_number,birth_date,phone_e164,email_normalized,address,vehicles,status").eq("property_id", propertyId).neq("status", "removed").order("created_at", { ascending: false }),
     supabase.rpc("get_admin_assistants", { target_property_id: propertyId }),
   ]);

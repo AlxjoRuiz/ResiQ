@@ -23,7 +23,7 @@ const dayMs=24*60*60*1000;
 const periodLabel=(value:string|null)=>value?new Intl.DateTimeFormat("es-CO",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(`${value}T00:00:00Z`)):null;
 
 export default async function AccountDetailPage({params}:{params:Promise<{propertyId:string;unitId:string}>}){
-  const{propertyId,unitId}=await params;const{supabase,membership,property}=await requirePropertyMember(propertyId);const admin=membership.roles.includes("administrator");const{data:visibleAccounts,error:visibilityError}=await supabase.rpc("list_finance_account_summaries",{target_property_id:propertyId});if(visibilityError||!(visibleAccounts??[]).some((row:{unit_id:string})=>row.unit_id===unitId))notFound();
+  const{propertyId,unitId}=await params;const{supabase,membership,property}=await requirePropertyMember(propertyId);const admin=membership.roles.includes("administrator");const{data:visibleAccounts,error:visibilityError}=await supabase.rpc("list_finance_account_summaries",{target_property_id:propertyId}).eq("unit_id",unitId);if(visibilityError||!(visibleAccounts??[]).some((row:{unit_id:string})=>row.unit_id===unitId))notFound();
   const[{data:unitData},{data:receivableData,error:receivableError},{data:paymentData,error:paymentError},{data:allocationData,error:allocationError},{data:evidenceData,error:evidenceError},{data:agreementData}]=await Promise.all([
     supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("id",unitId).maybeSingle(),
     supabase.from("accounts_receivable").select("id,concept,amount,currency,issued_on,due_on,status,source,external_reference,void_reason,created_at").eq("property_id",propertyId).eq("unit_id",unitId).order("created_at",{ascending:false}),

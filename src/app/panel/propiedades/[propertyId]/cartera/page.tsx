@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 
 type Summary={unit_id:string;building_name:string;unit_code:string;total_amount:number|string;applied_amount:number|string;outstanding_balance:number|string;overdue_balance:number|string;oldest_due_on:string|null;overdue_days:number;account_status:string;unapplied_payments:number|string};
 
@@ -13,7 +14,7 @@ export default async function FinancePage({params,searchParams}:{params:Promise<
   const{propertyId}=await params;const{supabase,membership}=await requirePropertyMember(propertyId);const admin=membership.roles.includes("administrator"),member=membership.roles.includes("member");if(!admin&&!member)notFound();
   if(admin)await supabase.rpc("process_delinquency_notifications",{target_property_id:propertyId});
   const[{data:summaryData,error:summaryError},{data:agreementData},{data:policy},{data:conceptData},{data:pendingEvidenceData},{data:legalUnitData}]=await Promise.all([
-    supabase.rpc("list_finance_account_summaries",{target_property_id:propertyId}),
+    fetchAllRows((from,to)=>supabase.rpc("list_finance_account_summaries",{target_property_id:propertyId}).order("unit_id").range(from,to)),
     admin?supabase.from("payment_agreements").select("unit_id").eq("property_id",propertyId).eq("status","active"):Promise.resolve({data:[]}),
     admin?supabase.from("property_policies").select("minimum_overdue_days").eq("property_id",propertyId).maybeSingle():Promise.resolve({data:null}),
     supabase.rpc("list_unit_pending_concepts",{target_property_id:propertyId}),
