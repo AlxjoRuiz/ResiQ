@@ -1,5 +1,6 @@
 import { strToU8, zipSync } from "fflate";
 import { NextResponse } from "next/server";
+import { displayDate } from "@/lib/finance/receivable-date";
 import { createClient } from "@/lib/supabase/server";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -9,7 +10,7 @@ const one = <T,>(value: T | T[] | null) => (Array.isArray(value) ? value[0] ?? n
 const escape = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 // «Descargar cartera»: las obligaciones vigentes del conjunto, ordenadas por torre y apartamento, con
-// las mismas columnas que se importan. Sin obligaciones, el Excel sale solo con los encabezados.
+// las mismas columnas que se importan. Fechas en DD/MM/AAAA (12/11/2026). Sin obligaciones, el Excel sale solo con los encabezados.
 export async function GET(_: Request, { params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params;
   if (!uuidPattern.test(propertyId)) return NextResponse.json({ error: "No encontrado." }, { status: 404 });
@@ -22,7 +23,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ propertyId
   if (error) return NextResponse.json({ error: "No disponible." }, { status: 500 });
   const rows = ((data ?? []) as unknown as Row[]).map((row) => { const unit = one(row.units); return { tower: one(unit?.buildings ?? null)?.name ?? "", unit: unit?.code ?? "", row }; })
     .sort((a, b) => a.tower.localeCompare(b.tower, "es", { numeric: true }) || a.unit.localeCompare(b.unit, "es", { numeric: true }) || a.row.issued_on.localeCompare(b.row.issued_on) || a.row.concept.localeCompare(b.row.concept, "es"));
-  const cells = [headers, ...rows.map(({ tower, unit, row }) => [tower, unit, row.concept, Number(row.amount), row.issued_on, row.due_on, row.source === "opening_balance" ? "saldo_inicial" : "obligacion"])];
+  const cells = [headers, ...rows.map(({ tower, unit, row }) => [tower, unit, row.concept, Number(row.amount), displayDate(row.issued_on), displayDate(row.due_on), row.source === "opening_balance" ? "saldo_inicial" : "obligacion"])];
   const column = (n: number) => { let label = ""; for (n++; n > 0; n = Math.floor((n - 1) / 26)) label = String.fromCharCode(65 + ((n - 1) % 26)) + label; return label; };
   const sheetData = cells.map((row, r) => `<row r="${r + 1}">${row.map((value, c) => typeof value === "number" ? `<c r="${column(c)}${r + 1}"><v>${value}</v></c>` : `<c r="${column(c)}${r + 1}" t="inlineStr"><is><t xml:space="preserve">${escape(String(value))}</t></is></c>`).join("")}</row>`).join("");
   const archive = zipSync({

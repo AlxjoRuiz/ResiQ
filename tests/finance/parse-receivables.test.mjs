@@ -37,11 +37,30 @@ test("tipo «Saldo inicial» es opening_balance; Obligación e import son import
   assert.deepEqual(kinds, ["opening_balance", "import", "import"]);
 });
 
-test("las fechas de Excel (Date) y el texto AAAA-MM-DD se aceptan; otros formatos no", () => {
+test("las fechas DD/MM/AAAA, las de Excel (Date) y AAAA-MM-DD se aceptan; las que no existen no", () => {
+  assert.equal(dateValue("05/10/2026"), "2026-10-05");
+  assert.equal(dateValue(" 5/1/2026 "), "2026-01-05");
+  assert.equal(dateValue("05-10-2026"), "2026-10-05");
   assert.equal(dateValue(new Date("2026-10-05T00:00:00Z")), "2026-10-05");
   assert.equal(dateValue(" 2026-10-05 "), "2026-10-05");
-  assert.equal(dateValue("05/10/2026"), "");
+  assert.equal(dateValue("31/02/2026"), "");
+  assert.equal(dateValue("10/2026"), "");
   assert.equal(dateValue(null), "");
+});
+
+test("la torre y el apartamento se encuentran sin importar tildes, mayúsculas, espacios ni la palabra torre", () => {
+  const map = new Map([[unitKey("Torre Única", "101"), "u1"], [unitKey("Torre 3", "202"), "u3"]]);
+  const index = receivableColumnIndex(headers);
+  const row = (building, code) => [building, code, "Administración", 1000, "01/10/2026", "31/10/2026", "obligacion"];
+  const { rows, rowErrors } = parseReceivableRows([row("TORRE  UNICA", "101"), row("3", "Apto 202"), row(" torre 3 ", "202")], index, map);
+  assert.deepEqual(rowErrors, []);
+  assert.deepEqual(rows.map((item) => item.unit_id), ["u1", "u3", "u3"]);
+});
+
+test("las filas vacías se ignoran", () => {
+  const { rows, rowErrors } = parse(valid, [null, null, "", null, null, null, null]);
+  assert.equal(rows.length, 1);
+  assert.deepEqual(rowErrors, []);
 });
 
 test("cada fila inválida se reporta con su número de fila en Excel y no se carga", () => {
@@ -52,12 +71,21 @@ test("cada fila inválida se reporta con su número de fila en Excel y no se car
     ["Torre 1", "101", "Administración", -5, "2026-10-01", "2026-10-10", "Obligación"], // 5: valor negativo
     ["Torre 1", "101", "Administración", "mil", "2026-10-01", "2026-10-10", "Obligación"], // 6: valor que no es número
     ["Torre 1", "101", "Administración", 1000, "2026-10-10", "2026-10-01", "Obligación"], // 7: vence antes de emitirse
-    ["Torre 1", "101", "Administración", 1000, "01/10/2026", "2026-10-10", "Obligación"], // 8: fecha con otro formato
+    ["Torre 1", "101", "Administración", 1000, "octubre", "2026-10-10", "Obligación"], // 8: fecha que no es fecha
     ["Torre 1", "101", "A", 1000, "2026-10-01", "2026-10-10", "Obligación"], // 9: concepto muy corto
     ["Torre 1", "101", "Administración", 1000, "2026-10-01", "2026-10-10", "Abono"], // 10: tipo desconocido
   );
   assert.equal(rows.length, 1);
-  assert.deepEqual(rowErrors, ["Fila 3", "Fila 4", "Fila 5", "Fila 6", "Fila 7", "Fila 8", "Fila 9", "Fila 10"]);
+  assert.deepEqual(rowErrors, [
+    "Fila 3: no existe la torre «Torre 9», apartamento «101» en el conjunto",
+    "Fila 4: el valor debe ser mayor que 0 (los saldos a favor no se importan)",
+    "Fila 5: el valor debe ser mayor que 0 (los saldos a favor no se importan)",
+    "Fila 6: el valor no es un número",
+    "Fila 7: vence antes de la fecha de emisión",
+    "Fila 8: la fecha de emisión debe ser DD/MM/AAAA",
+    "Fila 9: el concepto debe tener entre 2 y 180 caracteres",
+    "Fila 10: el tipo debe ser «obligacion» o «saldo_inicial»",
+  ]);
 });
 
 test("la referencia automática es la misma para la misma deuda, para no cargarla dos veces", () => {
@@ -72,5 +100,5 @@ test("si el archivo trae columna referencia se usa esa y se limita a 120 caracte
   const ok = parseReceivableRows([[...valid, "FAC-001"]], index, units);
   assert.equal(ok.rows[0].external_reference, "FAC-001");
   const tooLong = parseReceivableRows([[...valid, "x".repeat(121)]], index, units);
-  assert.deepEqual(tooLong.rowErrors, ["Fila 2"]);
+  assert.deepEqual(tooLong.rowErrors, ["Fila 2: la referencia supera 120 caracteres"]);
 });

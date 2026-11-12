@@ -132,7 +132,8 @@ export async function importReceivables(_: FinanceState, data: FormData): Promis
     const {data:units,error:unitError}=await supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active");if(unitError)return{error:friendlyError(unitError.message)};
     const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[unitKey(String(building?.name??""),unit.code),unit.id];}));
     const {rows:parsed,rowErrors}=parseReceivableRows(rows.slice(1),index,unitMap);
-    if(rowErrors.length)return{error:`Corrige ${rowErrors.slice(0,8).join(", ")}${rowErrors.length>8?" y otras filas":""}.`};
+    // Cada fila con error dice qué tiene mal (12/11/2026); no se carga nada hasta corregirlas.
+    if(rowErrors.length)return{error:`${rowErrors.length===1?"Hay 1 fila con errores":`Hay ${rowErrors.length} filas con errores`}; no se cargó nada. Corrígelas y vuelve a importar:\n${rowErrors.slice(0,15).join("\n")}${rowErrors.length>15?`\n… y ${rowErrors.length-15} filas más.`:""}`};
     // Sin columna «referencia», cada fila se identifica por apartamento, concepto, emisión y valor;
     // la base de datos salta las que ya están cargadas (o repetidas en el archivo).
     const batchId=crypto.randomUUID();const result=await supabase.rpc("import_receivables",{target_property_id:propertyId,target_batch_id:batchId,target_rows:parsed});if(result.error)return{error:friendlyError(result.error.message)};
