@@ -40,8 +40,9 @@ type EvidenceRow = { id: string; receivableId: string; concept: string; original
 // Comprobantes de pago del apartamento y, al lado, «Registrar pago». «Aceptar pago» llena el formulario
 // con la deuda, el valor y la fecha del comprobante; la administración revisa y pulsa «Registrar pago».
 // El pago queda amarrado al comprobante (no se puede registrar dos veces).
-// creditRequests (13/11/2026): solicitudes del residente para usar su saldo a favor; van primero, como comprobantes.
-export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments, voidableReceivables, creditRequests = [] }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[]; voidableReceivables: PostedPayment[]; creditRequests?: ReactNode[] }) {
+// Solicitudes del residente para usar su saldo a favor (13/11/2026), como comprobantes. Orden: primero todo lo que
+// está por revisar (solicitudes y comprobantes) y después lo ya registrado o anulado.
+export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments, voidableReceivables, pendingRequests = [], doneRequests = [] }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[]; voidableReceivables: PostedPayment[]; pendingRequests?: ReactNode[]; doneRequests?: ReactNode[] }) {
   const [prefill, setPrefill] = useState<PaymentPrefill>();
   const formRef = useRef<HTMLDivElement>(null);
   // Máximo 3 tarjetas: siempre todos los pendientes y, después, los registrados más recientes. Los
@@ -55,13 +56,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  return <section className="mt-7 grid gap-6 lg:grid-cols-2">
-    <Card><CardContent>
-      <h2 className="text-lg font-semibold">Comprobantes de pago</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Los comprobantes que sube el residente, con la deuda y el valor que eligió. «Aceptar pago» llena el formulario de al lado para que lo revises y lo registres.</p>
-      <div className="mt-5 grid gap-3">
-        {creditRequests}
-        {shown.map((evidence) => <article key={evidence.id} className="rounded-xl border p-4">
+  const evidenceCard = (evidence: EvidenceRow) => <article key={evidence.id} className="rounded-xl border p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             {/* Título: lo que se paga; debajo, más pequeño, el mes, el valor y la fecha; luego el archivo. */}
             <div className="min-w-0"><p className="break-words font-semibold">{evidence.concept}</p><p className="mt-0.5 text-xs text-muted-foreground">{evidence.periodLabel ? `Pago de ${evidence.periodLabel} · ` : ""}{evidence.declaredAmount !== null ? `${formatCop(evidence.declaredAmount)} · ` : ""}cargado {evidence.uploadedAt}</p><a href={`/api/finance/evidence/${evidence.id}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block break-words text-xs font-medium text-primary underline underline-offset-2">{evidence.originalName}</a></div>
@@ -71,8 +66,18 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
           {evidence.comment && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-secondary px-3 py-2 text-sm">{evidence.comment}</p>}
           {evidence.receivedAt && <p className="mt-2 text-xs text-muted-foreground">Recibido {evidence.receivedAt}</p>}
           {evidence.voidReason && <p className="mt-2 text-xs text-muted-foreground">Motivo de la anulación: {evidence.voidReason}</p>}{!evidence.registered && evidence.voidReason === null && <div className="mt-3 flex flex-wrap gap-2"><Button type="button" size="sm" variant={prefill?.evidenceId === evidence.id ? "outline" : "default"} onClick={() => accept(evidence)}>{prefill?.evidenceId === evidence.id ? "En el formulario →" : "Aceptar pago"}</Button></div>}
-        </article>)}
-        {!evidences.length && !creditRequests.length && <p className="text-sm text-muted-foreground">El residente aún no ha subido comprobantes.</p>}
+        </article>;
+
+  return <section className="mt-7 grid gap-6 lg:grid-cols-2">
+    <Card><CardContent>
+      <h2 className="text-lg font-semibold">Comprobantes de pago</h2>
+      <p className="mt-2 text-sm text-muted-foreground">Los comprobantes que sube el residente, con la deuda y el valor que eligió. «Aceptar pago» llena el formulario de al lado para que lo revises y lo registres.</p>
+      <div className="mt-5 grid gap-3">
+        {pendingRequests}
+        {shown.filter((evidence) => !evidence.registered && evidence.voidReason === null).map(evidenceCard)}
+        {doneRequests}
+        {shown.filter((evidence) => evidence.registered || evidence.voidReason !== null).map(evidenceCard)}
+        {!evidences.length && !pendingRequests.length && !doneRequests.length && <p className="text-sm text-muted-foreground">El residente aún no ha subido comprobantes.</p>}
         {inHistory > 0 && <p className="text-xs text-muted-foreground">{inHistory === 1 ? "1 comprobante registrado más está" : `${inHistory} comprobantes registrados más están`} en «Ver historial de pagos».</p>}
       </div>
     </CardContent></Card>
