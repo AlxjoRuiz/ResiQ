@@ -17,7 +17,7 @@ export function CloseMonth({ propertyId, month, closed, monthLabel }: { property
     <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="month" value={month} />
     <p className="text-sm">{closed
       ? <>Vas a guardar una <strong>corrección</strong> del cierre de {monthLabel}. La versión anterior se conserva; esta será la nueva versión con los datos de hoy.</>
-      : <>Vas a <strong>cerrar {monthLabel}</strong>. Se guarda el informe tal como está ahora (incluidas tus conclusiones) y ya no cambiará.</>}</p>
+      : <>Vas a <strong>cerrar {monthLabel}</strong>. Se guarda el informe tal como está ahora y ya no cambiará.</>}</p>
     {closed && <label className="text-sm font-medium">Motivo de la corrección<textarea name="reason" required minLength={3} maxLength={500} rows={2} className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" /></label>}
     <div className="flex flex-wrap items-center gap-2">
       <Button type="submit" disabled={pending}>{pending ? "Guardando…" : closed ? "Guardar corrección" : "Cerrar mes"}</Button>

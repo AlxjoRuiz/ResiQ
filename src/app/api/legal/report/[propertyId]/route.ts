@@ -5,8 +5,8 @@ import { writeWorkbook } from "@/lib/xlsx/write-workbook";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-// Informe jurídico del mes en Excel (12/11/2026): hojas Resumen, Antigüedad, Torres, Morosos, Gestión y
-// Conclusiones, con las mismas cifras de la página. Solo la abogada con acceso al conjunto (lo valida la base de datos).
+// Informe jurídico del mes en Excel (12/11/2026): hojas Resumen, Antigüedad, Torres, Morosos, Gestión y Evolución,
+// con las mismas cifras de la página. Solo la abogada con acceso al conjunto (lo valida la base de datos).
 export async function GET(request: Request, { params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params;
   if (!uuidPattern.test(propertyId)) return new Response("No encontrado.", { status: 404 });
@@ -43,7 +43,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ prop
       ...report.current.notices_month.map((item) => [formatGenerated(item.sent_at, raw.timezone), item.unit, item.recipient, Number(item.total), item.delivery]),
       [], ["Pagos registrados en el mes", report.current.payments_month], ["Acuerdos de pago creados en el mes", report.current.agreements_month], ["Apartamentos que se pusieron al día", report.caughtUp]] },
     { name: "Evolución", rows: [["Mes", "Cartera vencida (COP)", "Apartamentos en mora", "Recaudo (COP)", "Fuente"], ...trendPoints(raw).map((item) => [formatMonth(item.month), item.arrears, item.debtors, item.collected, item.closed ? "Cierre" : "Calculado"])] },
-    { name: "Conclusiones", rows: [["Conclusiones y recomendaciones de la abogada"], [raw.note?.body ?? "Sin conclusiones registradas para este periodo."]] },
   ]);
   return new Response(Buffer.from(archive), { headers: {
     "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

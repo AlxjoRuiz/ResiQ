@@ -10,11 +10,10 @@ import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { uuidPattern } from "../../legal-data";
 import { DebtorsTable } from "./debtors-table";
 import { PrintButton } from "./print-button";
-import { ReportNote } from "./report-note";
 
 // Informe jurídico por mes, fase 1 (12/11/2026, pedido de Alejandro). De lo general a lo detallado:
 // datos del informe, resumen ejecutivo, antigüedad, torres, morosos (con filtros), estado de los casos, gestión del
-// mes y conclusiones de la abogada. El mes elegido se calcula con las fechas de cada movimiento (el mes en curso es
+// mes y evolución. El mes elegido se calcula con las fechas de cada movimiento (el mes en curso es
 // un corte parcial a hoy). Descarga en PDF (impresión del navegador, con encabezado y páginas) y en Excel.
 // Fase 2 (12/11/2026): si el mes tiene cierre se muestra la foto guardada (o la versión elegida); con ?actual=1, los
 // datos de hoy. Además: botón para cerrar el mes o corregirlo, evolución de 6 meses e historial de cierres.
@@ -190,22 +189,6 @@ export default async function LegalReportPage(props: Props) {
         </tr>; })}</tbody></table></div>
     </section>}
 
-    {/* 10 · Conclusiones de la abogada. En un cierre salen tal como se guardaron; se editan en los datos de hoy. */}
-    <section className={`${card} mt-6`} aria-labelledby="conclusiones">
-      <h2 id="conclusiones" className={sectionTitle}>{number(8)}Conclusiones y recomendaciones</h2>
-      {closure ? <div className="mt-3"><p className="whitespace-pre-line text-[14px] leading-relaxed text-slate-800">{raw.note?.body?.trim() || "La abogada no registró conclusiones para este periodo."}</p><p className="mt-3 text-xs text-slate-500 print:hidden">Son las conclusiones guardadas al cerrar el mes; un mes cerrado ya no cambia.</p></div>
-        : <ReportNote propertyId={propertyId} month={raw.month} body={raw.note?.body ?? ""} updatedAt={raw.note ? formatGenerated(raw.note.updated_at, raw.timezone) : null} />}
-    </section>
-
-    {/* Historial de cierres (fase 2): cada mes cerrado y sus correcciones, con sus descargas. */}
-    <section className={`${card} mt-6 print:hidden`} aria-labelledby="historial">
-      <h2 id="historial" className={sectionTitle}>Historial de informes cerrados</h2>
-      <p className="mt-1 text-xs text-slate-500">Cada mes se cierra solo el día 1 a las 12:05 a. m. (hora de Bogotá). También puedes cerrar un mes terminado con el botón «Cerrar mes» del encabezado. Un mes cerrado ya no cambia.</p>
-      {(raw.history ?? []).length ? <ul className="mt-4 divide-y divide-slate-100">{(raw.history ?? []).map((item) => { const href = `?mes=${item.month.slice(0, 7)}&version=${item.version}`; return <li key={`${item.month}-${item.version}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-        <div><p className="font-medium">{formatMonth(item.month)}{item.version > 1 ? ` · versión ${item.version}` : ""}</p><p className="text-xs text-slate-500">Cerrado el {formatGenerated(item.closed_at, raw.timezone)} · {item.automatic ? "automático" : `por ${item.closed_by ?? "la abogada"}`}{item.reason ? ` · ${item.reason}` : ""}</p></div>
-        <div className="flex gap-2"><Link href={href} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-secondary">Ver y descargar PDF</Link><a href={`/api/legal/report/${propertyId}${href}`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-secondary">Excel</a></div>
-      </li>; })}</ul> : <p className="mt-4 text-sm text-slate-500">Todavía no hay meses cerrados. El primero se cerrará automáticamente el 1 del próximo mes, o puedes cerrar un mes terminado ahora.</p>}
-    </section>
 
     <p className="mt-6 text-center text-xs text-slate-500">Documento confidencial con datos personales de residentes (Ley 1581 de 2012). Uso exclusivo de la administración de {raw.property.name}. · ResiQ · Generado el {generated}</p>
   </div>;
