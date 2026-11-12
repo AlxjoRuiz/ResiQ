@@ -15,6 +15,19 @@ export async function markLegalPropertySeen(propertyId: string) {
   await supabase.rpc("legal_mark_property_seen", { target_property_id: propertyId });
 }
 
+// Conclusiones de la abogada en el informe del mes (12/11/2026): borrador editable; vacío lo borra.
+export type ReportNoteState = { error?: string; success?: string } | undefined;
+export async function saveReportNote(_: ReportNoteState, data: FormData): Promise<ReportNoteState> {
+  const propertyId = String(data.get("propertyId") ?? ""), month = String(data.get("month") ?? ""), body = String(data.get("body") ?? "");
+  if (!uuidPattern.test(propertyId) || !/^\d{4}-\d{2}-01$/.test(month)) return { error: "Informe inválido." };
+  if (body.trim().length > 5000) return { error: "Las conclusiones pueden tener hasta 5000 caracteres." };
+  const { supabase } = await requireLegalStaff();
+  const { error } = await supabase.rpc("legal_save_report_note", { target_property_id: propertyId, target_month: month, note_body: body });
+  if (error) return { error: "No pudimos guardar las conclusiones. Inténtalo de nuevo." };
+  revalidatePath(`/juridica/${propertyId}/informe`);
+  return { success: body.trim() ? "Conclusiones guardadas." : "Conclusiones borradas." };
+}
+
 export type CollectionNoticeState = { error?: string; success?: string } | undefined;
 
 // Adjuntos de la abogada (05/11/2026): hasta 5 archivos PDF, JPG o PNG y 4 MB en total (el límite del envío).

@@ -1,178 +1,164 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CircleCheck, DollarSign, FileWarning, Handshake, Scale, TrendingDown, TrendingUp, UsersRound } from "lucide-react";
+import { AlertTriangle, CalendarRange, CircleCheck, FileSpreadsheet, Gavel, Scale, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
-import { formatCop } from "@/lib/finance/constants";
+import { buildReport, caseStateLabels, change, formatCop, formatGenerated, formatLong, formatMonth, formatPercent, formatShort, parseMonth, reportFileName, summaryText, type ReportData } from "@/lib/legal/report";
+import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { uuidPattern } from "../../legal-data";
+import { DebtorsTable } from "./debtors-table";
 import { PrintButton } from "./print-button";
+import { ReportNote } from "./report-note";
 
-// Informe de gestión de cartera del conjunto (11/11/2026, pedido de Alejandro), guiado por el informe de
-// referencia que compartió: texto de resumen, cifras, recaudo por mes, distribución por estado, resumen
-// ejecutivo y detalle por caso. Todo sale de legal_property_report (solo lectura). «Descargar PDF» abre la
-// impresión del navegador; al imprimir no salen la barra lateral ni los filtros.
-type State = "finalized" | "agreement" | "pre_legal";
-type Case = { unit_id: string; unit_label: string; owner_name: string | null; first_notice_on: string; notice_count: number; first_total: number; outstanding: number; collected: number; state: State };
-type Report = {
-  property: { name: string; city: string | null; address: string | null }; today: string; started_on: string | null; first_notice_on: string | null;
-  cases: Case[]; monthly: { month: string; amount: number }[]; units_total: number; units_in_arrears: number; arrears_total: number; unmanaged: { count: number; amount: number };
-};
+// Informe jurídico por mes, fase 1 (12/11/2026, pedido de Alejandro). De lo general a lo detallado:
+// datos del informe, resumen ejecutivo, antigüedad, torres, morosos (con filtros), estado de los casos, gestión del
+// mes y conclusiones de la abogada. El mes elegido se calcula con las fechas de cada movimiento (el mes en curso es
+// un corte parcial a hoy). Descarga en PDF (impresión del navegador, con encabezado y páginas) y en Excel.
+type Props = { params: Promise<{ propertyId: string }>; searchParams: Promise<{ mes?: string }> };
 
-const stateInfo: Record<State, { label: string; color: string; pill: string; summary: string }> = {
-  finalized: { label: "Finalizado", color: "#1d4ed8", pill: "bg-primary/12 text-primary", summary: "Casos que ya pagaron toda la deuda: hoy no deben nada." },
-  agreement: { label: "Acuerdo de pago", color: "#60a5fa", pill: "bg-sky-100 text-sky-800", summary: "Casos con acuerdo de pago vigente, en seguimiento cuota a cuota." },
-  pre_legal: { label: "Prejurídico", color: "#f59e0b", pill: "bg-amber-100 text-amber-900", summary: "Casos con requerimiento enviado que todavía tienen saldo y no han firmado acuerdo." },
-};
-const unmanagedColor = "#dc2626";
+// Una sola consulta por solicitud aunque la usen el título del documento y la página.
+const loadReport = cache(async (propertyId: string, month: string) => {
+  const { supabase } = await requireLegalStaff();
+  const { data, error } = await supabase.rpc("legal_report_month", { target_property_id: propertyId, target_month: month });
+  return { data: data as ReportData | null, error: error?.message ?? null };
+});
 
-const longDate = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-const formatLong = (value: string | null) => value ? longDate.format(new Date(`${value.slice(0, 10)}T12:00:00Z`)) : "—";
-const monthName = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "UTC" });
-const monthShort = new Intl.DateTimeFormat("es-CO", { month: "short", timeZone: "UTC" });
-const asDate = (value: string) => new Date(`${value.slice(0, 10)}T12:00:00Z`);
-const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-const percent = (part: number, whole: number) => whole > 0 ? `${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format((part / whole) * 100)} %` : "0 %";
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
-
-// Texto del informe redactado con las cifras reales del conjunto.
-function narrative(report: Report, totals: { requested: number; collected: number; byState: Record<State, Case[]> }) {
-  const name = report.property.name;
-  const cases = report.cases.length;
-  const paragraphs: string[] = [];
-  if (!cases) {
-    paragraphs.push(`${report.started_on ? `El ${formatLong(report.started_on)} ResiQ asignó ${name} a gestión de cobro. ` : ""}A la fecha aún no se han enviado requerimientos de pago, por lo que no hay casos en gestión.`);
-    if (report.unmanaged.count) paragraphs.push(`Hoy ${plural(report.unmanaged.count, "apartamento está", "apartamentos están")} en mora por ${formatCop(report.unmanaged.amount)}. Se recomienda iniciar su gestión con el envío de los requerimientos de pago.`);
-    return paragraphs;
-  }
-  const finalized = totals.byState.finalized, agreement = totals.byState.agreement, preLegal = totals.byState.pre_legal;
-  paragraphs.push(`${report.started_on ? `El ${formatLong(report.started_on)} iniciamos la gestión de cobro de ${name}` : `Iniciamos la gestión de cobro de ${name}`}${report.first_notice_on ? ` y desde el ${formatLong(report.first_notice_on)} enviamos requerimientos de pago` : ""} a ${plural(cases, "apartamento", "apartamentos")}, con una cartera requerida de ${formatCop(totals.requested)}. A la fecha hemos logrado un recaudo efectivo de ${formatCop(totals.collected)}, que corresponde al ${percent(totals.collected, totals.requested)} de la cartera requerida.`);
-  const balance = [finalized.length ? `${plural(finalized.length, "caso finalizado", "casos finalizados")}, con la deuda saldada` : "", agreement.length ? `${plural(agreement.length, "acuerdo de pago vigente", "acuerdos de pago vigentes")} en seguimiento` : "", preLegal.length ? `${plural(preLegal.length, "caso", "casos")} en gestión prejurídica con un saldo de ${formatCop(preLegal.reduce((sum, item) => sum + Number(item.outstanding), 0))}` : ""].filter(Boolean);
-  paragraphs.push(`En este balance, la gestión se resume en ${balance.length > 1 ? `${balance.slice(0, -1).join(", ")} y ${balance.at(-1)}` : balance[0]}.${preLegal.length ? " La prioridad es lograr compromisos de pago con los casos prejurídicos y hacer seguimiento a los acuerdos vigentes para que se materialicen nuevos ingresos." : agreement.length ? " La prioridad es hacer seguimiento a los acuerdos vigentes para que cada cuota se pague a tiempo." : ""}`);
-  if (report.unmanaged.count) paragraphs.push(`Además, ${plural(report.unmanaged.count, "apartamento está", "apartamentos están")} hoy en mora por ${formatCop(report.unmanaged.amount)} sin requerimiento de pago; se recomienda incluirlos en la gestión.`);
-  return paragraphs;
-}
-
-// Gráfica de barras del recaudo por mes (SVG, se imprime igual).
-function MonthlyChart({ monthly }: { monthly: Report["monthly"] }) {
-  const width = 560, height = 230, left = 56, bottom = 30, top = 16;
-  const max = Math.max(...monthly.map((item) => Number(item.amount)), 1);
-  const step = (width - left - 10) / monthly.length;
-  const scale = (value: number) => (height - bottom - top) * (value / max);
-  const ticks = [0, 0.5, 1].map((part) => part * max);
-  const short = (value: number) => value >= 1_000_000 ? `$${new Intl.NumberFormat("es-CO", { maximumFractionDigits: 1 }).format(value / 1_000_000)} M` : value >= 1000 ? `$${Math.round(value / 1000)} mil` : `$${Math.round(value)}`;
-  return <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Recaudo por mes de los últimos seis meses" className="h-auto w-full">
-    {ticks.map((tick) => { const y = height - bottom - scale(tick); return <g key={tick}><line x1={left} x2={width - 10} y1={y} y2={y} stroke="#e2e8f0" strokeDasharray="4 4" /><text x={left - 8} y={y + 4} textAnchor="end" fontSize="11" fill="#64748b">{short(tick)}</text></g>; })}
-    {monthly.map((item, index) => { const value = Number(item.amount); const barHeight = scale(value); const x = left + index * step + step * 0.22; const barWidth = step * 0.56; return <g key={item.month}>
-      <rect x={x} y={height - bottom - barHeight} width={barWidth} height={Math.max(barHeight, value > 0 ? 2 : 0)} rx="6" fill="#1d4ed8"><title>{`${capital(monthName.format(asDate(item.month)))}: ${formatCop(value)}`}</title></rect>
-      {value > 0 && <text x={x + barWidth / 2} y={height - bottom - barHeight - 6} textAnchor="middle" fontSize="10.5" fill="#1e3a8a" fontWeight="600">{short(value)}</text>}
-      <text x={x + barWidth / 2} y={height - 10} textAnchor="middle" fontSize="11.5" fill="#475569">{capital(monthShort.format(asDate(item.month)).replace(".", ""))}</text>
-    </g>; })}
-  </svg>;
-}
-
-// Gráfica de anillo con la distribución de los apartamentos por estado.
-function StateDonut({ parts }: { parts: { label: string; value: number; color: string }[] }) {
-  const total = parts.reduce((sum, part) => sum + part.value, 0);
-  const radius = 70, circumference = 2 * Math.PI * radius;
-  let offset = 0;
-  return <div className="flex flex-wrap items-center justify-center gap-6">
-    <svg viewBox="0 0 200 200" role="img" aria-label="Distribución de apartamentos por estado" className="size-48 shrink-0 -rotate-90">
-      <circle cx="100" cy="100" r={radius} fill="none" stroke="#eef2f7" strokeWidth="26" />
-      {total > 0 && parts.filter((part) => part.value > 0).map((part) => { const length = (part.value / total) * circumference; const dash = <circle key={part.label} cx="100" cy="100" r={radius} fill="none" stroke={part.color} strokeWidth="26" strokeDasharray={`${length} ${circumference - length}`} strokeDashoffset={-offset}><title>{`${part.label}: ${part.value}`}</title></circle>; offset += length; return dash; })}
-      <text x="100" y="100" transform="rotate(90 100 100)" textAnchor="middle" dominantBaseline="central" fontSize="30" fontWeight="600" fill="#0f172a">{total}</text>
-    </svg>
-    <ul className="grid gap-2 text-sm">{parts.map((part) => <li key={part.label} className="flex items-center gap-2"><span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: part.color }} /><span className="text-slate-700">{part.label}</span><span className="ml-auto pl-4 font-semibold">{part.value}</span><span className="w-14 text-right text-xs text-slate-500">{percent(part.value, total)}</span></li>)}</ul>
-  </div>;
-}
-
-export default async function LegalReportPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ estado?: string }> }) {
+async function resolve({ params, searchParams }: Props) {
   const { propertyId } = await params;
   if (!uuidPattern.test(propertyId)) notFound();
-  const { supabase } = await requireLegalStaff();
-  const { data, error } = await supabase.rpc("legal_property_report", { target_property_id: propertyId });
-  if (error || !data) notFound();
-  const report = data as Report;
-  const cases = report.cases.map((item) => ({ ...item, first_total: Number(item.first_total), outstanding: Number(item.outstanding), collected: Number(item.collected) }));
-  const byState = { finalized: cases.filter((item) => item.state === "finalized"), agreement: cases.filter((item) => item.state === "agreement"), pre_legal: cases.filter((item) => item.state === "pre_legal") } as Record<State, Case[]>;
-  const totals = { requested: cases.reduce((sum, item) => sum + item.first_total, 0), collected: cases.reduce((sum, item) => sum + item.collected, 0), byState };
-  const sumCollected = (items: Case[]) => items.reduce((sum, item) => sum + item.collected, 0);
-  const sumOutstanding = (items: Case[]) => items.reduce((sum, item) => sum + item.outstanding, 0);
-  const { estado } = await searchParams;
-  const filter = (["finalized", "agreement", "pre_legal"] as const).find((value) => value === estado) ?? null;
-  const shown = filter ? byState[filter] : cases;
-  const lastMonths = report.monthly.slice(-3);
-  const generated = formatLong(report.today);
-  const kpis = [
-    { icon: DollarSign, label: "Recaudo total", value: formatCop(totals.collected), detail: `${percent(totals.collected, totals.requested)} de lo requerido` },
-    { icon: UsersRound, label: "Casos en gestión", value: String(cases.length), detail: `Cartera requerida ${formatCop(totals.requested)}` },
-    { icon: CircleCheck, label: "Finalizados", value: String(byState.finalized.length), detail: formatCop(sumCollected(byState.finalized)) },
-    { icon: Handshake, label: "Acuerdo de pago", value: String(byState.agreement.length), detail: formatCop(sumCollected(byState.agreement)) },
-    { icon: Scale, label: "Prejurídico", value: String(byState.pre_legal.length), detail: `Saldo ${formatCop(sumOutstanding(byState.pre_legal))}` },
-  ];
-  const card = "rounded-2xl border border-slate-200 bg-white p-5 break-inside-avoid";
+  const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
+  const month = parseMonth((await searchParams).mes, today);
+  return { propertyId, month, today, ...(await loadReport(propertyId, month)) };
+}
+
+// El título del documento es el nombre con que el navegador guarda el PDF.
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const { data, month } = await resolve(props);
+  return { title: data ? reportFileName(data.property.name, month) : "Informe jurídico" };
+}
+
+const card = "rounded-2xl border border-slate-200 bg-white p-5 break-inside-avoid";
+const sectionTitle = "flex items-center gap-2 text-lg font-semibold tracking-tight";
+// Flecha de tendencia: azul si el cambio es bueno (menos mora, más recaudo), roja si es malo.
+function Trend({ direction, good }: { direction: number; good: "up" | "down" }) {
+  if (direction === 0) return null;
+  const Icon = direction > 0 ? TrendingUp : TrendingDown;
+  return <Icon size={15} className={(direction > 0) === (good === "up") ? "text-primary" : "text-urgent"} aria-hidden="true" />;
+}
+const number = (index: number) => <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">{index}</span>;
+
+export default async function LegalReportPage(props: Props) {
+  const { propertyId, month, today, data, error } = await resolve(props);
+  if (error?.includes("not_authorized")) notFound();
+  const controls = (raw: ReportData | null) => <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
+    <Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>
+    <div className="flex flex-wrap items-end gap-2">
+      <form method="get" className="flex items-end gap-2"><label className="grid gap-1 text-xs font-medium text-slate-600">Periodo<input type="month" name="mes" defaultValue={month.slice(0, 7)} max={today.slice(0, 7)} min={raw?.first_month?.slice(0, 7)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label><button className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary">Ver</button></form>
+      {raw && <><PrintButton /><a href={`/api/legal/report/${propertyId}?mes=${month.slice(0, 7)}`} className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary"><FileSpreadsheet size={16} aria-hidden="true" />Descargar Excel</a></>}
+    </div>
+  </div>;
+  if (!data) return <div className="mx-auto w-full max-w-6xl">{controls(null)}<p role="status" className="mt-8 rounded-2xl border bg-white p-6 text-sm text-slate-600">No pudimos generar el informe de {formatMonth(month)}. Revisa el periodo elegido o inténtalo de nuevo en unos minutos.</p></div>;
+
+  const raw = data;
+  const report = buildReport(raw);
+  const { current, debtors } = report;
+  const arrearsChange = change(report.arrears, report.previousArrears);
+  const collectedChange = change(current.collected_month, report.previous.collected_month);
+  const debtorsChange = change(debtors.length, report.previous.units.filter((unit) => Number(unit.overdue) > 0).length);
+  const cut = raw.partial ? `Corte parcial al ${formatLong(raw.as_of)}` : `Cierre del mes: ${formatLong(raw.month_end)}`;
+  const generated = formatGenerated(raw.generated_at, raw.timezone);
+  const maxAging = Math.max(...report.aging.map((item) => item.amount), 1);
+  const maxBuilding = Math.max(...report.buildings.map((item) => item.amount), 1);
+  const beforeStart = raw.started_on && raw.month_end < raw.started_on;
 
   return <div className="mx-auto w-full max-w-6xl print:max-w-none">
-    <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-      <Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>
-      <PrintButton />
-    </div>
+    {/* Página impresa: márgenes, encabezado con el conjunto y el periodo, y números de página. */}
+    <style>{`@page { size: A4; margin: 18mm 14mm 16mm; @top-left { content: ${JSON.stringify(`${raw.property.name} · Informe jurídico · ${formatMonth(raw.month)}`)}; font-size: 9px; color: #475569; } @bottom-left { content: "Documento confidencial · uso exclusivo de la administración"; font-size: 8px; color: #64748b; } @bottom-right { content: "Página " counter(page) " de " counter(pages); font-size: 9px; color: #475569; } } @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }`}</style>
+    {controls(raw)}
 
-    <header className="mt-4 flex flex-wrap items-end justify-between gap-4 border-b pb-6">
-      <div>
-        <p className="text-xs font-semibold tracking-wider text-primary uppercase">Informe de gestión de cartera</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{report.property.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{[report.property.address, report.property.city].filter(Boolean).join(" · ")}{report.started_on ? ` · Gestión desde el ${formatLong(report.started_on)}` : ""} · Corte al {generated}</p>
+    {/* 11 · Datos del informe (al inicio, como membrete). */}
+    <header className="mt-5 rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 to-white p-6 break-inside-avoid">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">Informe de gestión de cartera · Cobro jurídico</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{raw.property.name}</h1><p className="mt-1 text-sm text-slate-600">{[raw.property.address, raw.property.city].filter(Boolean).join(" · ")}</p></div>
+        {raw.partial ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Corte parcial · mes en curso</span> : <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">Mes completo · calculado sin cierre oficial</span>}
       </div>
-      <p className="text-right text-xs text-muted-foreground">ResiQ · Cobro jurídico</p>
+      <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div><dt className="text-xs text-slate-500">Periodo</dt><dd className="font-medium">{formatMonth(raw.month)}</dd></div>
+        <div><dt className="text-xs text-slate-500">Corte</dt><dd className="font-medium">{cut}</dd></div>
+        <div><dt className="text-xs text-slate-500">Generado</dt><dd className="font-medium">{generated}</dd></div>
+        <div><dt className="text-xs text-slate-500">Elaborado por</dt><dd className="font-medium">{raw.prepared_by ?? "Abogada de cobros"}</dd></div>
+      </dl>
+      {beforeStart && <p className="mt-4 rounded-xl bg-white/80 p-3 text-xs text-slate-600">Este periodo es anterior al inicio de la gestión jurídica ({formatLong(raw.started_on)}): muestra la cartera del conjunto, no gestiones de cobro.</p>}
     </header>
 
-    <section aria-label="Resumen" className="mt-6 grid gap-3 text-[15px] leading-7 text-slate-700">{narrative(report, totals).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>
-
-    <section aria-label="Cifras principales" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-      {kpis.map(({ icon: Icon, label, value, detail }) => <div key={label} className={card}>
-        <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon size={18} aria-hidden="true" /></span>
-        <p className="mt-3 text-xs text-muted-foreground">{label}</p><p className="text-xl font-semibold tracking-tight">{value}</p><p className="mt-0.5 text-xs text-slate-500">{detail}</p>
-      </div>)}
-    </section>
-
-    <section aria-label="Recaudo de los últimos meses" className="mt-3 grid gap-3 sm:grid-cols-3">
-      {lastMonths.map((item, index) => { const previous = index > 0 ? Number(lastMonths[index - 1].amount) : null; const up = previous === null || Number(item.amount) >= previous; const Trend = up ? TrendingUp : TrendingDown; return <div key={item.month} className={`${card} flex items-center justify-between gap-3`}>
-        <div><p className="text-xs text-muted-foreground">Recaudo {monthName.format(asDate(item.month))}</p><p className="text-xl font-semibold tracking-tight">{formatCop(item.amount)}</p></div>
-        <span className={`flex size-9 items-center justify-center rounded-xl ${up ? "bg-primary/10 text-primary" : "bg-urgent/10 text-urgent"}`}><Trend size={18} aria-hidden="true" /></span>
-      </div>; })}
-    </section>
-
-    <section className="mt-6 grid gap-4 lg:grid-cols-2">
-      <div className={card}><h2 className="font-semibold">Recaudo mensual</h2><p className="text-xs text-muted-foreground">Pagos de los casos en gestión, desde su primer requerimiento.</p><div className="mt-4"><MonthlyChart monthly={report.monthly} /></div></div>
-      <div className={card}><h2 className="font-semibold">Distribución por estado</h2><p className="text-xs text-muted-foreground">Apartamentos en gestión y en mora sin requerimiento.</p><div className="mt-4"><StateDonut parts={[...(["finalized", "agreement", "pre_legal"] as const).map((state) => ({ label: stateInfo[state].label, value: byState[state].length, color: stateInfo[state].color })), { label: "En mora sin requerimiento", value: report.unmanaged.count, color: unmanagedColor }]} /></div></div>
-    </section>
-
-    <section className={`${card} mt-6`}>
-      <h2 className="font-semibold">Resumen ejecutivo</h2>
-      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-        {(["finalized", "agreement", "pre_legal"] as const).map((state) => <li key={state} className="flex gap-3 rounded-xl bg-slate-50 p-4"><span className="mt-1 size-3 shrink-0 rounded-full" style={{ backgroundColor: stateInfo[state].color }} /><div><p className="font-semibold">{stateInfo[state].label} · {byState[state].length}</p><p className="mt-1 text-sm text-slate-600">{stateInfo[state].summary}</p></div></li>)}
-        <li className="flex gap-3 rounded-xl bg-slate-50 p-4"><FileWarning size={16} className="mt-0.5 shrink-0 text-urgent" aria-hidden="true" /><div><p className="font-semibold">En mora sin requerimiento · {report.unmanaged.count}</p><p className="mt-1 text-sm text-slate-600">Apartamentos que hoy deben {formatCop(report.unmanaged.amount)} y aún no tienen requerimiento de pago.</p></div></li>
-      </ul>
-      <p className="mt-4 text-xs text-muted-foreground">El conjunto tiene {report.units_total} apartamentos; {report.units_in_arrears} están hoy en mora por {formatCop(report.arrears_total)}.</p>
-    </section>
-
-    <section className={`${card} mt-6`}>
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Detalle por caso ({shown.length})</h2>
-        <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-2 print:hidden">{[{ value: null, label: "Todos" }, ...(["finalized", "agreement", "pre_legal"] as const).map((value) => ({ value, label: stateInfo[value].label }))].map((option) => <Link key={option.label} href={option.value ? `?estado=${option.value}` : "?"} scroll={false} aria-current={filter === option.value ? "page" : undefined} className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${filter === option.value ? "border-primary bg-primary text-white" : "bg-white hover:bg-secondary"}`}>{option.label}</Link>)}</nav>
+    {/* 1 · Resumen ejecutivo. */}
+    <section className="mt-6 break-inside-avoid" aria-labelledby="resumen">
+      <h2 id="resumen" className={sectionTitle}>{number(1)}Resumen ejecutivo</h2>
+      <div className="mt-3 grid gap-2 text-[15px] leading-7 text-slate-700">{summaryText(report).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-urgent/10 text-urgent"><Wallet size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Cartera vencida</p><p className="text-2xl font-semibold tracking-tight">{formatCop(report.arrears)}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Trend direction={arrearsChange.direction} good="down" />{arrearsChange.text}</p></div>
+        <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><Scale size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Apartamentos en mora</p><p className="text-2xl font-semibold tracking-tight">{debtors.length} <span className="text-sm font-normal text-slate-500">de {current.units_total}</span></p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Trend direction={debtorsChange.direction} good="down" />{formatPercent(report.debtorShare)} del conjunto · {debtorsChange.text.toLowerCase()}</p></div>
+        <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><AlertTriangle size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Morosidad sobre lo facturado</p><p className="text-2xl font-semibold tracking-tight">{formatPercent(report.billedShare)}</p><p className="mt-1 text-xs text-slate-500">Facturado a la fecha: {formatCop(current.billed_total)}</p></div>
+        <div className={card}><span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><CircleCheck size={18} aria-hidden="true" /></span><p className="mt-3 text-xs text-slate-500">Recaudo del mes</p><p className="text-2xl font-semibold tracking-tight">{formatCop(current.collected_month)}</p><p className="mt-1 text-xs text-slate-500">{current.expected_month ? `${formatPercent(report.collectedShare)} de ${formatCop(current.expected_month)} esperado` : "Sin vencimientos en el mes"}</p><p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500"><Trend direction={collectedChange.direction} good="up" />{collectedChange.text}</p></div>
       </div>
-      {shown.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm">
-        <thead><tr className="bg-primary text-xs text-white"><th className="rounded-l-lg px-3 py-2 font-medium">Apartamento</th><th className="px-3 py-2 font-medium">Propietario o residente</th><th className="px-3 py-2 font-medium">Primer requerimiento</th><th className="px-3 py-2 text-right font-medium">Cartera requerida</th><th className="px-3 py-2 text-right font-medium">Recaudo</th><th className="px-3 py-2 text-right font-medium">Saldo hoy</th><th className="rounded-r-lg px-3 py-2 font-medium">Estado</th></tr></thead>
-        <tbody>{shown.map((item) => <tr key={item.unit_id} className="border-b last:border-0 break-inside-avoid">
-          <td className="px-3 py-2.5 font-medium"><Link href={`/juridica/${propertyId}/${item.unit_id}`} className="hover:text-primary print:no-underline">{item.unit_label}</Link></td>
-          <td className="px-3 py-2.5 text-slate-600">{item.owner_name ?? "—"}</td>
-          <td className="px-3 py-2.5 text-slate-600">{formatLong(item.first_notice_on)}{item.notice_count > 1 ? ` · ${item.notice_count} envíos` : ""}</td>
-          <td className="px-3 py-2.5 text-right">{formatCop(item.first_total)}</td>
-          <td className="px-3 py-2.5 text-right font-medium text-primary">{formatCop(item.collected)}</td>
-          <td className={`px-3 py-2.5 text-right ${item.outstanding > 0 ? "text-urgent" : ""}`}>{formatCop(item.outstanding)}</td>
-          <td className="px-3 py-2.5"><span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${stateInfo[item.state].pill}`}>{stateInfo[item.state].label}</span></td>
-        </tr>)}</tbody>
-      </table></div> : <p className="mt-4 text-sm text-muted-foreground">{cases.length ? "No hay casos con este estado." : "Aún no hay casos: se crean al enviar el primer requerimiento de pago a un apartamento."}</p>}
+      {report.critical.length > 0 && <div className={`${card} mt-3`}><p className="flex items-center gap-2 text-sm font-semibold"><AlertTriangle size={16} className="text-urgent" aria-hidden="true" />Casos que requieren atención inmediata</p>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{report.critical.map((item) => <li key={item.unit_id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm"><span><span className="font-medium">{item.building} · {item.code}</span><span className="block text-xs text-slate-500">{item.severity.label} · {item.days} días · {caseStateLabels[item.state]}</span></span><span className="font-semibold text-urgent">{formatCop(item.overdue)}</span></li>)}</ul>
+      </div>}
     </section>
 
-    <p className="mt-6 text-center text-xs text-muted-foreground">ResiQ · Gestión de recuperación de cartera · {report.property.name} · Actualizado el {generated}</p>
+    {/* 2 · Cartera por antigüedad. */}
+    <section className={`${card} mt-6`} aria-labelledby="antiguedad">
+      <h2 id="antiguedad" className={sectionTitle}>{number(2)}Cartera por antigüedad</h2>
+      <p className="mt-1 text-xs text-slate-500">Según la deuda más antigua sin pagar de cada apartamento.</p>
+      <ul className="mt-4 grid gap-3">{report.aging.map((item) => <li key={item.key} className="grid items-center gap-2 text-sm sm:grid-cols-[180px_1fr_200px]">
+        <span><span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${item.tone}`}>{item.label}</span> <span className="text-xs text-slate-500">{item.range}</span></span>
+        <span className="h-3 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-primary" style={{ width: `${(item.amount / maxAging) * 100}%` }} /></span>
+        <span className="text-right"><span className="font-semibold">{formatCop(item.amount)}</span> <span className="text-xs text-slate-500">· {item.count} {item.count === 1 ? "apto." : "aptos."}</span></span>
+      </li>)}</ul>
+    </section>
+
+    {/* 3 · Cartera por torre. */}
+    <section className={`${card} mt-6`} aria-labelledby="torres">
+      <h2 id="torres" className={sectionTitle}>{number(3)}Cartera por torre</h2>
+      <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead><tr className="bg-primary text-xs text-white"><th className="rounded-l-lg px-3 py-2 font-medium">Torre</th><th className="px-3 py-2 text-center font-medium">Apartamentos</th><th className="px-3 py-2 text-center font-medium">En mora</th><th className="px-3 py-2 text-center font-medium">% en mora</th><th className="px-3 py-2 font-medium">Cartera vencida</th><th className="rounded-r-lg px-3 py-2 text-right font-medium">Valor</th></tr></thead>
+        <tbody>{report.buildings.map((item) => <tr key={item.name} className="border-b border-slate-100 last:border-0"><td className="px-3 py-2.5 font-medium">{item.name}</td><td className="px-3 py-2.5 text-center">{item.units}</td><td className="px-3 py-2.5 text-center">{item.debtors}</td><td className="px-3 py-2.5 text-center">{item.units ? formatPercent(item.debtors / item.units) : "—"}</td><td className="px-3 py-2.5"><span className="block h-2.5 w-full min-w-24 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-primary" style={{ width: `${(item.amount / maxBuilding) * 100}%` }} /></span></td><td className="px-3 py-2.5 text-right font-medium">{formatCop(item.amount)}</td></tr>)}</tbody></table></div>
+    </section>
+
+    {/* 4 · Detalle de apartamentos en mora. */}
+    <section className={`${card} mt-6 print:break-inside-auto`} aria-labelledby="morosos">
+      <h2 id="morosos" className={sectionTitle}>{number(4)}Apartamentos en mora ({debtors.length})</h2>
+      <p className="mt-1 text-xs text-slate-500">Capital vencido: lo vencido sin pagar. Total adeudado: incluye lo que aún no vence. Sin intereses de mora (no aplican por ahora). El propietario o residente es el registrado hoy en el censo.</p>
+      {debtors.length ? <DebtorsTable debtors={debtors} buildings={report.buildings.map((item) => item.name)} propertyId={propertyId} /> : <p className="mt-4 text-sm text-slate-500">No hay apartamentos en mora en este periodo.</p>}
+    </section>
+
+    {/* 5 · Estado de los casos. */}
+    <section className={`${card} mt-6`} aria-labelledby="casos">
+      <h2 id="casos" className={sectionTitle}>{number(5)}Estado de la gestión por caso</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {report.byState.map((item) => <div key={item.state} className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">{item.label}</p><p className="text-2xl font-semibold">{item.count}</p><p className="text-xs text-slate-500">{formatCop(item.amount)} vencidos</p></div>)}
+        <div className="rounded-xl bg-primary/8 p-4"><p className="text-xs text-primary">Finalizados (ya pagaron)</p><p className="text-2xl font-semibold text-primary">{report.finalized.length}</p><p className="text-xs text-slate-500">Con requerimiento y hoy sin deuda</p></div>
+      </div>
+      <p className="mt-3 text-xs text-slate-500">En esta versión el estado se deduce de los datos: «Requerimiento enviado» si la abogada le envió uno, «Acuerdo de pago» si tiene uno vigente. Las etapas completas (contacto, cobro prejurídico, proceso jurídico, cierre) llegan en la siguiente fase.</p>
+    </section>
+
+    {/* 6 · Gestión realizada en el periodo. */}
+    <section className={`${card} mt-6`} aria-labelledby="gestion">
+      <h2 id="gestion" className={sectionTitle}>{number(6)}Gestión realizada en {formatMonth(raw.month).toLowerCase()}</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        {[{ icon: Gavel, label: "Requerimientos enviados", value: current.notices_month.length }, { icon: Wallet, label: "Pagos registrados", value: current.payments_month }, { icon: CalendarRange, label: "Acuerdos de pago creados", value: current.agreements_month }, { icon: CircleCheck, label: "Se pusieron al día", value: report.caughtUp }].map(({ icon: Icon, label, value }) => <div key={label} className="flex items-center gap-3 rounded-xl bg-slate-50 p-4"><Icon size={18} className="text-primary" aria-hidden="true" /><div><p className="text-xl font-semibold">{value}</p><p className="text-xs text-slate-500">{label}</p></div></div>)}
+      </div>
+      {current.notices_month.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm"><thead><tr className="bg-primary text-xs text-white"><th className="rounded-l-lg px-3 py-2 font-medium">Fecha</th><th className="px-3 py-2 font-medium">Apartamento</th><th className="px-3 py-2 font-medium">Destinatario</th><th className="px-3 py-2 text-right font-medium">Valor requerido</th><th className="rounded-r-lg px-3 py-2 font-medium">Correo</th></tr></thead>
+        <tbody>{current.notices_month.map((item, index) => <tr key={index} className="border-b border-slate-100 last:border-0"><td className="px-3 py-2.5">{formatShort(item.sent_at.slice(0, 10))}</td><td className="px-3 py-2.5 font-medium">{item.unit}</td><td className="px-3 py-2.5 text-slate-600">{item.recipient}</td><td className="px-3 py-2.5 text-right">{formatCop(Number(item.total))}</td><td className="px-3 py-2.5 text-xs">{{ held: "Retenido (modo de prueba)", queued: "En cola", processing: "Enviando", accepted: "Enviado", failed: "No se pudo enviar", cancelled: "Cancelado" }[item.delivery] ?? item.delivery}</td></tr>)}</tbody></table></div>
+        : <p className="mt-4 text-sm text-slate-500">No se enviaron requerimientos de pago en este periodo.</p>}
+    </section>
+
+    {/* 10 · Conclusiones de la abogada. */}
+    <section className={`${card} mt-6`} aria-labelledby="conclusiones">
+      <h2 id="conclusiones" className={sectionTitle}>{number(7)}Conclusiones y recomendaciones</h2>
+      <ReportNote propertyId={propertyId} month={raw.month} body={raw.note?.body ?? ""} updatedAt={raw.note ? formatGenerated(raw.note.updated_at, raw.timezone) : null} />
+    </section>
+
+    <p className="mt-6 text-center text-xs text-slate-500">Documento confidencial con datos personales de residentes (Ley 1581 de 2012). Uso exclusivo de la administración de {raw.property.name}. · ResiQ · Generado el {generated}</p>
   </div>;
 }
