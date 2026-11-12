@@ -55,7 +55,7 @@ function VoidForm({ propertyId, unitId, creditId }: { propertyId: string; unitId
 
 function CreateForm({ propertyId, unitId, today }: { propertyId: string; unitId: string; today: string }) {
   const [state, action, pending] = useFormActionState(createUnitCredit, undefined as FinanceState);
-  return <details className="mt-5 rounded-xl border p-4"><summary className="cursor-pointer text-sm font-medium">Registrar saldo a favor</summary>
+  return <details className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4"><summary className="cursor-pointer text-sm font-medium text-primary">+ Registrar saldo a favor</summary>
     <form onSubmit={action} className="mt-4 grid gap-4 sm:grid-cols-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
       <label className={`${labelClass} sm:col-span-3`}>Concepto<input className={inputClass} name="concept" minLength={2} maxLength={180} placeholder="Ej.: Saldo a favor de octubre" required /></label>
       <label className={labelClass}>Valor<input className={inputClass} name="amount" type="number" min={1} step="any" required /></label>
@@ -94,19 +94,30 @@ export function CreditRequestCard({ propertyId, unitId, request }: { propertyId:
 }
 
 export function UnitCreditsCard({ propertyId, unitId, credits, requests, debts, admin, today, className = "mt-7" }: { propertyId: string; unitId: string; credits: UnitCredit[]; requests: CreditRequest[]; debts: OpenDebt[]; admin: boolean; today: string; className?: string }) {
-  const active = credits.filter((credit) => credit.status === "active");
+  // Los más recientes primero (13/11/2026); la lista llega de la más antigua a la más reciente.
+  const active = credits.filter((credit) => credit.status === "active").slice().reverse();
   const total = active.reduce((sum, credit) => sum + available(credit), 0);
   if (!admin && !active.length) return null;
   return <section className={`${className} rounded-2xl border bg-card p-5 sm:p-6`} aria-labelledby="saldo-a-favor">
     <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="saldo-a-favor" className="text-lg font-semibold">Saldo a favor</h2><p className="text-2xl font-semibold text-primary">{formatCop(total)}</p></div>
     <p className="mt-1 text-sm text-muted-foreground">{admin ? "Se aplica a una deuda con saldo y queda como un abono a esa deuda. Las solicitudes del residente llegan a «Comprobantes de pago»." : "Dinero a favor de tu apartamento. Elige la deuda y el valor, y envía la solicitud: la administración la revisa y, al registrarla, se descuenta de tu deuda."}</p>
-    {active.length > 0 && <div className="mt-4 grid gap-3">{active.map((credit) => <article key={credit.id} className="rounded-xl border p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-medium">{credit.concept}</p><p className="text-xs text-muted-foreground">{displayDate(credit.issued_on)} · {credit.source === "import" ? "Cargado desde Excel" : "Registrado a mano"} · valor inicial {formatCop(credit.amount)}</p></div>
-        <div className="text-right text-sm"><p>Disponible <strong>{formatCop(available(credit))}</strong></p>{Number(credit.pending ?? 0) > 0 && <p className="text-xs text-amber-700">{formatCop(Number(credit.pending))} en revisión</p>}</div></div>
-      {available(credit) > 0 && <UseForm propertyId={propertyId} unitId={unitId} credit={credit} debts={debts} admin={admin} />}
-      {admin && Number(credit.remaining) === Number(credit.amount) && !Number(credit.pending ?? 0) && <VoidForm propertyId={propertyId} unitId={unitId} creditId={credit.id} />}
-    </article>)}</div>}
-    {!admin && requests.length > 0 && <div className="mt-4 grid gap-2"><p className="text-sm font-medium">Mis solicitudes</p>{requests.map((request) => { const state = requestLabel(request.status); return <div key={request.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"><span className="min-w-0">{formatCop(request.amount)} para «{request.debtConcept}» · {request.createdAt}{request.rejectReason ? ` · Motivo: ${request.rejectReason}` : ""}</span><span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[state.tone]}`}>{state.label}</span></div>; })}</div>}
     {admin && <CreateForm propertyId={propertyId} unitId={unitId} today={today} />}
+    {active.length > 0 && <div className="mt-4 grid gap-3">{active.map((credit) => { const free = available(credit), used = Math.max(Number(credit.amount) - Number(credit.remaining), 0), held = Number(credit.pending ?? 0), share = Number(credit.amount) ? Math.min(100, (used / Number(credit.amount)) * 100) : 0;
+      return <article key={credit.id} className="rounded-xl border p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0"><p className="break-words font-semibold text-primary">{credit.concept}</p><p className="mt-0.5 text-xs text-muted-foreground">{credit.source === "import" ? "Cargado desde Excel" : "Registrado a mano"} · {displayDate(credit.issued_on)}</p></div>
+        <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[free > 0 ? "success" : held > 0 ? "warning" : "neutral"]}`}>{free > 0 ? "Disponible" : held > 0 ? "En revisión" : "Usado completo"}</span>
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+        <div className="rounded-lg bg-secondary/60 px-3 py-2"><dt className="text-xs text-muted-foreground">Valor inicial</dt><dd className="font-medium">{formatCop(credit.amount)}</dd></div>
+        <div className="rounded-lg bg-secondary/60 px-3 py-2"><dt className="text-xs text-muted-foreground">Usado</dt><dd className="font-medium">{formatCop(used)}</dd></div>
+        <div className="rounded-lg bg-secondary/60 px-3 py-2"><dt className="text-xs text-muted-foreground">En revisión</dt><dd className={`font-medium ${held ? "text-amber-700" : ""}`}>{formatCop(held)}</dd></div>
+        <div className="rounded-lg bg-primary/8 px-3 py-2"><dt className="text-xs text-primary">Disponible</dt><dd className="font-semibold text-primary">{formatCop(free)}</dd></div>
+      </dl>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden="true"><div className="h-full rounded-full bg-primary" style={{ width: `${share}%` }} /></div>
+      {free > 0 && <UseForm propertyId={propertyId} unitId={unitId} credit={credit} debts={debts} admin={admin} />}
+      {admin && Number(credit.remaining) === Number(credit.amount) && !held && <VoidForm propertyId={propertyId} unitId={unitId} creditId={credit.id} />}
+    </article>; })}</div>}
+    {!admin && requests.length > 0 && <div className="mt-4 grid gap-2"><p className="text-sm font-medium">Mis solicitudes</p>{requests.map((request) => { const state = requestLabel(request.status); return <div key={request.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"><span className="min-w-0">{formatCop(request.amount)} para «{request.debtConcept}» · {request.createdAt}{request.rejectReason ? ` · Motivo: ${request.rejectReason}` : ""}</span><span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[state.tone]}`}>{state.label}</span></div>; })}</div>}
   </section>;
 }
