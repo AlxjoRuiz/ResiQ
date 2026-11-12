@@ -1,5 +1,5 @@
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
-import { buildReport, caseStateLabels, formatGenerated, formatMonth, parseMonth, reportFileName, type ReportData } from "@/lib/legal/report";
+import { buildReport, caseStateLabels, formatGenerated, formatMonth, parseMonth, reportFileName, reportQuery, trendPoints, type ReportData } from "@/lib/legal/report";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { writeWorkbook } from "@/lib/xlsx/write-workbook";
 
@@ -11,12 +11,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ prop
   const { propertyId } = await params;
   if (!uuidPattern.test(propertyId)) return new Response("No encontrado.", { status: 404 });
   const { supabase } = await requireLegalStaff();
-  const month = parseMonth(new URL(request.url).searchParams.get("mes") ?? undefined, dateInputValue(new Date(), COLOMBIA_TIME_ZONE));
-  const { data, error } = await supabase.rpc("legal_report_month", { target_property_id: propertyId, target_month: month });
+  const search = new URL(request.url).searchParams;
+  const month = parseMonth(search.get("mes") ?? undefined, dateInputValue(new Date(), COLOMBIA_TIME_ZONE));
+  // Fase 2: el cierre del mes (o la versión pedida); con actual=1, los datos de hoy.
+  const { version, live } = reportQuery({ version: search.get("version") ?? undefined, actual: search.get("actual") ?? undefined });
+  const { data, error } = await supabase.rpc("legal_report_view", { target_property_id: propertyId, target_month: month, target_version: version, live });
   if (error || !data) return new Response("No se pudo generar el informe.", { status: error?.message.includes("not_authorized") ? 404 : 500 });
   const raw = data as ReportData;
   const report = buildReport(raw);
-  const cut = raw.partial ? `Corte parcial al ${raw.as_of}` : `Cierre del mes (${raw.month_end})`;
+  const cut = raw.closure ? `Mes cerrado · versión ${raw.closure.version} · ${formatGenerated(raw.closure.closed_at, raw.timezone)}${raw.closure.reason ? ` · Motivo: ${raw.closure.reason}` : ""}`
+    : raw.partial ? `Corte parcial al ${raw.as_of}` : `Mes completo sin cierre (calculado al ${raw.month_end})`;
   const percent = (value: number) => Math.round(value * 1000) / 10;
 
   const archive = writeWorkbook([
@@ -38,11 +42,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ prop
     { name: "Gestión", rows: [["Requerimientos de pago enviados en el mes"], ["Fecha", "Apartamento", "Destinatario", "Total requerido (COP)", "Estado del correo"],
       ...report.current.notices_month.map((item) => [formatGenerated(item.sent_at, raw.timezone), item.unit, item.recipient, Number(item.total), item.delivery]),
       [], ["Pagos registrados en el mes", report.current.payments_month], ["Acuerdos de pago creados en el mes", report.current.agreements_month], ["Apartamentos que se pusieron al día", report.caughtUp]] },
+    { name: "Evolución", rows: [["Mes", "Cartera vencida (COP)", "Apartamentos en mora", "Recaudo (COP)", "Fuente"], ...trendPoints(raw).map((item) => [formatMonth(item.month), item.arrears, item.debtors, item.collected, item.closed ? "Cierre" : "Calculado"])] },
     { name: "Conclusiones", rows: [["Conclusiones y recomendaciones de la abogada"], [raw.note?.body ?? "Sin conclusiones registradas para este periodo."]] },
   ]);
   return new Response(Buffer.from(archive), { headers: {
     "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "content-disposition": `attachment; filename="${reportFileName(raw.property.name, raw.month)}.xlsx"`,
+    "content-disposition": `attachment; filename="${reportFileName(raw.property.name, raw.month, raw.closure?.version)}.xlsx"`,
     "cache-control": "no-store",
   } });
 }

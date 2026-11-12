@@ -15,6 +15,11 @@ export type ReportData = {
   property: { name: string; city: string | null; address: string | null }; month: string; month_end: string; as_of: string; today: string; partial: boolean;
   generated_at: string; timezone: string; started_on: string | null; first_month: string | null; prepared_by: string | null;
   note: { body: string; updated_at: string } | null; current: State; previous: State;
+  // Fase 2 (12/11/2026): cierre que se está mostrando (null = cálculo con fechas), tendencia de 6 meses e historial.
+  closure?: { version: number; closed_at: string; automatic: boolean; reason: string | null; closed_by: string | null } | null;
+  trend?: { month: string; arrears: number; debtors: number; collected: number; closed: boolean }[];
+  month_closed?: boolean; can_close?: boolean;
+  history?: { month: string; version: number; closed_at: string; automatic: boolean; reason: string | null; closed_by: string | null }[];
 };
 
 // Estado del caso de cada apartamento en mora (fase 1: deducido de los datos; las etapas completas llegan en la fase 2).
@@ -113,8 +118,17 @@ export function parseMonth(value: string | undefined, todayIso: string) {
   return `${todayIso.slice(0, 7)}-01`;
 }
 
-// Nombre de archivo claro: Informe-Juridico_ConjuntoBonavento_2026-10.
-export function reportFileName(propertyName: string, month: string) {
+// Nombre de archivo claro: Informe-Juridico_ConjuntoBonavento_2026-10 (y _v2 si es una corrección del cierre).
+export function reportFileName(propertyName: string, month: string, version?: number | null) {
   const name = propertyName.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, " ").trim().split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join("");
-  return `Informe-Juridico_${name || "Conjunto"}_${month.slice(0, 7)}`;
+  return `Informe-Juridico_${name || "Conjunto"}_${month.slice(0, 7)}${version && version > 1 ? `_v${version}` : ""}`;
 }
+
+// Parámetros del informe en la dirección: ?mes=2026-10&version=2&actual=1 (versión de cierre o datos actuales).
+export function reportQuery(searchParams: { mes?: string; version?: string; actual?: string }) {
+  const version = Number(searchParams.version);
+  return { version: Number.isInteger(version) && version > 0 && version < 1000 ? version : null, live: searchParams.actual === "1" };
+}
+
+// Tendencia con números (lo que llega de la base de datos puede venir como texto).
+export const trendPoints = (raw: ReportData) => (raw.trend ?? []).map((item) => ({ ...item, arrears: toNumber(item.arrears), debtors: toNumber(item.debtors), collected: toNumber(item.collected) }));

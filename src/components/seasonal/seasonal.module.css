@@ -1,5 +1,7 @@
 /* Capa decorativa de temporada: detrás del recuadro del dashboard, sin recibir clics. */
 .layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+/* Al imprimir o guardar un PDF (informes) la decoración no sale (12/11/2026). */
+@media print { .layer { display: none !important; } }
 .item { position: absolute; top: -40px; font-size: 15px; line-height: 1; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
 @keyframes fall {
   0% { transform: translate3d(0, 0, 0) rotate(0deg); }

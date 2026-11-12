@@ -15,6 +15,19 @@ export async function markLegalPropertySeen(propertyId: string) {
   await supabase.rpc("legal_mark_property_seen", { target_property_id: propertyId });
 }
 
+// Cierre del informe de un mes terminado (12/11/2026). Si el mes ya estaba cerrado, es una corrección: pide
+// motivo y crea una versión nueva; la anterior se conserva.
+export type CloseReportState = { error?: string; success?: string } | undefined;
+export async function closeReportMonth(_: CloseReportState, data: FormData): Promise<CloseReportState> {
+  const propertyId = String(data.get("propertyId") ?? ""), month = String(data.get("month") ?? ""), reason = String(data.get("reason") ?? "").trim();
+  if (!uuidPattern.test(propertyId) || !/^\d{4}-\d{2}-01$/.test(month)) return { error: "Informe inválido." };
+  const { supabase } = await requireLegalStaff();
+  const { data: version, error } = await supabase.rpc("legal_close_report_month", { target_property_id: propertyId, target_month: month, close_reason: reason || null });
+  if (error) return { error: error.message.includes("reason_required") ? "Este mes ya está cerrado: escribe el motivo de la corrección (3 a 500 caracteres)." : error.message.includes("month_not_finished") ? "Solo se pueden cerrar meses que ya terminaron." : "No pudimos cerrar el mes. Inténtalo de nuevo." };
+  revalidatePath(`/juridica/${propertyId}/informe`);
+  return { success: Number(version) > 1 ? `Corrección guardada como versión ${version}.` : "Mes cerrado. Este informe ya no cambiará." };
+}
+
 // Conclusiones de la abogada en el informe del mes (12/11/2026): borrador editable; vacío lo borra.
 export type ReportNoteState = { error?: string; success?: string } | undefined;
 export async function saveReportNote(_: ReportNoteState, data: FormData): Promise<ReportNoteState> {

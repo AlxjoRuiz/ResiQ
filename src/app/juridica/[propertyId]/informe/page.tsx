@@ -4,7 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, CalendarRange, CircleCheck, FileSpreadsheet, Gavel, Scale, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { requireLegalStaff } from "@/lib/auth/require-legal-staff";
-import { buildReport, caseStateLabels, change, formatCop, formatGenerated, formatLong, formatMonth, formatPercent, formatShort, parseMonth, reportFileName, summaryText, type ReportData } from "@/lib/legal/report";
+import { buildReport, caseStateLabels, change, formatCop, formatGenerated, formatLong, formatMonth, formatPercent, formatShort, parseMonth, reportFileName, reportQuery, summaryText, trendPoints, type ReportData } from "@/lib/legal/report";
+import { CloseMonth } from "./close-month";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 import { uuidPattern } from "../../legal-data";
 import { DebtorsTable } from "./debtors-table";
@@ -15,12 +16,14 @@ import { ReportNote } from "./report-note";
 // datos del informe, resumen ejecutivo, antigüedad, torres, morosos (con filtros), estado de los casos, gestión del
 // mes y conclusiones de la abogada. El mes elegido se calcula con las fechas de cada movimiento (el mes en curso es
 // un corte parcial a hoy). Descarga en PDF (impresión del navegador, con encabezado y páginas) y en Excel.
-type Props = { params: Promise<{ propertyId: string }>; searchParams: Promise<{ mes?: string }> };
+// Fase 2 (12/11/2026): si el mes tiene cierre se muestra la foto guardada (o la versión elegida); con ?actual=1, los
+// datos de hoy. Además: botón para cerrar el mes o corregirlo, evolución de 6 meses e historial de cierres.
+type Props = { params: Promise<{ propertyId: string }>; searchParams: Promise<{ mes?: string; version?: string; actual?: string }> };
 
 // Una sola consulta por solicitud aunque la usen el título del documento y la página.
-const loadReport = cache(async (propertyId: string, month: string) => {
+const loadReport = cache(async (propertyId: string, month: string, version: number | null, live: boolean) => {
   const { supabase } = await requireLegalStaff();
-  const { data, error } = await supabase.rpc("legal_report_month", { target_property_id: propertyId, target_month: month });
+  const { data, error } = await supabase.rpc("legal_report_view", { target_property_id: propertyId, target_month: month, target_version: version, live });
   return { data: data as ReportData | null, error: error?.message ?? null };
 });
 
@@ -28,14 +31,16 @@ async function resolve({ params, searchParams }: Props) {
   const { propertyId } = await params;
   if (!uuidPattern.test(propertyId)) notFound();
   const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
-  const month = parseMonth((await searchParams).mes, today);
-  return { propertyId, month, today, ...(await loadReport(propertyId, month)) };
+  const query = await searchParams;
+  const month = parseMonth(query.mes, today);
+  const { version, live } = reportQuery(query);
+  return { propertyId, month, today, version, live, ...(await loadReport(propertyId, month, version, live)) };
 }
 
 // El título del documento es el nombre con que el navegador guarda el PDF.
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { data, month } = await resolve(props);
-  return { title: data ? reportFileName(data.property.name, month) : "Informe jurídico" };
+  return { title: data ? reportFileName(data.property.name, month, data.closure?.version) : "Informe jurídico" };
 }
 
 const card = "rounded-2xl border border-slate-200 bg-white p-5 break-inside-avoid";
@@ -49,13 +54,15 @@ function Trend({ direction, good }: { direction: number; good: "up" | "down" }) 
 const number = (index: number) => <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">{index}</span>;
 
 export default async function LegalReportPage(props: Props) {
-  const { propertyId, month, today, data, error } = await resolve(props);
+  const { propertyId, month, today, live, data, error } = await resolve(props);
   if (error?.includes("not_authorized")) notFound();
+  const monthParam = month.slice(0, 7);
+  const excelHref = `/api/legal/report/${propertyId}?mes=${monthParam}${data?.closure ? `&version=${data.closure.version}` : live ? "&actual=1" : ""}`;
   const controls = (raw: ReportData | null) => <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
     <Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>
     <div className="flex flex-wrap items-end gap-2">
       <form method="get" className="flex items-end gap-2"><label className="grid gap-1 text-xs font-medium text-slate-600">Periodo<input type="month" name="mes" defaultValue={month.slice(0, 7)} max={today.slice(0, 7)} min={raw?.first_month?.slice(0, 7)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm" /></label><button className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary">Ver</button></form>
-      {raw && <><PrintButton /><a href={`/api/legal/report/${propertyId}?mes=${month.slice(0, 7)}`} className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary"><FileSpreadsheet size={16} aria-hidden="true" />Descargar Excel</a></>}
+      {raw && <><PrintButton /><a href={excelHref} className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary"><FileSpreadsheet size={16} aria-hidden="true" />Descargar Excel</a></>}
     </div>
   </div>;
   if (!data) return <div className="mx-auto w-full max-w-6xl">{controls(null)}<p role="status" className="mt-8 rounded-2xl border bg-white p-6 text-sm text-slate-600">No pudimos generar el informe de {formatMonth(month)}. Revisa el periodo elegido o inténtalo de nuevo en unos minutos.</p></div>;
@@ -71,6 +78,11 @@ export default async function LegalReportPage(props: Props) {
   const maxAging = Math.max(...report.aging.map((item) => item.amount), 1);
   const maxBuilding = Math.max(...report.buildings.map((item) => item.amount), 1);
   const beforeStart = raw.started_on && raw.month_end < raw.started_on;
+  const closure = raw.closure ?? null;
+  const monthVersions = (raw.history ?? []).filter((item) => item.month === raw.month);
+  const trend = trendPoints(raw);
+  const maxTrend = Math.max(...trend.map((item) => Math.max(item.arrears, item.collected)), 1);
+  const monthLabel = formatMonth(raw.month).toLowerCase();
 
   return <div className="mx-auto w-full max-w-6xl print:max-w-none">
     {/* Página impresa: márgenes, encabezado con el conjunto y el periodo, y números de página. */}
@@ -81,7 +93,9 @@ export default async function LegalReportPage(props: Props) {
     <header className="mt-5 rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 to-white p-6 break-inside-avoid">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">Informe de gestión de cartera · Cobro jurídico</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{raw.property.name}</h1><p className="mt-1 text-sm text-slate-600">{[raw.property.address, raw.property.city].filter(Boolean).join(" · ")}</p></div>
-        {raw.partial ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Corte parcial · mes en curso</span> : <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">Mes completo · calculado sin cierre oficial</span>}
+        {closure ? <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">Mes cerrado · versión {closure.version}</span>
+          : raw.partial ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Corte parcial · mes en curso</span>
+          : <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">{raw.month_closed ? "Datos actuales · no es el cierre" : "Mes completo · sin cierre todavía"}</span>}
       </div>
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <div><dt className="text-xs text-slate-500">Periodo</dt><dd className="font-medium">{formatMonth(raw.month)}</dd></div>
@@ -90,6 +104,13 @@ export default async function LegalReportPage(props: Props) {
         <div><dt className="text-xs text-slate-500">Elaborado por</dt><dd className="font-medium">{raw.prepared_by ?? "Abogada de cobros"}</dd></div>
       </dl>
       {beforeStart && <p className="mt-4 rounded-xl bg-white/80 p-3 text-xs text-slate-600">Este periodo es anterior al inicio de la gestión jurídica ({formatLong(raw.started_on)}): muestra la cartera del conjunto, no gestiones de cobro.</p>}
+      {/* Cierre: quién y cuándo, motivo si es corrección, y cambiar entre versiones o ver los datos de hoy. */}
+      {closure && <p className="mt-4 rounded-xl bg-white/80 p-3 text-xs text-slate-600">Cerrado el {formatGenerated(closure.closed_at, raw.timezone)} · {closure.automatic ? "cierre automático" : `por ${closure.closed_by ?? "la abogada"}`}{closure.reason ? ` · Motivo de la corrección: ${closure.reason}` : ""}. Este informe guarda los datos tal como estaban y no cambia.</p>}
+      {(monthVersions.length > 0 || raw.can_close) && <div className="mt-4 flex flex-wrap items-center gap-2 text-xs print:hidden">
+        {monthVersions.map((item) => <Link key={item.version} href={`?mes=${monthParam}&version=${item.version}`} aria-current={closure?.version === item.version ? "page" : undefined} className={`rounded-full border px-3 py-1 font-medium ${closure?.version === item.version ? "border-primary bg-primary text-white" : "bg-white hover:bg-secondary"}`}>Versión {item.version}</Link>)}
+        {raw.month_closed && <Link href={`?mes=${monthParam}&actual=1`} aria-current={!closure ? "page" : undefined} className={`rounded-full border px-3 py-1 font-medium ${!closure ? "border-primary bg-primary text-white" : "bg-white hover:bg-secondary"}`}>Datos de hoy</Link>}
+        {raw.can_close && <CloseMonth propertyId={propertyId} month={raw.month} closed={Boolean(raw.month_closed)} monthLabel={monthLabel} />}
+      </div>}
     </header>
 
     {/* 1 · Resumen ejecutivo. */}
@@ -153,10 +174,39 @@ export default async function LegalReportPage(props: Props) {
         : <p className="mt-4 text-sm text-slate-500">No se enviaron requerimientos de pago en este periodo.</p>}
     </section>
 
-    {/* 10 · Conclusiones de la abogada. */}
+    {/* 9 · Evolución en el tiempo (fase 2): 6 meses hasta el elegido, del cierre si existe o calculado. */}
+    {trend.length > 0 && <section className={`${card} mt-6`} aria-labelledby="evolucion">
+      <h2 id="evolucion" className={sectionTitle}>{number(7)}Evolución de los últimos 6 meses</h2>
+      <p className="mt-1 flex flex-wrap items-center gap-4 text-xs text-slate-500"><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-urgent" />Cartera vencida</span><span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-primary" />Recaudo del mes</span><span>Los meses sin cierre salen calculados con fechas.</span></p>
+      <div className="mt-4 grid grid-cols-6 items-end gap-2 sm:gap-4" style={{ height: 180 }} aria-hidden="true">
+        {trend.map((item) => <div key={item.month} className="flex h-full items-end justify-center gap-1">
+          <span className="w-1/3 max-w-7 rounded-t-md bg-urgent" style={{ height: `${Math.max((item.arrears / maxTrend) * 100, item.arrears ? 2 : 0)}%` }} title={`Cartera vencida: ${formatCop(item.arrears)}`} />
+          <span className="w-1/3 max-w-7 rounded-t-md bg-primary" style={{ height: `${Math.max((item.collected / maxTrend) * 100, item.collected ? 2 : 0)}%` }} title={`Recaudo: ${formatCop(item.collected)}`} />
+        </div>)}
+      </div>
+      <div className="mt-2 grid grid-cols-6 gap-2 text-center text-[11px] text-slate-500 sm:gap-4" aria-hidden="true">{trend.map((item) => <span key={item.month}>{formatMonth(item.month).slice(0, 3)} {item.month.slice(2, 4)}</span>)}</div>
+      <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead><tr className="bg-primary text-xs text-white"><th className="rounded-l-lg px-3 py-2 font-medium">Mes</th><th className="px-3 py-2 text-right font-medium">Cartera vencida</th><th className="px-3 py-2 text-center font-medium">Apartamentos en mora</th><th className="px-3 py-2 text-right font-medium">Recaudo</th><th className="rounded-r-lg px-3 py-2 font-medium">Fuente</th></tr></thead>
+        <tbody>{trend.map((item, index) => { const before = trend[index - 1]; const delta = before ? change(item.arrears, before.arrears) : null; return <tr key={item.month} className={`border-b border-slate-100 last:border-0 ${item.month === raw.month ? "bg-primary/5 font-medium" : ""}`}>
+          <td className="px-3 py-2.5">{formatMonth(item.month)}</td><td className="px-3 py-2.5 text-right">{formatCop(item.arrears)}{delta && delta.direction !== 0 && <span className={`ml-2 text-xs ${delta.direction > 0 ? "text-urgent" : "text-primary"}`}>{delta.direction > 0 ? "▲" : "▼"}</span>}</td>
+          <td className="px-3 py-2.5 text-center">{item.debtors}</td><td className="px-3 py-2.5 text-right">{formatCop(item.collected)}</td><td className="px-3 py-2.5 text-xs text-slate-600">{item.closed ? "Cierre" : "Calculado"}</td>
+        </tr>; })}</tbody></table></div>
+    </section>}
+
+    {/* 10 · Conclusiones de la abogada. En un cierre salen tal como se guardaron; se editan en los datos de hoy. */}
     <section className={`${card} mt-6`} aria-labelledby="conclusiones">
-      <h2 id="conclusiones" className={sectionTitle}>{number(7)}Conclusiones y recomendaciones</h2>
-      <ReportNote propertyId={propertyId} month={raw.month} body={raw.note?.body ?? ""} updatedAt={raw.note ? formatGenerated(raw.note.updated_at, raw.timezone) : null} />
+      <h2 id="conclusiones" className={sectionTitle}>{number(8)}Conclusiones y recomendaciones</h2>
+      {closure ? <div className="mt-3"><p className="whitespace-pre-line text-[14px] leading-relaxed text-slate-800">{raw.note?.body?.trim() || "La abogada no registró conclusiones para este periodo."}</p><p className="mt-3 text-xs text-slate-500 print:hidden">Son las conclusiones guardadas al cerrar el mes. Para cambiarlas, edítalas en «Datos de hoy» y registra una corrección del cierre.</p></div>
+        : <ReportNote propertyId={propertyId} month={raw.month} body={raw.note?.body ?? ""} updatedAt={raw.note ? formatGenerated(raw.note.updated_at, raw.timezone) : null} />}
+    </section>
+
+    {/* Historial de cierres (fase 2): cada mes cerrado y sus correcciones, con sus descargas. */}
+    <section className={`${card} mt-6 print:hidden`} aria-labelledby="historial">
+      <h2 id="historial" className={sectionTitle}>Historial de informes cerrados</h2>
+      <p className="mt-1 text-xs text-slate-500">Cada mes se cierra solo el día 1 a las 12:05 a. m. (hora de Bogotá). También puedes cerrarlo o corregirlo con el botón del encabezado; las correcciones se guardan como una versión nueva.</p>
+      {(raw.history ?? []).length ? <ul className="mt-4 divide-y divide-slate-100">{(raw.history ?? []).map((item) => { const href = `?mes=${item.month.slice(0, 7)}&version=${item.version}`; return <li key={`${item.month}-${item.version}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+        <div><p className="font-medium">{formatMonth(item.month)} · versión {item.version}</p><p className="text-xs text-slate-500">Cerrado el {formatGenerated(item.closed_at, raw.timezone)} · {item.automatic ? "automático" : `por ${item.closed_by ?? "la abogada"}`}{item.reason ? ` · ${item.reason}` : ""}</p></div>
+        <div className="flex gap-2"><Link href={href} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-secondary">Ver y descargar PDF</Link><a href={`/api/legal/report/${propertyId}${href}`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-secondary">Excel</a></div>
+      </li>; })}</ul> : <p className="mt-4 text-sm text-slate-500">Todavía no hay meses cerrados. El primero se cerrará automáticamente el 1 del próximo mes, o puedes cerrar un mes terminado ahora.</p>}
     </section>
 
     <p className="mt-6 text-center text-xs text-slate-500">Documento confidencial con datos personales de residentes (Ley 1581 de 2012). Uso exclusivo de la administración de {raw.property.name}. · ResiQ · Generado el {generated}</p>
