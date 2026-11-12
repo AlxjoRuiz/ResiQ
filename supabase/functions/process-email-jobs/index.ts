@@ -63,6 +63,48 @@ export function adminInvitationContent(job: EmailJob, link: string) {
   return { subject, text: lines.join("\n\n"), html };
 }
 
+// Correos de cartera (13/11/2026, pedido de Alejandro): texto claro con el detalle y firmados por el conjunto
+// («Administración …» con su dirección). Cartera nueva por Excel: se listan las obligaciones del lote de ese apartamento.
+const financeTemplates = ["receivable_created", "receivable_voided", "payment_recorded", "payment_voided", "delinquency_notice"];
+type FinanceItem = { concept: string; amount: number; due_on: string | null };
+// deno-lint-ignore no-explicit-any
+export async function financeContent(supabase: any, job: EmailJob, appUrl: string) {
+  const data = job.template_data as EmailJob["template_data"] & { batch_id?: string; heading?: string; overdue_days?: number; amount?: number | string; currency?: string; concept?: string; due_on?: string; paid_on?: string };
+  const { data: property } = await supabase.from("properties").select("name,address,city").eq("id", data.property_id ?? "").maybeSingle();
+  const propertyName = (property?.name as string | undefined) ?? "tu conjunto";
+  const unit = data.unit_label ?? "tu apartamento";
+  const money = (value: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: data.currency ?? "COP", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value);
+  const day = (value?: string | null) => value && /^\d{4}-\d{2}-\d{2}/.test(value) ? `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}` : value ?? "";
+  let items: FinanceItem[] = data.concept ? [{ concept: data.concept, amount: Number(data.amount ?? 0), due_on: data.due_on ?? null }] : [];
+  if (job.template_key === "receivable_created" && data.batch_id && data.unit_id) {
+    const { data: rows } = await supabase.from("accounts_receivable").select("concept,amount,due_on").eq("import_batch_id", data.batch_id).eq("unit_id", data.unit_id).order("due_on");
+    items = ((rows ?? []) as { concept: string; amount: number | string; due_on: string }[]).map((row) => ({ concept: row.concept, amount: Number(row.amount), due_on: row.due_on }));
+  }
+  const reminder = job.template_key === "delinquency_notice" && data.heading === "Recordatorio de pago";
+  const title = reminder ? "Recordatorio de pago" : ({ receivable_created: "Nueva cartera en tu cuenta", receivable_voided: "Obligación anulada", payment_recorded: "Pago registrado", payment_voided: "Pago anulado", delinquency_notice: "Aviso de mora" } as Record<string, string>)[job.template_key] ?? "Actualización de cartera";
+  const plural = items.length > 1;
+  const intro = reminder ? `Te recordamos que la cuenta de tu apartamento ${unit} en ${propertyName} tiene saldo vencido:`
+    : job.template_key === "receivable_created" ? `La administración de ${propertyName} registró ${plural ? "nuevas obligaciones" : "una nueva obligación"} en la cuenta de tu apartamento ${unit}:`
+    : job.template_key === "receivable_voided" ? `La administración de ${propertyName} anuló una obligación de la cuenta de tu apartamento ${unit}:`
+    : job.template_key === "payment_recorded" ? `La administración de ${propertyName} registró un pago en la cuenta de tu apartamento ${unit}:`
+    : job.template_key === "payment_voided" ? `La administración de ${propertyName} anuló un pago registrado en la cuenta de tu apartamento ${unit}:`
+    : `La cuenta de tu apartamento ${unit} en ${propertyName} tiene una obligación vencida${data.overdue_days ? ` con ${data.overdue_days} días de mora` : ""}:`;
+  const lines = job.template_key.startsWith("payment_")
+    ? [`Valor: ${money(Number(data.amount ?? 0))}${data.paid_on ? ` · Fecha de pago: ${day(data.paid_on)}` : ""}`]
+    : items.map((item) => `${item.concept}\nValor: ${money(item.amount)}${item.due_on ? ` · ${reminder ? "Vencida desde" : "Vence"}: ${day(item.due_on)}` : ""}`);
+  const total = !job.template_key.startsWith("payment_") && items.length > 1 ? `Total: ${money(items.reduce((sum, item) => sum + item.amount, 0))}` : "";
+  const closing = job.template_key === "payment_recorded" ? "Gracias por tu pago." : job.template_key === "receivable_created" || job.template_key === "delinquency_notice" ? "Si ya pagaste, no tengas en cuenta este mensaje." : "";
+  const signature = ["Cordialmente,", `Administración ${propertyName}`, [property?.address, property?.city].filter(Boolean).join(" · ")].filter(Boolean) as string[];
+  const path = data.property_id && data.unit_id ? `/panel/propiedades/${data.property_id}/cartera/${data.unit_id}` : "/panel";
+  const link = `${appUrl}${path}`;
+  const subject = `${title} · ${propertyName}`;
+  const text = ["Hola,", intro, ...lines, total, `Puedes ver tu estado de cuenta y reportar tus pagos en ResiQ: ${link}`, closing, signature.join("\n")].filter(Boolean).join("\n\n");
+  const paragraph = (value: string) => `<p>${escapeHtml(value).replace(/\n/g, "<br>")}</p>`;
+  const html = [paragraph("Hola,"), paragraph(intro), ...lines.map((line) => `<p style="margin-left:16px">${escapeHtml(line).replace(/\n/g, "<br>")}</p>`), total ? `<p style="margin-left:16px"><strong>${escapeHtml(total)}</strong></p>` : "",
+    paragraph("Puedes ver tu estado de cuenta y reportar tus pagos en ResiQ:"), `<p><a href="${escapeHtml(link)}">Ver mi cuenta</a></p>`, closing ? paragraph(closing) : "", paragraph(signature.join("\n"))].join("");
+  return { subject, text, html };
+}
+
 function emailContent(job: EmailJob, appUrl: string) {
   if (job.template_key.startsWith("assembly_")) {
     const headings: Record<string, string> = { assembly_published: "Nueva convocatoria de asamblea", assembly_reminder: "Recordatorio de asamblea", assembly_updated: "Cambio en una asamblea", assembly_cancelled: "Asamblea cancelada" };
@@ -93,16 +135,6 @@ function emailContent(job: EmailJob, appUrl: string) {
     const timeZone = job.template_data.timezone ?? "America/Bogota";
     const details = [job.template_data.amenity_name ? `Zona: ${job.template_data.amenity_name}` : "", job.template_data.starts_at ? `Inicio: ${new Date(job.template_data.starts_at).toLocaleString("es-CO", { timeZone })}` : "", job.template_data.ends_at ? `Fin: ${new Date(job.template_data.ends_at).toLocaleString("es-CO", { timeZone })}` : ""].filter(Boolean).join("\n");
     const path = job.template_data.property_id ? `/panel/propiedades/${job.template_data.property_id}/reservas` : "/panel";
-    const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
-    return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
-  }
-  if (["receivable_created", "receivable_voided", "payment_recorded", "payment_voided", "delinquency_notice"].includes(job.template_key)) {
-    const headings: Record<string, string> = { receivable_created: "Cartera actualizada en ResiQ", receivable_voided: "Obligación anulada", payment_recorded: "Pago registrado en ResiQ", payment_voided: "Pago anulado", delinquency_notice: "Aviso de mora en ResiQ" };
-    // «heading» en los datos: título propio, por ejemplo el recordatorio de pago semanal (12/11/2026).
-    const heading = (typeof job.template_data.heading === "string" ? job.template_data.heading : null) ?? headings[job.template_key] ?? "Actualización de cartera";
-    const amount = typeof job.template_data.amount === "number" ? new Intl.NumberFormat("es-CO", { style: "currency", currency: job.template_data.currency ?? "COP" }).format(job.template_data.amount) : "";
-    const details = [job.template_data.unit_label ? `Apartamento: ${job.template_data.unit_label}` : "", job.template_data.concept ? `Concepto: ${job.template_data.concept}` : "", amount ? `Valor: ${amount}` : "", job.template_data.due_on ? `Vencimiento: ${job.template_data.due_on}` : "", job.template_data.paid_on ? `Fecha de pago: ${job.template_data.paid_on}` : ""].filter(Boolean).join("\n");
-    const path = job.template_data.property_id && job.template_data.unit_id ? `/panel/propiedades/${job.template_data.property_id}/cartera/${job.template_data.unit_id}` : "/panel";
     const escaped = details.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[character]!);
     return { subject: heading, text: `${heading}\n\n${details}\n\nConsulta el detalle en ${appUrl}${path}`, html: `<h1>${heading}</h1><p>${escaped.replace(/\n/g, "<br>")}</p><p><a href="${appUrl}${path}">Ver en ResiQ</a></p>` };
   }
@@ -175,7 +207,7 @@ export default {
           : await supabase.rpc("authorize_email_job", { target_job_id: job.id, worker_name: workerName });
         if (authorization.error) throw new Error("email_authorization_unavailable");
         if (authorization.data !== true) { results.push({ id: job.id, status: "cancelled" }); continue; }
-        content = job.legal_notice_id ? legalNoticeContent(job) : emailContent(job, appUrl);
+        content = job.legal_notice_id ? legalNoticeContent(job) : financeTemplates.includes(job.template_key) ? await financeContent(supabase, job, appUrl) : emailContent(job, appUrl);
         logged = { subject: content.subject, text: content.text };
       }
       // Adjuntos de la abogada (05/11/2026): se leen del almacenamiento y viajan en el correo.
