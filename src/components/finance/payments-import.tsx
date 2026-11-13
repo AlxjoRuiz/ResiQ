@@ -61,7 +61,7 @@ export function PaymentsImportButton({ propertyId }: { propertyId: string }) {
       {file && <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Importar pagos">
         <div className="grid max-h-[85vh] w-full max-w-2xl gap-4 overflow-y-auto rounded-2xl border bg-white p-5 text-sm shadow-lg">
           <div><h2 className="text-lg font-semibold">Importar pagos</h2><p className="mt-1 break-all text-muted-foreground">{file.name}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Columnas: torre, apartamento, valor, fecha_pago y, opcionales, referencia y concepto (la deuda a la que va el pago; si no lo pones, va a la más antigua). <a href="/api/templates/pagos" download className="font-medium text-primary underline underline-offset-2">Descargar plantilla</a></p></div>
+            <p className="mt-1 text-xs text-muted-foreground">Columnas: torre, apartamento, concepto (opcional: la deuda a la que va el pago; si no lo pones, va a la más antigua), valor, fecha_pago y referencia (opcional). El orden de las columnas no importa. <a href="/api/templates/pagos" download className="font-medium text-primary underline underline-offset-2">Descargar plantilla</a></p></div>
           {previewError && <p role="alert" className="text-destructive">{previewError}</p>}
           {preview.length > 0 && <div className="overflow-x-auto rounded-xl border"><table className="min-w-full text-left text-xs">
             <thead className="bg-secondary font-semibold"><tr><th className="px-3 py-2">Apartamento</th><th className="px-3 py-2 text-right">Pagos</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2">Fecha del pago</th></tr></thead>
