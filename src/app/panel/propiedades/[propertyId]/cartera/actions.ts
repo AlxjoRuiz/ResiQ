@@ -230,7 +230,7 @@ export async function importPayments(_: FinanceState, data: FormData): Promise<F
     const rows=await readSheet(Buffer.from(archive));
     if(rows.length<2||rows.length>FINANCE_MAX_ROWS+1)return{error:`El archivo debe contener encabezados y entre 1 y ${FINANCE_MAX_ROWS} filas.`};
     const index=paymentColumnIndex(rows[0]);
-    if(!index)return{error:`Faltan columnas. Usa la plantilla de pagos: ${PAYMENT_REQUIRED_COLUMNS.join(", ")} (y referencia y concepto, opcionales).`};
+    if(!index)return{error:`Faltan columnas. Usa la plantilla de pagos: ${PAYMENT_REQUIRED_COLUMNS.join(", ")} (y referencia, opcional).`};
     const {data:units,error:unitError}=await fetchAllRows((from,to)=>supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active").order("id").range(from,to));if(unitError)return{error:friendlyError(unitError.message)};
     const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[unitKey(String(building?.name??""),unit.code),unit.id];}));
     const {rows:parsed,rowErrors,emptyValueRows}=parsePaymentRows(rows.slice(1),index,unitMap,dateInputValue(new Date(),COLOMBIA_TIME_ZONE));

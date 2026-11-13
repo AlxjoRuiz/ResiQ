@@ -40,8 +40,8 @@ test("filas sin valor se saltan y se cuentan; las inválidas dicen qué tienen m
   ]);
 });
 
-test("la columna concepto (opcional) dice a qué deuda va el pago", () => {
+test("si el Excel trae una columna concepto, se ignora: el pago va a la deuda más antigua", () => {
   const index = paymentColumnIndex([...headers, "Concepto"]);
   const { rows } = parsePaymentRows([["Torre 1", "101", 128000, "15/03/2026", "", "  Administración   marzo 2026 "]], index, units, "2026-11-13");
-  assert.equal(rows[0].concept, "Administración marzo 2026");
+  assert.equal(rows[0].concept, "");
 });
