@@ -139,14 +139,14 @@ export async function importReceivables(_: FinanceState, data: FormData): Promis
     // Todos los apartamentos, de 1.000 en 1.000 (Supabase corta en 1.000; 12/11/2026).
     const {data:units,error:unitError}=await fetchAllRows((from,to)=>supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active").order("id").range(from,to));if(unitError)return{error:friendlyError(unitError.message)};
     const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[unitKey(String(building?.name??""),unit.code),unit.id];}));
-    const {rows:parsed,rowErrors}=parseReceivableRows(rows.slice(1),index,unitMap);
+    const {rows:parsed,rowErrors,emptyValueRows}=parseReceivableRows(rows.slice(1),index,unitMap);
     // Cada fila con error dice qué tiene mal (12/11/2026); no se carga nada hasta corregirlas.
     if(rowErrors.length)return{error:`${rowErrors.length===1?"Hay 1 fila con errores":`Hay ${rowErrors.length} filas con errores`}; no se cargó nada. Corrígelas y vuelve a importar:\n${rowErrors.slice(0,15).join("\n")}${rowErrors.length>15?`\n… y ${rowErrors.length-15} filas más.`:""}`};
     // Sin columna «referencia», cada fila se identifica por apartamento, concepto, emisión y valor;
     // la base de datos salta las que ya están cargadas (o repetidas en el archivo).
     const batchId=crypto.randomUUID();const result=await supabase.rpc("import_receivables",{target_property_id:propertyId,target_batch_id:batchId,target_rows:parsed});if(result.error)return{error:friendlyError(result.error.message)};
     const imported=Number(result.data??0);if(imported===0)return{error:"Todas las obligaciones del archivo ya estaban cargadas; no se agregó nada."};
-    refreshFinance(propertyId);redirect(`${financePath(propertyId)}?imported=${imported}&skipped=${parsed.length-imported}`);
+    refreshFinance(propertyId);redirect(`${financePath(propertyId)}?imported=${imported}&skipped=${parsed.length-imported}${emptyValueRows?`&sinvalor=${emptyValueRows}`:""}`);
   } catch(error) { if(error && typeof error==="object" && "digest" in error)throw error;return{error:"No pudimos leer el archivo. Descarga la plantilla y verifica que sea un .xlsx válido."}; }
 }
 

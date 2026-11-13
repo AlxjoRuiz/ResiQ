@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { amountValue } from "../../src/lib/finance/receivable-amount.ts";
 import { autoReference, dateValue, normalizeHeader, parseReceivableRows, receivableColumnIndex, unitKey } from "../../src/lib/finance/parse-receivables.ts";
 
 const headers = ["Torre", "Apartamento", "Concepto", "Valor", "Fecha Emisión", "Fecha_Vencimiento", "TIPO"];
@@ -108,4 +109,45 @@ test("una fila con valor negativo es un saldo a favor, con el valor en positivo 
   assert.equal(rows[0].amount, 84147);
   assert.equal(rows[0].issued_on, "2026-10-01");
   assert.match(rows[0].external_reference, /^AUTO-[0-9a-f]{32}$/);
+});
+
+test("el valor se entiende como número de Excel o como texto al estilo colombiano", () => {
+  assert.equal(amountValue(128000), 128000);
+  assert.equal(amountValue("$ 128.000"), 128000);
+  assert.equal(amountValue("128.000"), 128000);
+  assert.equal(amountValue("128,000"), 128000);
+  assert.equal(amountValue("1.250.000,50"), 1250000.5);
+  assert.equal(amountValue("1,250,000.50"), 1250000.5);
+  assert.equal(amountValue("COP 52.610"), 52610);
+  assert.equal(amountValue("-84.147"), -84147);
+  assert.equal(amountValue("(84.147)"), -84147);
+  assert.equal(amountValue("270443,2"), 270443.2);
+  assert.ok(Number.isNaN(amountValue("mil")));
+  assert.ok(Number.isNaN(amountValue("")));
+  const { rows } = parse(["Torre 1", "101", "Administración", "$ 128.000", "01/10/2026", "31/10/2026", "obligacion"]);
+  assert.equal(rows[0].amount, 128000);
+});
+
+test("una fila con la celda de valor vacía se salta y se cuenta (el apartamento no debe nada)", () => {
+  const { rows, rowErrors, emptyValueRows } = parse(valid, ["Torre 1", "101", "Cuota junio", null, "01/06/2026", "30/06/2026", "obligacion"], ["Torre 2", "202", "Cuota junio", "", "01/06/2026", "30/06/2026", "obligacion"]);
+  assert.equal(rows.length, 1);
+  assert.deepEqual(rowErrors, []);
+  assert.equal(emptyValueRows, 2);
+});
+
+test("las fechas se aceptan en cualquier formato común", () => {
+  assert.equal(dateValue(46203), "2026-06-30");
+  assert.equal(dateValue("46203"), "2026-06-30");
+  assert.equal(dateValue("30.06.2026"), "2026-06-30");
+  assert.equal(dateValue("30/6/26"), "2026-06-30");
+  assert.equal(dateValue("2026/06/30"), "2026-06-30");
+  assert.equal(dateValue("30/06/2026 12:00"), "2026-06-30");
+  assert.equal(dateValue("2026-06-30T00:00:00Z"), "2026-06-30");
+  assert.equal(dateValue("30 de junio de 2026"), "2026-06-30");
+  assert.equal(dateValue("30-jun-2026"), "2026-06-30");
+  assert.equal(dateValue("Junio 30 2026"), "2026-06-30");
+  assert.equal(dateValue("Jun 30, 2026"), "2026-06-30");
+  assert.equal(dateValue("30 sept 26"), "2026-09-30");
+  assert.equal(dateValue("31/02/2026"), "");
+  assert.equal(dateValue("junio"), "");
 });

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { CellValue } from "read-excel-file/node";
 // Con extensión .ts para que las pruebas (node --experimental-strip-types) encuentren el archivo.
 import { dateValue } from "./receivable-date.ts";
+import { amountValue } from "./receivable-amount.ts";
 
 // Lectura del Excel de importación de cartera (plantilla de /api/templates/cartera). Separada de la acción del
 // servidor (cartera/actions.ts) para poder probarla sin Supabase: tests/finance/parse-receivables.test.mjs.
@@ -58,14 +59,18 @@ export function receivableColumnIndex(headerRow: Cell[]): Record<string, number>
  */
 export function parseReceivableRows(dataRows: Cell[][], index: Record<string, number>, unitIds: Map<string, string>) {
   const rows: ParsedReceivable[] = [];
+  // Filas con la celda de valor vacía (13/11/2026): el apartamento no debe nada en ese archivo; se saltan y se cuentan.
+  let emptyValueRows = 0;
   const rowErrors: string[] = [];
   dataRows.forEach((row, offset) => {
     if (row.every((cell) => textValue(cell) === "")) return; // filas vacías: se ignoran
+    if (textValue(row[index.valor]) === "") { emptyValueRows += 1; return; }
     const line = offset + 2;
     const building = textValue(row[index.torre]), code = textValue(row[index.apartamento]);
     const concept = textValue(row[index.concepto]);
     const rawAmount = row[index.valor];
-    const amount = textValue(rawAmount) === "" ? NaN : Number(rawAmount);
+    // Número de Excel o texto como «$ 128.000» (13/11/2026).
+    const amount = amountValue(rawAmount);
     const issued = dateValue(row[index.fecha_emision]);
     const due = dateValue(row[index.fecha_vencimiento]);
     const reference = index.referencia === undefined ? "" : textValue(row[index.referencia]);
@@ -95,5 +100,5 @@ export function parseReceivableRows(dataRows: Cell[][], index: Record<string, nu
     }
     rows.push({ unit_id: unitId, concept, amount, issued_on: issued, due_on: due, external_reference: reference || autoReference(unitId, concept, issued, amount), source });
   });
-  return { rows, rowErrors };
+  return { rows, rowErrors, emptyValueRows };
 }
