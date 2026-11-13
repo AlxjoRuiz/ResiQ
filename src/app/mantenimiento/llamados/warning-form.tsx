@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
-import { createWarning, type WarningState } from "./actions";
+import { createWarning, deleteWarning, updateWarning, type WarningState } from "./actions";
 
 const field = "mt-1 h-11 w-full rounded-lg border bg-white px-3 text-sm";
 
@@ -18,4 +19,24 @@ export function NewWarningForm({ workers, today }: { workers: { staffId: string;
     <label className="text-sm font-medium sm:col-span-2">Descripción<textarea name="description" required minLength={3} maxLength={2000} rows={4} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm" /></label>
     <div className="flex flex-wrap items-center gap-3 sm:col-span-2"><Button disabled={pending}>{pending ? "Registrando…" : "Registrar llamado"}</Button>{state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}</div>
   </form>;
+}
+
+// Admin: editar o borrar un llamado ya registrado (13/11/2026). Borrar pide confirmación.
+export function WarningAdminActions({ warning, today }: { warning: { id: string; date: string; reason: string; description: string }; today: string }) {
+  const [mode, setMode] = useState<"none" | "edit" | "delete">("none");
+  const [editState, edit, saving] = useFormActionState(updateWarning, undefined as WarningState);
+  const [deleteState, remove, deleting] = useFormActionState(deleteWarning, undefined as WarningState);
+  return <div className="mt-4 border-t pt-3">
+    {mode === "none" && <div className="flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setMode("edit")}>Editar</Button><Button type="button" size="sm" variant="outline" className="text-destructive" onClick={() => setMode("delete")}>Borrar</Button>{editState?.success && <p role="status" className="self-center text-sm text-primary">{editState.success}</p>}</div>}
+    {mode === "edit" && <form onSubmit={edit} className="grid gap-4 sm:grid-cols-2"><input type="hidden" name="warningId" value={warning.id} />
+      <label className="text-sm font-medium">Fecha<DatePicker name="date" required defaultValue={warning.date} max={today} /></label>
+      <label className="text-sm font-medium">Motivo<input name="reason" required minLength={3} maxLength={120} defaultValue={warning.reason} className={field} /></label>
+      <label className="text-sm font-medium sm:col-span-2">Descripción<textarea name="description" required minLength={3} maxLength={2000} rows={4} defaultValue={warning.description} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm" /></label>
+      <div className="flex flex-wrap items-center gap-2 sm:col-span-2"><Button size="sm" disabled={saving}>{saving ? "Guardando…" : "Guardar cambios"}</Button><Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => setMode("none")}>Cancelar</Button>{editState?.error && <p role="alert" className="text-sm text-destructive">{editState.error}</p>}{editState?.success && <p role="status" className="text-sm text-primary">{editState.success}</p>}</div>
+    </form>}
+    {mode === "delete" && <form onSubmit={remove} className="grid gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3"><input type="hidden" name="warningId" value={warning.id} />
+      <p className="text-sm">¿Borrar este llamado de atención? El trabajador ya no lo verá y no se puede deshacer.</p>
+      <div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" className="text-destructive" disabled={deleting}>{deleting ? "Borrando…" : "Sí, borrar"}</Button><Button type="button" size="sm" variant="outline" disabled={deleting} onClick={() => setMode("none")}>Cancelar</Button>{deleteState?.error && <p role="alert" className="text-sm text-destructive">{deleteState.error}</p>}</div>
+    </form>}
+  </div>;
 }

@@ -20,3 +20,28 @@ export async function createWarning(_: WarningState, data: FormData): Promise<Wa
   revalidatePath("/mantenimiento/llamados");
   return { success: "Llamado de atención registrado." };
 }
+
+// Editar y borrar un llamado (13/11/2026, pedido de Alejandro). Solo el admin; la base valida que sea de su lado.
+export async function updateWarning(_: WarningState, data: FormData): Promise<WarningState> {
+  const { supabase } = await requireMaintenanceStaff("admin");
+  const warningId = String(data.get("warningId") ?? ""), date = String(data.get("date") ?? "");
+  const reason = String(data.get("reason") ?? "").trim(), description = String(data.get("description") ?? "").trim();
+  if (!/^[0-9a-f-]{36}$/i.test(warningId)) return { error: "Llamado no válido." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > dateInputValue(new Date(), COLOMBIA_TIME_ZONE)) return { error: "La fecha no puede ser futura." };
+  if (reason.length < 3 || reason.length > 120) return { error: "Escribe el motivo (entre 3 y 120 caracteres)." };
+  if (description.length < 3 || description.length > 2000) return { error: "Escribe la descripción (entre 3 y 2.000 caracteres)." };
+  const { error } = await supabase.rpc("maintenance_update_warning", { target_warning_id: warningId, target_date: date, target_reason: reason, target_description: description });
+  if (error) return { error: error.message.includes("warning_not_found") ? "Ese llamado ya no existe." : "No pudimos guardar los cambios." };
+  revalidatePath("/mantenimiento/llamados");
+  return { success: "Llamado actualizado." };
+}
+
+export async function deleteWarning(_: WarningState, data: FormData): Promise<WarningState> {
+  const { supabase } = await requireMaintenanceStaff("admin");
+  const warningId = String(data.get("warningId") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(warningId)) return { error: "Llamado no válido." };
+  const { error } = await supabase.rpc("maintenance_delete_warning", { target_warning_id: warningId });
+  if (error) return { error: error.message.includes("warning_not_found") ? "Ese llamado ya no existe." : "No pudimos borrar el llamado." };
+  revalidatePath("/mantenimiento/llamados");
+  return { success: "Llamado borrado." };
+}

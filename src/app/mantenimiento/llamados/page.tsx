@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
-import { NewWarningForm } from "./warning-form";
+import { NewWarningForm, WarningAdminActions } from "./warning-form";
 
 type Warning = { warning_id: string; staff_id: string; worker_name: string; warning_date: string; reason: string; description: string; created_at: string };
 
@@ -40,6 +40,7 @@ export default async function MaintenanceWarningsPage({ searchParams }: { search
       {warnings.map((warning) => <Card key={warning.warning_id}><CardContent>
         <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold">{warning.reason}</h2>{admin && <p className="text-sm text-muted-foreground">{warning.worker_name}</p>}</div><span className="rounded-full bg-secondary px-3 py-1 text-xs">{dateOnly.format(new Date(`${warning.warning_date}T12:00:00Z`))}</span></div>
         <p className="mt-3 text-sm whitespace-pre-line">{warning.description}</p>
+        {admin && <WarningAdminActions warning={{ id: warning.warning_id, date: warning.warning_date, reason: warning.reason, description: warning.description }} today={today} />}
       </CardContent></Card>)}
       {!warnings.length && <Card><CardContent><p className="text-sm text-muted-foreground">{admin ? "No hay llamados de atención registrados." : "No tienes llamados de atención."}</p></CardContent></Card>}
     </div>
