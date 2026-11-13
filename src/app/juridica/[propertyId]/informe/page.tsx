@@ -77,7 +77,8 @@ export default async function LegalReportPage(props: Props) {
   const controls = (raw: ReportData | null) => <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
     <Link href={`/juridica/${propertyId}`} className="text-sm text-muted-foreground hover:text-foreground">← Cartera del conjunto</Link>
     <div className="flex flex-wrap items-end gap-2">
-      <PeriodPicker key={`${pickerFrom}_${pickerTo}`} label={pickerLabel} today={today} firstMonth={raw?.first_month ?? null} initialMode={pickerMode} from={pickerFrom} to={pickerTo} />
+      {/* Sin límite hacia atrás (13/11/2026, pedido de Alejandro): todos los meses y años anteriores; solo se bloquea lo futuro. */}
+      <PeriodPicker key={`${pickerFrom}_${pickerTo}`} label={pickerLabel} today={today} firstMonth={null} initialMode={pickerMode} from={pickerFrom} to={pickerTo} />
       {raw && <><PrintButton /><a href={excelHref} className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium hover:bg-secondary"><FileSpreadsheet size={16} aria-hidden="true" />Descargar Excel</a></>}
     </div>
   </div>;
