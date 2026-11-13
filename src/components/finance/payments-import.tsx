@@ -17,6 +17,8 @@ const normalize = (value: CellValue | null) => { const key = String(value ?? "")
 
 export function PaymentsImportButton({ propertyId }: { propertyId: string }) {
   const [state, action, pending] = useFormActionState(importPayments, undefined as FinanceState);
+  // El aviso del servidor es del archivo que se envió; al elegir otro archivo deja de mostrarse (13/11/2026).
+  const [submitted, setSubmitted] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Summary[]>([]);
@@ -56,7 +58,7 @@ export function PaymentsImportButton({ propertyId }: { propertyId: string }) {
 
   return <>
     <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>Importar pagos</Button>
-    <form onSubmit={action}><input type="hidden" name="propertyId" value={propertyId} />
+    <form onSubmit={(event) => { setSubmitted(file); action(event); }}><input type="hidden" name="propertyId" value={propertyId} />
       <input ref={inputRef} type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="sr-only" tabIndex={-1} aria-label="Elegir Excel de pagos" onChange={(event) => { void selectFile(event.target.files?.[0]); }} />
       {file && <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Importar pagos">
         <div className="grid max-h-[85vh] w-full max-w-2xl gap-4 overflow-y-auto rounded-2xl border bg-white p-5 text-sm shadow-lg">
@@ -70,7 +72,7 @@ export function PaymentsImportButton({ propertyId }: { propertyId: string }) {
           </table><p className="border-t p-3 text-xs text-muted-foreground">Cada pago baja la deuda del apartamento, de la más antigua a la más nueva, con su fecha de pago. Al confirmar se valida cada fila y se registra todo o nada.{empty > 0 ? ` ${empty} ${empty === 1 ? "fila no tiene" : "filas no tienen"} valor y se saltan.` : ""}</p></div>}
           {!preview.length && !previewError && <p className="text-muted-foreground">Leyendo el archivo…</p>}
           <div className="flex flex-wrap items-center gap-2"><Button disabled={pending || preview.length === 0 || Boolean(previewError)}>{pending ? "Registrando…" : "Confirmar importación"}</Button><Button type="button" variant="outline" disabled={pending} onClick={close}>Cancelar</Button>
-            {state?.error && <p role="alert" className="whitespace-pre-line text-sm text-destructive">{state.error}</p>}</div>
+            {state?.error && submitted === file && <p role="alert" className="whitespace-pre-line text-sm text-destructive">{state.error}</p>}</div>
         </div>
       </div>}
     </form>

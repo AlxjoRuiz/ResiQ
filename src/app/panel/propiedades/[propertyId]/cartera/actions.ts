@@ -218,6 +218,9 @@ const paymentImportError = (message: string) => {
   if (message.includes("unit_not_found")) return `${prefix}el apartamento no está activo.`;
   if (message.includes("concept_not_found")) return `${prefix}el apartamento no tiene una deuda con ese concepto. Revisa que el concepto sea igual al de la cartera.`;
   if (message.includes("concept_already_paid")) return `${prefix}la deuda de ese concepto ya está pagada.`;
+  // Pagos iguales (13/11/2026): se distinguen por la referencia.
+  if (message.includes("possible_duplicate_no_reference")) return `${prefix}ya hay un pago registrado de este apartamento con la misma fecha y el mismo valor. Si es otra transferencia, escribe en «referencia» el número de la transferencia para distinguirla; si es el mismo pago, quita la fila.`;
+  if (message.includes("duplicate_in_file")) return `${prefix}está repetida en el archivo (mismo apartamento, fecha y valor). Si son dos transferencias distintas, escribe en «referencia» el número de cada una.`;
   if (message.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
   return `${prefix}no se pudo registrar el pago. No se cargó ningún pago del archivo.`;
 };
@@ -238,8 +241,9 @@ export async function importPayments(_: FinanceState, data: FormData): Promise<F
     if(!parsed.length)return{error:"El archivo no tiene pagos con valor."};
     const result=await supabase.rpc("import_payments",{target_property_id:propertyId,target_rows:parsed});
     if(result.error)return{error:paymentImportError(result.error.message)};
-    const summary=(result.data??{}) as {imported?:number;skipped?:number};const imported=Number(summary.imported??0),skipped=Number(summary.skipped??0);
-    if(imported===0)return{error:"Todos los pagos del archivo ya estaban registrados; no se agregó nada."};
-    refreshFinance(propertyId);redirect(`${financePath(propertyId)}?pagos=${imported}&pagosrepetidos=${skipped}${emptyValueRows?`&sinvalor=${emptyValueRows}`:""}`);
+    const summary=(result.data??{}) as {imported?:number;skipped?:number;skipped_lines?:number[]};const imported=Number(summary.imported??0),skipped=Number(summary.skipped??0);
+    const skippedLines=(summary.skipped_lines??[]).slice(0,20).join(", ");
+    if(imported===0)return{error:`Todos los pagos del archivo ya estaban registrados (misma fecha, valor y referencia${skippedLines?`; filas ${skippedLines}`:""}); no se agregó nada. Si son pagos nuevos, revisa la referencia.`};
+    refreshFinance(propertyId);redirect(`${financePath(propertyId)}?pagos=${imported}&pagosrepetidos=${skipped}${skippedLines?`&filasrepetidas=${encodeURIComponent(skippedLines)}`:""}${emptyValueRows?`&sinvalor=${emptyValueRows}`:""}`);
   } catch(error) { if(error && typeof error==="object" && "digest" in error)throw error;return{error:"No pudimos leer el archivo. Descarga la plantilla de pagos y verifica que sea un .xlsx válido."}; }
 }
