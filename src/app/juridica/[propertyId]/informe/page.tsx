@@ -113,7 +113,7 @@ export default async function LegalReportPage(props: Props) {
         {closure ? <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">Mes cerrado</span>
           : raw.partial ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Corte parcial · {period.isRange ? "periodo en curso" : "mes en curso"}</span>
           : period.isRange ? <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">Periodo completo</span>
-          : <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">{raw.month_closed ? "Datos actuales · no es el cierre" : "Mes completo · sin cierre todavía"}</span>}
+          : <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">{raw.month_closed ? "Datos actuales · no es el cierre" : "Mes abierto · se actualiza solo"}</span>}
       </div>
       <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <div><dt className="text-xs text-slate-500">Periodo</dt><dd className="font-medium">{period.title}</dd></div>
@@ -123,7 +123,7 @@ export default async function LegalReportPage(props: Props) {
       </dl>
       {beforeStart && <p className="mt-4 rounded-xl bg-white/80 p-3 text-xs text-slate-600">Este periodo es anterior al inicio de la gestión jurídica ({formatLong(raw.started_on)}): muestra la cartera del conjunto, no gestiones de cobro.</p>}
       {/* Cierre: quién y cuándo. */}
-      {closure && <p className="mt-4 rounded-xl bg-white/80 p-3 text-xs text-slate-600">Cerrado el {formatGenerated(closure.closed_at, raw.timezone)} · {closure.automatic ? "cierre automático" : `por ${closure.closed_by ?? "la abogada"}`}{closure.reason ? ` · Motivo de la corrección: ${closure.reason}` : ""}. Este informe guarda los datos tal como estaban y no cambia.</p>}
+      {closure && <p className="mt-4 rounded-xl bg-white/80 p-3 text-xs text-slate-600">{closure.automatic ? `Cerrado por la abogada y actualizado solo el ${formatGenerated(closure.closed_at, raw.timezone)}${closure.reason ? `: ${closure.reason}` : ""}.` : `Cerrado el ${formatGenerated(closure.closed_at, raw.timezone)} por ${closure.closed_by ?? "la abogada"}${closure.reason ? ` · Motivo: ${closure.reason}` : ""}.`} El informe guarda los datos del cierre; solo cambia si entra un pago con fecha de este mes.</p>}
       {/* Solo «Cerrar mes» para meses terminados sin cierre: sin correcciones, versiones ni «datos de hoy» (pedido de Alejandro, 12/11/2026). */}
       {raw.can_close && !raw.month_closed && <div className="mt-4 flex flex-wrap items-center gap-2 text-xs print:hidden">
         <CloseMonth propertyId={propertyId} month={raw.month} closed={false} monthLabel={monthLabel} />
