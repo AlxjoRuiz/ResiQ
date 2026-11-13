@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowRight, Bell, Building2, CalendarDays, CheckCircle2, KeyRound, Mail, Megaphone, MessageSquareText, Package, ShieldCheck, UserRound, UsersRound, Vote, Wallet } from "lucide-react";
-import { Instrument_Serif } from "next/font/google";
+import { Cormorant_Garamond, Instrument_Serif } from "next/font/google";
 import Image from "next/image";
 import liftCard from "@/components/ui/lift-card.module.css";
 import styles from "./home.module.css";
@@ -9,6 +9,9 @@ import { Reveal } from "./reveal";
 // Solo describe lo que la plataforma ya hace; el acceso sigue siendo por invitación.
 // Cursiva serif para las palabras de acento; la fuente se sirve desde la misma web (la CSP no permite otras).
 const serif = Instrument_Serif({ weight: "400", style: "italic", subsets: ["latin"], display: "swap" });
+// Subtítulos de las secciones (13/11/2026, pedido de Alejandro): letra serif clásica en versalitas, más elegante.
+const eyebrowFont = Cormorant_Garamond({ weight: "600", subsets: ["latin"], display: "swap" });
+const eyebrow = `${eyebrowFont.className} text-[15px] tracking-[0.18em] uppercase`;
 
 const modules = [
   { icon: Wallet, title: "Cartera", description: "Estado de cuenta, comprobantes de pago y acuerdos de pago, claros para todos." },
@@ -91,7 +94,7 @@ export default function HomePage() {
 
           {/* Franja de módulos que se desplaza. */}
           <div className={`${styles.rise} ${styles.delay5} mx-auto max-w-6xl px-6 pb-16 sm:px-10`}>
-            <p className="mb-4 text-center text-[11px] font-semibold tracking-[0.25em] text-slate-500 uppercase">Todo lo de tu conjunto, en un solo lugar</p>
+            <p className={`mb-4 text-center ${eyebrow} text-slate-500`}>Todo lo de tu conjunto, en un solo lugar</p>
             <div className={styles.marquee} aria-hidden="true">
               <div className={styles.marqueeTrack}>{[...modules, ...modules].map(({ icon: Icon, title }, index) => <span key={index} className="mx-6 inline-flex shrink-0 items-center gap-2 text-[15px] font-medium text-slate-500"><Icon size={17} className="text-primary/70" />{title}</span>)}</div>
             </div>
@@ -116,7 +119,7 @@ export default function HomePage() {
               </div>
             </Reveal>
             <Reveal className="order-1 lg:order-2">
-              <p className="text-[11px] font-semibold tracking-[0.25em] text-primary uppercase">Tu día en el conjunto</p>
+              <p className={`${eyebrow} text-primary`}>Tu día en el conjunto</p>
               <h2 className="mt-4 text-[clamp(2rem,4vw,3.2rem)] leading-[1.06] font-medium tracking-[-0.035em] text-slate-950">Todo lo que pasa en tu conjunto, <span className={`${styles.serif} ${serif.className}`}>en tu bolsillo.</span></h2>
               <p className="mt-5 max-w-[30rem] text-[17px] leading-relaxed text-slate-600">Cuando portería recibe un paquete, cuando registran tu pago o cuando aprueban tu reserva, te enteras al momento. Sin llamadas, sin papeles y sin filas en la administración.</p>
               <ul className="mt-8 grid gap-3 text-[15px] text-slate-700">{["Tu estado de cuenta siempre claro, con tus comprobantes", "Avisos de paquetes, visitas y reservas al instante", "Comunicados y asambleas de tu comunidad"].map((point) => <li key={point} className="flex items-start gap-3"><CheckCircle2 size={19} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{point}</li>)}</ul>
@@ -127,7 +130,7 @@ export default function HomePage() {
         <section id="modulos" className="scroll-mt-24 py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-6 sm:px-10">
             <Reveal className="max-w-2xl">
-              <p className="text-[11px] font-semibold tracking-[0.25em] text-primary uppercase">Todo en un lugar</p>
+              <p className={`${eyebrow} text-primary`}>Todo en un lugar</p>
               <h2 className="mt-4 text-[clamp(2rem,4vw,3.2rem)] leading-[1.06] font-medium tracking-[-0.035em] text-slate-950">Menos trámites. <span className={`${styles.serif} ${serif.className}`}>Más comunidad.</span></h2>
               <p className="mt-4 text-[17px] text-slate-600">Cada módulo está pensado para el día a día de un conjunto residencial.</p>
             </Reveal>
@@ -146,7 +149,7 @@ export default function HomePage() {
         <section id="perfiles" className="scroll-mt-24 bg-white py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-6 sm:px-10">
             <Reveal className="max-w-2xl">
-              <p className="text-[11px] font-semibold tracking-[0.25em] text-primary uppercase">Para cada persona del conjunto</p>
+              <p className={`${eyebrow} text-primary`}>Para cada persona del conjunto</p>
               <h2 className="mt-4 text-[clamp(2rem,4vw,3.2rem)] leading-[1.06] font-medium tracking-[-0.035em] text-slate-950">Cada quien ve <span className={`${styles.serif} ${serif.className}`}>lo que necesita.</span></h2>
             </Reveal>
             <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -164,7 +167,7 @@ export default function HomePage() {
         <section id="como-funciona" className="scroll-mt-24 py-20 sm:py-28">
           <div className="mx-auto max-w-6xl px-6 sm:px-10">
             <Reveal className="mx-auto max-w-2xl text-center">
-              <p className="text-[11px] font-semibold tracking-[0.25em] text-primary uppercase">Cómo funciona</p>
+              <p className={`${eyebrow} text-primary`}>Cómo funciona</p>
               <h2 className="mt-4 text-[clamp(2rem,4vw,3.2rem)] leading-[1.06] font-medium tracking-[-0.035em] text-slate-950">Empezar es <span className={`${styles.serif} ${serif.className}`}>muy sencillo.</span></h2>
             </Reveal>
             <ol className="relative mt-14 grid gap-10 md:grid-cols-3">
