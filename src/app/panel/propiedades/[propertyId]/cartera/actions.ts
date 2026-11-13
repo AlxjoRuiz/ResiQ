@@ -216,6 +216,8 @@ const paymentImportError = (message: string) => {
   const prefix = row ? `Fila ${row}: ` : "";
   if (message.includes("payment_exceeds_debt")) return `${prefix}el pago es mayor que lo que debe el apartamento (los pagos no pueden quedar con sobrante; regístralo como saldo a favor).`;
   if (message.includes("unit_not_found")) return `${prefix}el apartamento no está activo.`;
+  if (message.includes("concept_not_found")) return `${prefix}el apartamento no tiene una deuda con ese concepto. Revisa que el concepto sea igual al de la cartera.`;
+  if (message.includes("concept_already_paid")) return `${prefix}la deuda de ese concepto ya está pagada.`;
   if (message.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
   return `${prefix}no se pudo registrar el pago. No se cargó ningún pago del archivo.`;
 };
@@ -228,7 +230,7 @@ export async function importPayments(_: FinanceState, data: FormData): Promise<F
     const rows=await readSheet(Buffer.from(archive));
     if(rows.length<2||rows.length>FINANCE_MAX_ROWS+1)return{error:`El archivo debe contener encabezados y entre 1 y ${FINANCE_MAX_ROWS} filas.`};
     const index=paymentColumnIndex(rows[0]);
-    if(!index)return{error:`Faltan columnas. Usa la plantilla de pagos: ${PAYMENT_REQUIRED_COLUMNS.join(", ")} (y referencia, opcional).`};
+    if(!index)return{error:`Faltan columnas. Usa la plantilla de pagos: ${PAYMENT_REQUIRED_COLUMNS.join(", ")} (y referencia y concepto, opcionales).`};
     const {data:units,error:unitError}=await fetchAllRows((from,to)=>supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active").order("id").range(from,to));if(unitError)return{error:friendlyError(unitError.message)};
     const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[unitKey(String(building?.name??""),unit.code),unit.id];}));
     const {rows:parsed,rowErrors,emptyValueRows}=parsePaymentRows(rows.slice(1),index,unitMap,dateInputValue(new Date(),COLOMBIA_TIME_ZONE));

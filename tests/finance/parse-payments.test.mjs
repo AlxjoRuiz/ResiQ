@@ -17,8 +17,8 @@ test("cada fila válida es un pago con su fecha y referencia; valor y fecha en c
   const { rows, rowErrors } = parse(["Torre 1", "101", "$ 128.000", "30/08/2026", "Transferencia 123"], ["TORRE 2", 202, 50000, "1 de octubre de 2026", ""]);
   assert.deepEqual(rowErrors, []);
   assert.deepEqual(rows, [
-    { line: 2, unit_id: "u101", amount: 128000, paid_on: "2026-08-30", reference: "Transferencia 123" },
-    { line: 3, unit_id: "u202", amount: 50000, paid_on: "2026-10-01", reference: "" },
+    { line: 2, unit_id: "u101", amount: 128000, paid_on: "2026-08-30", reference: "Transferencia 123", concept: "" },
+    { line: 3, unit_id: "u202", amount: 50000, paid_on: "2026-10-01", reference: "", concept: "" },
   ]);
 });
 
@@ -38,4 +38,10 @@ test("filas sin valor se saltan y se cuentan; las inválidas dicen qué tienen m
     "Fila 5: la fecha del pago no es una fecha válida",
     "Fila 6: la fecha del pago no puede ser futura",
   ]);
+});
+
+test("la columna concepto (opcional) dice a qué deuda va el pago", () => {
+  const index = paymentColumnIndex([...headers, "Concepto"]);
+  const { rows } = parsePaymentRows([["Torre 1", "101", 128000, "15/03/2026", "", "  Administración   marzo 2026 "]], index, units, "2026-11-13");
+  assert.equal(rows[0].concept, "Administración marzo 2026");
 });

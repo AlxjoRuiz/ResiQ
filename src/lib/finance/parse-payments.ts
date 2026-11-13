@@ -5,14 +5,14 @@ import { dateValue } from "./receivable-date.ts";
 import { normalizeHeader, unitKey } from "./parse-receivables.ts";
 
 // Lectura del Excel de «Importar pagos» (13/11/2026, pedido de Alejandro). Columnas: torre, apartamento, valor,
-// fecha_pago y, opcional, referencia. Valor y fecha en cualquier formato común (como la cartera). Las filas sin valor
+// fecha_pago y, opcionales, referencia y concepto (13/11/2026: la deuda a la que va el pago, por su concepto). Valor y fecha en cualquier formato común (como la cartera). Las filas sin valor
 // se saltan y se cuentan; cada fila con error dice qué tiene mal.
 
 type Cell = CellValue | null;
 
 export const PAYMENT_REQUIRED_COLUMNS = ["torre", "apartamento", "valor", "fecha_pago"] as const;
 
-export type ParsedPayment = { line: number; unit_id: string; amount: number; paid_on: string; reference: string };
+export type ParsedPayment = { line: number; unit_id: string; amount: number; paid_on: string; reference: string; concept: string };
 
 /** Posición de cada columna según los encabezados, o null si falta alguna obligatoria. Acepta «fecha de pago». */
 export function paymentColumnIndex(headerRow: Cell[]): Record<string, number> | null {
@@ -35,6 +35,7 @@ export function parsePaymentRows(dataRows: Cell[][], index: Record<string, numbe
     const amount = amountValue(row[index.valor]);
     const paidOn = dateValue(row[index.fecha_pago]);
     const reference = index.referencia === undefined ? "" : text(row[index.referencia]);
+    const concept = index.concepto === undefined ? "" : text(row[index.concepto]).replace(/\s+/g, " ");
     const unitId = unitIds.get(unitKey(building, code));
     const problems: string[] = [];
     if (!unitId) problems.push(`no existe la torre «${building}», apartamento «${code}» en el conjunto`);
@@ -43,8 +44,9 @@ export function parsePaymentRows(dataRows: Cell[][], index: Record<string, numbe
     if (!paidOn) problems.push("la fecha del pago no es una fecha válida");
     else if (paidOn > todayIso) problems.push("la fecha del pago no puede ser futura");
     if (reference.length > 120) problems.push("la referencia supera 120 caracteres");
+    if (concept.length > 180) problems.push("el concepto supera 180 caracteres");
     if (problems.length || !unitId) { rowErrors.push(`Fila ${line}: ${problems.join(", ")}`); return; }
-    rows.push({ line, unit_id: unitId, amount: Math.round(amount * 100) / 100, paid_on: paidOn, reference });
+    rows.push({ line, unit_id: unitId, amount: Math.round(amount * 100) / 100, paid_on: paidOn, reference, concept });
   });
   return { rows, rowErrors, emptyValueRows };
 }
