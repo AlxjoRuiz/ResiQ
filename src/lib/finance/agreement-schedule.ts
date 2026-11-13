@@ -1,7 +1,7 @@
 // Calendario de un acuerdo de pago (05/11/2026): lo calcula la base de datos (private.agreement_schedule) y es el
 // mismo para el admin, el residente y la abogada. Lo que falta del acuerdo es siempre lo que falta de sus deudas.
 export type InstallmentState = "paid" | "settled" | "late" | "pending";
-export type AgreementSchedule = {
+type AgreementSchedule = {
   agreement_id: string; status: string; total: number; remaining: number; paid: number;
   // Deudas que cubre el acuerdo (05/11/2026): las demás salen como «No está en el acuerdo de pago».
   debt_ids?: string[];

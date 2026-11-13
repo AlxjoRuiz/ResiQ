@@ -8,7 +8,7 @@ import { formatCop } from "@/lib/finance/constants";
 // torre, de menor a mayor, con sus apartamentos también de menor a mayor. Cada torre dibuja sus apartamentos al
 // abrirla, para que la página no pese con conjuntos grandes (1.593 en mora en Bonavento).
 // caseLabel/caseTone (13/11/2026): estado del expediente prejurídico, si el apartamento tiene uno abierto.
-export type LegalTowerUnit = { id: string; code: string; owner: string | null; amount: number; days: number; lastPayment: string; agreement: boolean; inArrears: boolean; outstanding: number; caseLabel?: string | null; caseTone?: string | null };
+type LegalTowerUnit = { id: string; code: string; owner: string | null; amount: number; days: number; lastPayment: string; agreement: boolean; inArrears: boolean; outstanding: number; caseLabel?: string | null; caseTone?: string | null };
 export type LegalTower = { name: string; units: LegalTowerUnit[] };
 
 function TowerCard({ tower, propertyId, arrears, startOpen }: { tower: LegalTower; propertyId: string; arrears: boolean; startOpen: boolean }) {

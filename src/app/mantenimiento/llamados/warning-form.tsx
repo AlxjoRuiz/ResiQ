@@ -7,7 +7,7 @@ import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { LegalFilesField, withFiles } from "@/components/legal/legal-files-field";
 import { createWarning, deleteWarning, removeWarningAttachment, updateWarning, type WarningState } from "./actions";
 
-export type WarningAttachment = { id: string; name: string };
+type WarningAttachment = { id: string; name: string };
 
 const field = "mt-1 h-11 w-full rounded-lg border bg-white px-3 text-sm";
 

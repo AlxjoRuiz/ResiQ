@@ -13,7 +13,7 @@ type Recipient = { email: string; name: string | null; kind: string };
 // Acuerdo vigente (09/11/2026): sus cuotas con saldo se pueden cobrar igual que las deudas. Las deudas que están en
 // el acuerdo no se cobran junto con sus cuotas (se cobraría dos veces): elegir una cosa bloquea la otra.
 type NoticeInstallment = { id: string; number: number; due_on: string; outstanding: number; overdue: boolean };
-export type NoticeAgreement = { total: number; remaining: number | null; installmentCount: number; debtIds: string[]; installments: NoticeInstallment[] };
+type NoticeAgreement = { total: number; remaining: number | null; installmentCount: number; debtIds: string[]; installments: NoticeInstallment[] };
 const field = "mt-1 block w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const dayFormat = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "UTC" });
 const formatDay = (value: string) => dayFormat.format(new Date(`${value}T12:00:00Z`));

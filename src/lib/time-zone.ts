@@ -1,7 +1,7 @@
 export const COLOMBIA_TIME_ZONE = "America/Bogota";
 
 /** «Buenos días» (5 a. m. a 11:59 a. m.), «Buenas tardes» (12 m. a 6:59 p. m.) o «Buenas noches», en la hora del conjunto. */
-export function greetingFor(date: Date, timeZone: string) {
+function greetingFor(date: Date, timeZone: string) {
   const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone, hour: "2-digit", hourCycle: "h23" }).format(date));
   return hour >= 5 && hour < 12 ? "Buenos días" : hour >= 12 && hour < 19 ? "Buenas tardes" : "Buenas noches";
 }

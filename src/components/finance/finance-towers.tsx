@@ -8,7 +8,7 @@ import { accountStatusLabel, formatCop } from "@/lib/finance/constants";
 // Estado por apartamento de Cartera (12/11/2026): una pestaña plegable por torre. El servidor manda solo los datos
 // de cada apartamento y la tabla se dibuja al abrir la torre; antes la página traía las 1.860 filas ya dibujadas
 // (5,5 MB en Bonavento) y tardaba más de 4 segundos.
-export type FinanceTowerUnit = { id: string; code: string; concepts: string; status: string; owed: number; late: number; days: number; legal: boolean; dot: boolean };
+type FinanceTowerUnit = { id: string; code: string; concepts: string; status: string; owed: number; late: number; days: number; legal: boolean; dot: boolean };
 export type FinanceTower = { name: string; units: FinanceTowerUnit[] };
 
 function TowerTable({ tower, propertyId, admin }: { tower: FinanceTower; propertyId: string; admin: boolean }) {

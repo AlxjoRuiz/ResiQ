@@ -2,7 +2,7 @@
 // secciones del informe. Se usa en la página y en el Excel, para que los dos digan exactamente lo mismo.
 // Sin intereses de mora: no aplican por ahora (decisión de Alejandro, 12/11/2026).
 
-export type ReportUnit = {
+type ReportUnit = {
   unit_id: string; building: string; code: string; owner_name: string | null; overdue: number; total: number; oldest_due_on: string | null;
   days: number; last_payment_on: string | null; first_notice_on: string | null; last_notice_on: string | null; notice_count: number; agreement_active: boolean;
 };
@@ -28,15 +28,15 @@ export type CaseState = "agreement" | "notice" | "none";
 export const caseStateLabels: Record<CaseState, string> = { agreement: "Acuerdo de pago", notice: "Requerimiento enviado", none: "Sin gestión" };
 
 // Gravedad por antigüedad de la deuda más vieja sin pagar. Se muestra con texto, no solo con color.
-export const severities = [
+const severities = [
   { key: "low", label: "Leve", range: "1 a 30 días", min: 1, max: 30, tone: "bg-sky-100 text-sky-900" },
   { key: "medium", label: "Moderada", range: "31 a 60 días", min: 31, max: 60, tone: "bg-amber-100 text-amber-900" },
   { key: "high", label: "Alta", range: "61 a 90 días", min: 61, max: 90, tone: "bg-orange-100 text-orange-900" },
   { key: "veryHigh", label: "Muy alta", range: "91 a 180 días", min: 91, max: 180, tone: "bg-urgent/10 text-urgent" },
   { key: "critical", label: "Crítica", range: "Más de 180 días", min: 181, max: Infinity, tone: "bg-urgent text-white" },
 ] as const;
-export type Severity = (typeof severities)[number];
-export const severityFor = (days: number): Severity => severities.find((item) => days >= item.min && days <= item.max) ?? severities[0];
+type Severity = (typeof severities)[number];
+const severityFor = (days: number): Severity => severities.find((item) => days >= item.min && days <= item.max) ?? severities[0];
 
 const toNumber = (value: unknown) => Number(value ?? 0) || 0;
 const caseState = (unit: ReportUnit): CaseState => unit.agreement_active ? "agreement" : unit.notice_count > 0 ? "notice" : "none";

@@ -13,7 +13,7 @@ type Cell = CellValue | null;
 
 export const PAYMENT_REQUIRED_COLUMNS = ["torre", "apartamento", "valor", "fecha_pago"] as const;
 
-export type ParsedPayment = { line: number; unit_id: string; amount: number; paid_on: string; reference: string; concept: string };
+type ParsedPayment = { line: number; unit_id: string; amount: number; paid_on: string; reference: string; concept: string };
 
 /** Posición de cada columna según los encabezados, o null si falta alguna obligatoria. Acepta «fecha de pago». */
 export function paymentColumnIndex(headerRow: Cell[]): Record<string, number> | null {

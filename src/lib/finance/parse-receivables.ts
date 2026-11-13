@@ -14,7 +14,7 @@ type Cell = CellValue | null;
 export const RECEIVABLE_REQUIRED_COLUMNS = ["torre", "apartamento", "concepto", "valor", "fecha_emision", "fecha_vencimiento", "tipo"] as const;
 
 // kind «credit» (13/11/2026): fila con valor negativo = saldo a favor del apartamento; amount va en positivo.
-export type ParsedReceivable = { unit_id: string; concept: string; amount: number; issued_on: string; due_on: string; external_reference: string; source: string; kind?: "credit" };
+type ParsedReceivable = { unit_id: string; concept: string; amount: number; issued_on: string; due_on: string; external_reference: string; source: string; kind?: "credit" };
 
 export { dateValue };
 

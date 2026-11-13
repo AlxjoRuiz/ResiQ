@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, CalendarPopover, CalendarTrigger, colombiaToday, fixedBelow, MonthCalendar, shortDate, useCloseOnOutside, validDay } from "./calendar";
 
 const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -62,31 +61,3 @@ export function DatePicker({ name, value, defaultValue, onChange, min, max, requ
   </div>;
 }
 
-// Mes (YYYY-MM) con el mismo aspecto: rejilla de los 12 meses y flechas de año. Reemplaza a <input type="month">.
-export function MonthPicker({ name, value, onChange, min, max, required, disabled, placeholder = "Selecciona el mes", label, className }: {
-  name?: string; value: string; onChange: (value: string) => void; min?: string; max?: string; required?: boolean; disabled?: boolean; placeholder?: string; label?: string; className?: string;
-}) {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [year, setYear] = useState(Number((value || colombiaToday()).slice(0, 4)));
-  useCloseOnOutside(open, boxRef, useCallback(() => setOpen(false), []));
-  const display = /^\d{4}-\d{2}$/.test(value) ? `${monthNames[Number(value.slice(5, 7)) - 1]} de ${value.slice(0, 4)}` : undefined;
-
-  return <div ref={boxRef} className="relative min-w-0">
-    <CalendarTrigger open={open} onClick={() => setOpen(!open)} disabled={disabled} placeholder={placeholder} className={className}>{display}</CalendarTrigger>
-    {(name || required) && <input tabIndex={-1} aria-hidden="true" name={name} value={value} required={required} onChange={() => {}} className="pointer-events-none absolute bottom-0 left-4 h-px w-px opacity-0" />}
-    {open && <CalendarPopover label={label ?? "Elegir mes"}>
-      <div className="flex items-center justify-between">
-        <button type="button" onClick={() => setYear(year - 1)} disabled={min !== undefined && year <= Number(min.slice(0, 4))} aria-label="Año anterior" className="flex size-9 items-center justify-center rounded-lg hover:bg-secondary disabled:opacity-30"><ChevronLeft size={18} /></button>
-        <p className="text-sm font-semibold">{year}</p>
-        <button type="button" onClick={() => setYear(year + 1)} disabled={max !== undefined && year >= Number(max.slice(0, 4))} aria-label="Año siguiente" className="flex size-9 items-center justify-center rounded-lg hover:bg-secondary disabled:opacity-30"><ChevronRight size={18} /></button>
-      </div>
-      <div className="mt-2 grid grid-cols-3 gap-1">{monthNames.map((nameOfMonth, index) => {
-        const key = `${year}-${String(index + 1).padStart(2, "0")}`;
-        const blocked = (min !== undefined && key < min.slice(0, 7)) || (max !== undefined && key > max.slice(0, 7));
-        return <button key={key} type="button" disabled={blocked} onClick={() => { onChange(key); setOpen(false); }} aria-pressed={key === value}
-          className={`h-10 rounded-lg text-sm ${key === value ? "bg-primary font-semibold text-white" : "hover:bg-secondary"} disabled:cursor-not-allowed disabled:opacity-30`}>{nameOfMonth.slice(0, 3)}</button>;
-      })}</div>
-    </CalendarPopover>}
-  </div>;
-}

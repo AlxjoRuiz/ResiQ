@@ -29,7 +29,7 @@ export const statusPill: Record<StatusTone, string> = {
 
 // Leído / no leído de las notificaciones (09/11/2026): no leída en verde azulado (--unread-notice) y
 // leída en blanco con texto gris (--read-bg, --read-text). Variables en globals.css.
-export type ReadTone = "unread" | "read";
+type ReadTone = "unread" | "read";
 export const readCard: Record<ReadTone, string> = {
   unread: "border-unread-notice/40 bg-unread-notice-bg hover:bg-unread-notice/10",
   // Al pasar el cursor la tarjeta leída se pone un poco azul (10/11/2026).

@@ -4,7 +4,7 @@ import { statusPill, type StatusTone } from "@/lib/ui/status-tones";
 
 // Tarjeta común de «Comprobantes de pago» (13/11/2026, pedido de Alejandro): los comprobantes y las solicitudes de
 // saldo a favor se ven igual: título azul, tipo, estado, datos en recuadros, a qué deudas se abona y las acciones.
-export type PaymentCardFact = { label: string; value: ReactNode };
+type PaymentCardFact = { label: string; value: ReactNode };
 
 export function PaymentCard({ title, kind, status, facts, allocations, allocationNote, children }: {
   title: string; kind: string; status: { label: string; tone: StatusTone }; facts: PaymentCardFact[];
