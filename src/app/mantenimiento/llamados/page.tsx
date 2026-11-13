@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Paperclip } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
@@ -16,10 +17,16 @@ export default async function MaintenanceWarningsPage({ searchParams }: { search
   const admin = staff.role === "admin";
   const params = await searchParams;
   const workerId = admin && params.trabajador && uuidPattern.test(params.trabajador) ? params.trabajador : null;
-  const [warningsResult, workersResult] = await Promise.all([
+  const [warningsResult, workersResult, attachmentsResult] = await Promise.all([
     supabase.rpc("maintenance_list_warnings", { target_staff_id: workerId }),
     admin ? supabase.rpc("maintenance_list_workers") : Promise.resolve({ data: [], error: null }),
+    // Documentos de los llamados (13/11/2026); si la consulta falla, los llamados salen sin documentos.
+    supabase.rpc("maintenance_list_warning_attachments"),
   ]);
+  const attachmentsByWarning = new Map<string, { id: string; name: string }[]>();
+  for (const row of ((attachmentsResult.error ? [] : attachmentsResult.data ?? []) as { attachment_id: string; warning_id: string; original_name: string }[])) {
+    attachmentsByWarning.set(row.warning_id, [...(attachmentsByWarning.get(row.warning_id) ?? []), { id: row.attachment_id, name: row.original_name }]);
+  }
   if (warningsResult.error || workersResult.error) throw new Error("No se pudieron cargar los llamados de atención.");
   const warnings = (warningsResult.data ?? []) as Warning[];
   const workers = ((workersResult.data ?? []) as { staff_id: string; first_name: string; first_surname: string; staff_status: string }[])
@@ -40,7 +47,8 @@ export default async function MaintenanceWarningsPage({ searchParams }: { search
       {warnings.map((warning) => <Card key={warning.warning_id}><CardContent>
         <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold">{warning.reason}</h2>{admin && <p className="text-sm text-muted-foreground">{warning.worker_name}</p>}</div><span className="rounded-full bg-secondary px-3 py-1 text-xs">{dateOnly.format(new Date(`${warning.warning_date}T12:00:00Z`))}</span></div>
         <p className="mt-3 text-sm whitespace-pre-line">{warning.description}</p>
-        {admin && <WarningAdminActions warning={{ id: warning.warning_id, date: warning.warning_date, reason: warning.reason, description: warning.description }} today={today} />}
+        {(attachmentsByWarning.get(warning.warning_id) ?? []).length > 0 && <div className="mt-3 flex flex-wrap gap-2">{(attachmentsByWarning.get(warning.warning_id) ?? []).map((attachment) => <a key={attachment.id} href={`/api/maintenance/warnings/attachments/${attachment.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border bg-secondary/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-secondary"><Paperclip size={14} aria-hidden="true" /><span className="truncate">{attachment.name}</span></a>)}</div>}
+        {admin && <WarningAdminActions warning={{ id: warning.warning_id, date: warning.warning_date, reason: warning.reason, description: warning.description }} today={today} attachments={attachmentsByWarning.get(warning.warning_id) ?? []} />}
       </CardContent></Card>)}
       {!warnings.length && <Card><CardContent><p className="text-sm text-muted-foreground">{admin ? "No hay llamados de atención registrados." : "No tienes llamados de atención."}</p></CardContent></Card>}
     </div>
