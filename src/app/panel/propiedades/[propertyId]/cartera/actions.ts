@@ -9,6 +9,8 @@ import { requirePropertyAdmin } from "@/lib/auth/require-property-admin";
 import { boundedXlsx } from "@/lib/finance/bounded-xlsx";
 import { FINANCE_MAX_FILE_BYTES, FINANCE_MAX_FILE_LABEL, FINANCE_MAX_ROWS, financeXlsxLimits } from "@/lib/finance/import-limits";
 import { parseReceivableRows, receivableColumnIndex, RECEIVABLE_REQUIRED_COLUMNS, unitKey } from "@/lib/finance/parse-receivables";
+import { parsePaymentRows, paymentColumnIndex, PAYMENT_REQUIRED_COLUMNS } from "@/lib/finance/parse-payments";
+import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 
 export type FinanceState = { error?: string; success?: string } | undefined;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -205,4 +207,37 @@ export async function rejectCreditRequest(_: FinanceState, data: FormData): Prom
   const result=await supabase.rpc("reject_credit_request",{target_property_id:propertyId,target_request_id:requestId,target_reason:reason});
   if(result.error)return{error:friendlyError(result.error.message)};
   refreshFinance(propertyId,unitId);return{success:"Solicitud rechazada."};
+}
+
+// «Importar pagos» (13/11/2026): un Excel con los pagos (torre, apartamento, valor, fecha_pago, referencia). Cada fila se
+// registra como un pago con su fecha; todo el archivo o nada. Los repetidos se saltan.
+const paymentImportError = (message: string) => {
+  const row = /fila (\d+)/.exec(message)?.[1];
+  const prefix = row ? `Fila ${row}: ` : "";
+  if (message.includes("payment_exceeds_debt")) return `${prefix}el pago es mayor que lo que debe el apartamento (los pagos no pueden quedar con sobrante; regístralo como saldo a favor).`;
+  if (message.includes("unit_not_found")) return `${prefix}el apartamento no está activo.`;
+  if (message.includes("not_authorized")) return "No tienes permiso para realizar esta acción.";
+  return `${prefix}no se pudo registrar el pago. No se cargó ningún pago del archivo.`;
+};
+export async function importPayments(_: FinanceState, data: FormData): Promise<FinanceState> {
+  const propertyId=field(data,"propertyId"),file=data.get("file");
+  if(!uuidPattern.test(propertyId)||!(file instanceof File)||file.size===0||file.size>FINANCE_MAX_FILE_BYTES||!file.name.toLowerCase().endsWith(".xlsx"))return{error:`Selecciona un archivo .xlsx de máximo ${FINANCE_MAX_FILE_LABEL}.`};
+  const { supabase } = await requirePropertyAdmin(propertyId);
+  try {
+    const archive = boundedXlsx(new Uint8Array(await file.arrayBuffer()), 32, financeXlsxLimits);
+    const rows=await readSheet(Buffer.from(archive));
+    if(rows.length<2||rows.length>FINANCE_MAX_ROWS+1)return{error:`El archivo debe contener encabezados y entre 1 y ${FINANCE_MAX_ROWS} filas.`};
+    const index=paymentColumnIndex(rows[0]);
+    if(!index)return{error:`Faltan columnas. Usa la plantilla de pagos: ${PAYMENT_REQUIRED_COLUMNS.join(", ")} (y referencia, opcional).`};
+    const {data:units,error:unitError}=await fetchAllRows((from,to)=>supabase.from("units").select("id,code,buildings(name)").eq("property_id",propertyId).eq("status","active").order("id").range(from,to));if(unitError)return{error:friendlyError(unitError.message)};
+    const unitMap=new Map((units??[]).map((unit)=>{const building=Array.isArray(unit.buildings)?unit.buildings[0]:unit.buildings;return[unitKey(String(building?.name??""),unit.code),unit.id];}));
+    const {rows:parsed,rowErrors,emptyValueRows}=parsePaymentRows(rows.slice(1),index,unitMap,dateInputValue(new Date(),COLOMBIA_TIME_ZONE));
+    if(rowErrors.length)return{error:`${rowErrors.length===1?"Hay 1 fila con errores":`Hay ${rowErrors.length} filas con errores`}; no se cargó nada. Corrígelas y vuelve a importar:\n${rowErrors.slice(0,15).join("\n")}${rowErrors.length>15?`\n… y ${rowErrors.length-15} filas más.`:""}`};
+    if(!parsed.length)return{error:"El archivo no tiene pagos con valor."};
+    const result=await supabase.rpc("import_payments",{target_property_id:propertyId,target_rows:parsed});
+    if(result.error)return{error:paymentImportError(result.error.message)};
+    const summary=(result.data??{}) as {imported?:number;skipped?:number};const imported=Number(summary.imported??0),skipped=Number(summary.skipped??0);
+    if(imported===0)return{error:"Todos los pagos del archivo ya estaban registrados; no se agregó nada."};
+    refreshFinance(propertyId);redirect(`${financePath(propertyId)}?pagos=${imported}&pagosrepetidos=${skipped}${emptyValueRows?`&sinvalor=${emptyValueRows}`:""}`);
+  } catch(error) { if(error && typeof error==="object" && "digest" in error)throw error;return{error:"No pudimos leer el archivo. Descarga la plantilla de pagos y verifica que sea un .xlsx válido."}; }
 }
