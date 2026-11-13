@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowRight, Bell, Building2, CalendarDays, CheckCircle2, KeyRound, Mail, Megaphone, MessageSquareText, Package, ShieldCheck, UserRound, UsersRound, Vote, Wallet } from "lucide-react";
-import { Cormorant_Garamond, Instrument_Serif } from "next/font/google";
+import { Instrument_Serif } from "next/font/google";
 import Image from "next/image";
 import liftCard from "@/components/ui/lift-card.module.css";
 import styles from "./home.module.css";
@@ -9,9 +9,9 @@ import { Reveal } from "./reveal";
 // Solo describe lo que la plataforma ya hace; el acceso sigue siendo por invitación.
 // Cursiva serif para las palabras de acento; la fuente se sirve desde la misma web (la CSP no permite otras).
 const serif = Instrument_Serif({ weight: "400", style: "italic", subsets: ["latin"], display: "swap" });
-// Subtítulos de las secciones (13/11/2026, pedido de Alejandro): letra serif clásica en versalitas, más elegante.
-const eyebrowFont = Cormorant_Garamond({ weight: "600", subsets: ["latin"], display: "swap" });
-const eyebrow = `${eyebrowFont.className} text-[15px] tracking-[0.18em] uppercase`;
+// Subtítulos de las secciones (13/11/2026, pedido de Alejandro): la misma letra del texto de la página (la de «Tu estado
+// de cuenta siempre claro…»), en minúsculas y sin espaciado amplio; el color los sigue distinguiendo.
+const eyebrow = "text-[15px] font-medium";
 
 const modules = [
   { icon: Wallet, title: "Cartera", description: "Estado de cuenta, comprobantes de pago y acuerdos de pago, claros para todos." },
