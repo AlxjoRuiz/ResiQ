@@ -6,9 +6,9 @@ import { statusPill, type StatusTone } from "@/lib/ui/status-tones";
 // saldo a favor se ven igual: título azul, tipo, estado, datos en recuadros, a qué deudas se abona y las acciones.
 type PaymentCardFact = { label: string; value: ReactNode };
 
-export function PaymentCard({ title, kind, status, facts, allocations, allocationNote, children }: {
+export function PaymentCard({ title, kind, status, facts, allocations, allocationNote, allocationTitle = "Se abona así (lo eligió el residente)", children }: {
   title: string; kind: string; status: { label: string; tone: StatusTone }; facts: PaymentCardFact[];
-  allocations: { key: string; concept: string; amount: number | null }[]; allocationNote?: ReactNode; children?: ReactNode;
+  allocations: { key: string; concept: string; amount: number | null }[]; allocationNote?: ReactNode; allocationTitle?: string; children?: ReactNode;
 }) {
   return <article className="rounded-xl border p-4">
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -19,7 +19,7 @@ export function PaymentCard({ title, kind, status, facts, allocations, allocatio
       {facts.map((fact) => <div key={fact.label} className="min-w-0 rounded-lg bg-secondary/60 px-3 py-2"><dt className="text-xs text-muted-foreground">{fact.label}</dt><dd className="break-words font-medium">{fact.value}</dd></div>)}
     </dl>
     {allocations.length > 0 && <div className="mt-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm">
-      <p className="text-xs font-medium text-primary">Se abona así (lo eligió el residente)</p>
+      <p className="text-xs font-medium text-primary">{allocationTitle}</p>
       <ul className="mt-1 grid gap-0.5">{allocations.map((item) => <li key={item.key} className="flex justify-between gap-3"><span className="min-w-0">{item.concept}</span>{item.amount !== null && <span className="shrink-0 font-medium">{formatCop(item.amount)}</span>}</li>)}</ul>
       {allocationNote && <p className="mt-1 text-xs text-muted-foreground">{allocationNote}</p>}
     </div>}
