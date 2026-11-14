@@ -197,7 +197,7 @@ export async function registerCreditRequest(_: FinanceState, data: FormData): Pr
   const { supabase } = await requirePropertyAdmin(propertyId);
   const result=await supabase.rpc("register_credit_request",{target_property_id:propertyId,target_request_id:requestId});
   if(result.error)return{error:friendlyError(result.error.message)};
-  refreshFinance(propertyId,unitId);return{success:"Saldo a favor registrado en la deuda."};
+  refreshFinance(propertyId,unitId);return{success:"Pago con saldo a favor registrado en la deuda."};
 }
 
 export async function rejectCreditRequest(_: FinanceState, data: FormData): Promise<FinanceState> {

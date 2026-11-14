@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { applyUnitCredit, createUnitCredit, registerCreditRequest, rejectCreditRequest, requestUnitCredit, voidUnitCredit, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
+import { applyUnitCredit, createUnitCredit, rejectCreditRequest, requestUnitCredit, voidUnitCredit, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
@@ -14,7 +14,7 @@ import { PaymentCard } from "@/components/finance/payment-card";
 // o con «Registrar saldo a favor». La administración puede aplicarlos directo; el residente envía una solicitud
 // («Usar saldo a favor») que le llega a la administración como un comprobante de pago y que ella registra o rechaza.
 export type UnitCredit = { id: string; concept: string; amount: number; remaining: number; pending?: number; issued_on: string; source: string; status: string; void_reason: string | null };
-export type CreditRequest = { id: string; creditConcept: string; debtConcept: string; amount: number; status: string; createdAt: string; createdIso: string; rejectReason: string | null };
+export type CreditRequest = { id: string; receivableId: string; creditConcept: string; debtConcept: string; amount: number; status: string; createdAt: string; createdIso: string; rejectReason: string | null };
 type OpenDebt = { id: string; concept: string; dueOn: string; outstanding: number };
 
 const inputClass = "mt-2 block box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -69,9 +69,10 @@ function CreateForm({ propertyId, unitId, today }: { propertyId: string; unitId:
 
 const requestLabel = (status: string) => status === "registered" ? { label: "Registrado", tone: "success" as const } : status === "rejected" ? { label: "Rechazado", tone: "danger" as const } : { label: "Por revisar", tone: "warning" as const };
 
-// Solicitud en «Comprobantes de pago» de la administración: a qué deuda se abona, y registrar o rechazar.
-export function CreditRequestCard({ propertyId, unitId, request }: { propertyId: string; unitId: string; request: CreditRequest }) {
-  const [registerState, register, registering] = useFormActionState(registerCreditRequest, undefined as FinanceState);
+// Solicitud en «Comprobantes de pago» de la administración: a qué deuda se abona, y aceptar o rechazar.
+// 14/11/2026 (pedido de Alejandro): «Aceptar pago» ya no registra directo; llena «Registrar pago», como un
+// comprobante, y desde ahí la administración lo revisa y lo registra.
+export function CreditRequestCard({ propertyId, unitId, request, inForm, onAccept }: { propertyId: string; unitId: string; request: CreditRequest; inForm: boolean; onAccept: () => void }) {
   const [rejectState, reject, rejecting] = useFormActionState(rejectCreditRequest, undefined as FinanceState);
   const state = requestLabel(request.status);
   return <PaymentCard title={request.debtConcept} kind="Pago con saldo a favor" status={state}
@@ -79,14 +80,14 @@ export function CreditRequestCard({ propertyId, unitId, request }: { propertyId:
     allocations={[{ key: request.id, concept: request.debtConcept, amount: request.amount }]}>
     {request.rejectReason && <p className="mt-2 text-xs text-muted-foreground">Motivo del rechazo: {request.rejectReason}</p>}
     {request.status === "pending" && <div className="mt-3 grid gap-2">
-      <form onSubmit={register}><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} /><input type="hidden" name="requestId" value={request.id} /><Button size="sm" disabled={registering}>{registering ? "Registrando…" : "Aceptar y registrar"}</Button></form>
+      <div><Button type="button" size="sm" variant={inForm ? "outline" : "default"} onClick={onAccept}>{inForm ? "En el formulario →" : "Aceptar pago"}</Button></div>
       <details><summary className="cursor-pointer text-xs font-medium text-muted-foreground">Rechazar</summary>
         <form onSubmit={reject} className="mt-2 flex flex-wrap items-end gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} /><input type="hidden" name="requestId" value={request.id} />
           <label className={`${labelClass} min-w-56 flex-1`}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required /></label>
           <Button size="sm" variant="outline" disabled={rejecting}>{rejecting ? "Rechazando…" : "Rechazar"}</Button>
         </form>
       </details>
-      <Result state={registerState} /><Result state={rejectState} />
+      <Result state={rejectState} />
     </div>}
   </PaymentCard>;
 }

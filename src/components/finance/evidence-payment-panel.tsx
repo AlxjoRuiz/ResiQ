@@ -10,6 +10,7 @@ import { CreditRequestCard, type CreditRequest } from "@/components/finance/unit
 import { formatCop } from "@/lib/finance/constants";
 import { displayDate } from "@/lib/finance/receivable-date";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
+import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
 
 type PostedPayment = { id: string; label: string };
 
@@ -46,6 +47,7 @@ type EvidenceRow = { id: string; receivableId: string; concept: string; original
 // está por revisar (solicitudes y comprobantes) y después lo ya registrado o anulado.
 export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivables, payments, voidableReceivables, creditRequests = [] }: { propertyId: string; unitId: string; evidences: EvidenceRow[]; receivables: OpenReceivable[]; payments: PostedPayment[]; voidableReceivables: PostedPayment[]; creditRequests?: CreditRequest[] }) {
   const [prefill, setPrefill] = useState<PaymentPrefill>();
+  const today = dateInputValue(new Date(), COLOMBIA_TIME_ZONE);
   const formRef = useRef<HTMLDivElement>(null);
   // Máximo 3 tarjetas entre comprobantes y solicitudes de saldo a favor (13/11/2026): siempre todo lo que está por
   // revisar y, con el espacio que quede, lo más reciente ya registrado. Lo demás queda en «Ver historial de pagos».
@@ -63,6 +65,11 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
     setPrefill({ evidenceId: evidence.id, label: evidence.concept, amount: evidence.declaredAmount ?? outstanding, paidOn: evidence.paidOn ?? evidence.uploadedDay, reference: `Comprobante: ${evidence.originalName}`.slice(0, 120), receivableId: evidence.receivableId, allocations: evidence.plannedAllocations ?? undefined });
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  // Solicitud de saldo a favor (14/11/2026): también llena «Registrar pago»; se registra desde ahí.
+  function acceptCredit(request: CreditRequest) {
+    setPrefill({ creditRequestId: request.id, label: request.debtConcept, amount: request.amount, paidOn: today, reference: `Saldo a favor · ${request.creditConcept}`.slice(0, 120), receivableId: request.receivableId });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const evidenceCard = (evidence: EvidenceRow) => <PaymentCard key={evidence.id} title={evidence.concept} kind="Pago con comprobante"
     status={evidence.voidReason !== null ? { label: "Pago anulado", tone: "danger" } : evidence.registered ? { label: "Registrado", tone: "success" } : { label: evidence.receivedAt ? "Recibido" : "Por revisar", tone: "warning" }}
@@ -78,17 +85,17 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
   return <section className="mt-7 grid gap-6 lg:grid-cols-2">
     <Card><CardContent>
       <h2 className="text-lg font-semibold">Comprobantes de pago</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Los comprobantes que sube el residente, con la deuda y el valor que eligió. «Aceptar pago» llena el formulario de al lado para que lo revises y lo registres.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Los comprobantes que sube el residente y sus pagos con saldo a favor, con la deuda y el valor que eligió. «Aceptar pago» llena el formulario de al lado para que lo revises y lo registres.</p>
       <div className="mt-5 grid gap-3">
-        {shown.map((item) => item.evidence ? evidenceCard(item.evidence) : item.request ? <CreditRequestCard key={item.key} propertyId={propertyId} unitId={unitId} request={item.request} /> : null)}
+        {shown.map((item) => item.evidence ? evidenceCard(item.evidence) : item.request ? <CreditRequestCard key={item.key} propertyId={propertyId} unitId={unitId} request={item.request} inForm={prefill?.creditRequestId === item.request.id} onAccept={() => acceptCredit(item.request!)} /> : null)}
         {!items.length && <p className="text-sm text-muted-foreground">El residente aún no ha subido comprobantes.</p>}
         {inHistory > 0 && <p className="text-xs text-muted-foreground">{inHistory === 1 ? "1 comprobante registrado más está" : `${inHistory} comprobantes registrados más están`} en «Ver historial de pagos».</p>}
       </div>
     </CardContent></Card>
     <Card><CardContent>
       <h2 className="text-lg font-semibold">Registrar pago</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Llénalo con «Aceptar pago» en un comprobante, o escribe un pago recibido sin comprobante.</p>
-      <div ref={formRef} className="mt-5 scroll-mt-6"><PaymentForm key={prefill?.evidenceId ?? "manual"} propertyId={propertyId} unitId={unitId} receivables={receivables} prefill={prefill} onDone={() => setPrefill(undefined)} onCancel={() => setPrefill(undefined)} /></div>
+      <p className="mt-2 text-sm text-muted-foreground">Llénalo con «Aceptar pago» en un comprobante o en un pago con saldo a favor, o escribe un pago recibido sin comprobante.</p>
+      <div ref={formRef} className="mt-5 scroll-mt-6"><PaymentForm key={prefill?.evidenceId ?? prefill?.creditRequestId ?? "manual"} propertyId={propertyId} unitId={unitId} receivables={receivables} prefill={prefill} onDone={() => setPrefill(undefined)} onCancel={() => setPrefill(undefined)} /></div>
       <VoidPaymentPicker propertyId={propertyId} unitId={unitId} payments={payments} />
       <VoidReceivablePicker propertyId={propertyId} unitId={unitId} receivables={voidableReceivables} />
     </CardContent></Card>
