@@ -243,7 +243,7 @@ export async function importPayments(_: FinanceState, data: FormData): Promise<F
     if(result.error)return{error:paymentImportError(result.error.message)};
     const summary=(result.data??{}) as {imported?:number;skipped?:number;skipped_lines?:number[]};const imported=Number(summary.imported??0),skipped=Number(summary.skipped??0);
     const skippedLines=(summary.skipped_lines??[]).slice(0,20).join(", ");
-    if(imported===0)return{error:`Todos los pagos del archivo ya estaban registrados (misma fecha, valor y referencia${skippedLines?`; filas ${skippedLines}`:""}); no se agregó nada. Si son pagos nuevos, revisa la referencia.`};
+    if(imported===0)return{error:`Todos los pagos del archivo ya estaban registrados (misma fecha, valor y referencia${skippedLines?`; filas ${skippedLines}`:""}); no se agregó nada. Si son pagos diferentes, escribe en «referencia» el número de cada transferencia o consignación para registrarlos; así no se confunden con pagos dobles.`};
     refreshFinance(propertyId);redirect(`${financePath(propertyId)}?pagos=${imported}&pagosrepetidos=${skipped}${skippedLines?`&filasrepetidas=${encodeURIComponent(skippedLines)}`:""}${emptyValueRows?`&sinvalor=${emptyValueRows}`:""}`);
   } catch(error) { if(error && typeof error==="object" && "digest" in error)throw error;return{error:"No pudimos leer el archivo. Descarga la plantilla de pagos y verifica que sea un .xlsx válido."}; }
 }
