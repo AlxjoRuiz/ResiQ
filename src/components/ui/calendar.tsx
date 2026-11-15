@@ -46,7 +46,9 @@ export function CalendarTrigger({ open, onClick, children, placeholder, invalid,
 // Caja flotante del calendario, debajo del botón. Con style (posición fija calculada) flota por encima de
 // listas con desplazamiento propio que, si no, la recortarían.
 export function CalendarPopover({ label, children, align = "left", style }: { label: string; children: ReactNode; align?: "left" | "right"; style?: CSSProperties }) {
-  return <div role="dialog" aria-label={label} style={style} className={cn("z-30 w-[19rem] max-w-[calc(100vw-2rem)] rounded-2xl border bg-white p-3 text-sm font-normal text-foreground shadow-lg", style ? "fixed" : "absolute top-full mt-2", !style && (align === "right" ? "right-0" : "left-0"))}>{children}</div>;
+  return <div role="dialog" aria-label={label} style={style} className={cn("z-30 w-[19rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-primary/30 bg-white text-sm font-normal text-foreground shadow-lg", style ? "fixed" : "absolute top-full mt-2", !style && (align === "right" ? "right-0" : "left-0"))}>
+    {/* Recuadro azul como «Crear zona» (14/11/2026): fondo azul claro sobre blanco, para que no se transparente. */}
+    <div className="bg-primary/5 p-3">{children}</div></div>;
 }
 
 // Posición fija para el calendario justo debajo de su botón, sin salirse de la pantalla.
@@ -63,9 +65,9 @@ export function MonthCalendar({ month, onMonthChange, today, min, max, dayState,
 }) {
   return <>
     <div className="flex items-center justify-between gap-1">
-      <button type="button" onClick={() => onMonthChange(addMonths(month, -1))} disabled={min !== undefined && month <= min.slice(0, 7)} aria-label="Mes anterior" className="flex size-9 shrink-0 items-center justify-center rounded-lg hover:bg-secondary disabled:opacity-30"><ChevronLeft size={18} /></button>
-      {header ?? <p className="text-sm font-semibold capitalize">{monthName(month)}</p>}
-      <button type="button" onClick={() => onMonthChange(addMonths(month, 1))} disabled={max !== undefined && month >= max.slice(0, 7)} aria-label="Mes siguiente" className="flex size-9 shrink-0 items-center justify-center rounded-lg hover:bg-secondary disabled:opacity-30"><ChevronRight size={18} /></button>
+      <button type="button" onClick={() => onMonthChange(addMonths(month, -1))} disabled={min !== undefined && month <= min.slice(0, 7)} aria-label="Mes anterior" className="flex size-9 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-primary/10 disabled:opacity-30"><ChevronLeft size={18} /></button>
+      {header ?? <p className="text-sm font-semibold capitalize text-primary">{monthName(month)}</p>}
+      <button type="button" onClick={() => onMonthChange(addMonths(month, 1))} disabled={max !== undefined && month >= max.slice(0, 7)} aria-label="Mes siguiente" className="flex size-9 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-primary/10 disabled:opacity-30"><ChevronRight size={18} /></button>
     </div>
     <div className="mt-2 grid grid-cols-7 text-center text-xs text-muted-foreground">{weekdays.map((day) => <span key={day} className="py-1">{day}</span>)}</div>
     <div className="grid grid-cols-7 gap-y-1 text-center text-sm" onMouseLeave={() => onHover?.(null)}>{monthGrid(month).map((day, index) => {
@@ -73,7 +75,7 @@ export function MonthCalendar({ month, onMonthChange, today, min, max, dayState,
       const blocked = (min !== undefined && day < min) || (max !== undefined && day > max);
       const state = dayState(day);
       return <button key={day} type="button" disabled={blocked} onClick={() => onPick(day)} onMouseEnter={() => onHover?.(day)} aria-pressed={state !== null} aria-label={shortDate(day)}
-        className={`h-9 ${state === "edge" ? "rounded-lg bg-primary font-semibold text-white" : state === "inside" ? "bg-primary/12 text-primary" : "rounded-lg hover:bg-secondary"} ${day === today && state !== "edge" ? "font-semibold underline" : ""} disabled:cursor-not-allowed disabled:opacity-30`}>{Number(day.slice(8))}</button>;
+        className={`h-9 ${state === "edge" ? "rounded-lg bg-primary font-semibold text-white" : state === "inside" ? "bg-primary/12 text-primary" : "rounded-lg hover:bg-primary/10"} ${day === today && state !== "edge" ? "font-semibold underline" : ""} disabled:cursor-not-allowed disabled:opacity-30`}>{Number(day.slice(8))}</button>;
     })}</div>
   </>;
 }

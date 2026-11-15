@@ -29,7 +29,7 @@ export function CreateVisitForm({propertyId,directory,timeZone}:{propertyId:stri
     <div className="grid min-w-0 gap-5 sm:grid-cols-2"><DateTimeField name="scheduledStart" label="Inicio de la visita" value={values.scheduledStart} onChange={(value)=>update("scheduledStart",value)}/><DateTimeField name="scheduledEnd" label="Fin de la visita" value={values.scheduledEnd} onChange={(value)=>update("scheduledEnd",value)}/></div>
     <label className={labelClass}>Observaciones<textarea className={areaClass} name="notes" value={values.notes} onChange={(event)=>update("notes",event.target.value)} maxLength={1000}/></label>
     <p className="text-xs text-muted-foreground">El documento completo no se almacena. La ventana puede durar máximo 24 horas.</p>
-    <div className="flex items-center gap-4"><Button disabled={pending||!unitId}>{pending?"Enviando…":"Solicitar visita"}</Button><Result state={state}/></div>
+    <div className="flex items-center gap-4"><Button disabled={pending||!unitId}>{pending?"Enviando…":"Enviar solicitud de ingreso"}</Button><Result state={state}/></div>
   </form>;
 }
 
