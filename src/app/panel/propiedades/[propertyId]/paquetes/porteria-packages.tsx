@@ -75,7 +75,7 @@ export async function PorteriaPackages({ supabase, propertyId, timeZone, tab, pa
           const details = [item.description, item.carrier, item.tracking_number ? `Guía ${item.tracking_number}` : null].filter(Boolean).join(" · ");
           return <div key={item.id} className="grid gap-3">{showDay && <h2 className="mt-3 text-sm font-semibold first-letter:uppercase">{dayLabel(deliveredDay)}</h2>}<article className={`rounded-xl border p-5 transition-colors motion-reduce:transition-none ${statusCard[packageTone[item.status] ?? "neutral"]}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{receivedItemLabel(item.kind, item.utility_service)} · {unitLabel(item.units)}</p><h2 className="mt-1 text-lg font-semibold"><Link href={detailPath} className="hover:underline">{item.recipient_name}</Link></h2></div>
+              <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{receivedItemLabel(item.kind, item.utility_service)} · {unitLabel(item.units)}</p><h2 className="mt-1 text-lg font-semibold text-primary"><Link href={detailPath} className="hover:underline">{item.recipient_name}</Link></h2></div>
               <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[packageTone[item.status] ?? "neutral"]}`}>{packageStatusLabel(item.status)}</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{details}</p>

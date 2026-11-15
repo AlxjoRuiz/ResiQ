@@ -131,7 +131,7 @@ export default async function ReservationsPage({ params, searchParams }: {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold tracking-wider text-primary uppercase">{row.amenity}</p>
-              <h2 className="mt-2 text-lg font-semibold">{formatter.format(new Date(row.startsAt))} → {formatter.format(new Date(row.endsAt))}</h2>
+              <h2 className="mt-2 text-lg font-semibold text-primary">{formatter.format(new Date(row.startsAt))} → {formatter.format(new Date(row.endsAt))}</h2>
               <p className="mt-1 text-xs text-muted-foreground">Solicitada el {formatter.format(new Date(row.createdAt))}</p>
               <p className="mt-2 text-sm text-muted-foreground">{row.unit} · {row.attendeeCount} asistentes{row.requester ? ` · ${row.requester}` : ""}</p>
               <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Motivo de la reserva:</strong> {row.purpose ?? "No registrado en esta solicitud anterior."}</p>

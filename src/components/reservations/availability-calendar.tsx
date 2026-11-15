@@ -74,7 +74,7 @@ export function AvailabilityCalendar({ zones, timeZone, today, month, propertyId
   return <section className="mt-7 rounded-2xl border bg-card p-5" aria-labelledby="availability-heading">
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 id="availability-heading" className="text-lg font-semibold">Calendario de disponibilidad</h2>
+        <h2 id="availability-heading" className="text-lg font-semibold text-primary">Calendario de disponibilidad</h2>
         <p className="mt-1 text-sm text-muted-foreground">Consulta ocupaciones y cierres de este mes o de los próximos once antes de elegir tu horario.</p>
       </div>
       <label className="grid gap-1 text-sm">Zona

@@ -62,7 +62,7 @@ export function PaymentsImportButton({ propertyId }: { propertyId: string }) {
       <input ref={inputRef} type="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="sr-only" tabIndex={-1} aria-label="Elegir Excel de pagos" onChange={(event) => { void selectFile(event.target.files?.[0]); }} />
       {file && <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Importar pagos">
         <div className="grid max-h-[85vh] w-full max-w-2xl gap-4 overflow-y-auto rounded-2xl border bg-white p-5 text-sm shadow-lg">
-          <div><h2 className="text-lg font-semibold">Importar pagos</h2><p className="mt-1 break-all text-muted-foreground">{file.name}</p>
+          <div><h2 className="text-lg font-semibold text-primary">Importar pagos</h2><p className="mt-1 break-all text-muted-foreground">{file.name}</p>
             <p className="mt-1 text-xs text-muted-foreground">Columnas: torre, apartamento, valor, fecha_pago y referencia (opcional). El orden de las columnas no importa. <a href="/api/templates/pagos" download className="font-medium text-primary underline underline-offset-2">Descargar plantilla</a></p></div>
           {previewError && <p role="alert" className="text-destructive">{previewError}</p>}
           {preview.length > 0 && <div className="overflow-x-auto rounded-xl border"><table className="min-w-full text-left text-xs">

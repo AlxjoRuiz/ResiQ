@@ -33,7 +33,7 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
   }
   return <>
     <Card><CardContent>
-      <h2 className="text-lg font-semibold">Equipo de mantenimiento</h2>
+      <h2 className="text-lg font-semibold text-primary">Equipo de mantenimiento</h2>
       <p className="mt-1 text-sm text-muted-foreground">El admin de mantenimiento entra con el enlace a su correo y solo ve el módulo de mantenimiento. Él crea a sus trabajadores.</p>
       <ul className="mt-4 grid gap-3">{maintenanceAdmins.map((admin, index) => <li key={`${admin.email}-${index}`} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border p-4">
         <div className="min-w-0"><p className="font-medium">{admin.display_name ?? "Sin aceptar todavía"}</p><p className="break-all text-sm text-muted-foreground">{admin.email}</p><p className="mt-1 text-xs text-muted-foreground">{admin.invitation_id ? "Invitado el" : "Desde el"} {date.format(new Date(admin.since))}</p></div>
@@ -44,7 +44,7 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
     </CardContent></Card>
 
     <Card id={test ? "juridica-prueba" : "juridica"} className="scroll-mt-6"><CardContent>
-      <h2 className="text-lg font-semibold">Jurídica</h2>
+      <h2 className="text-lg font-semibold text-primary">Jurídica</h2>
       <p className="mt-1 text-sm text-muted-foreground">La abogada de cobros entra con el enlace a su correo y solo ve la cartera, en solo lectura, de los conjuntos que le asignes.</p>
       <ul className="mt-4 grid gap-3">{legalTeam.map((person, index) => <li key={`${person.email}-${index}`} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border p-4">
         <div className="min-w-0"><p className="font-medium">{person.display_name ?? "Sin aceptar todavía"}</p><p className="break-all text-sm text-muted-foreground">{person.email}</p><p className="mt-1 text-xs text-muted-foreground">{person.invitation_id ? "Invitada el" : "Desde el"} {date.format(new Date(person.since))}</p></div>
@@ -63,7 +63,7 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
     </CardContent></Card>
 
     {test && <Card><CardContent>
-      <h2 className="text-lg font-semibold">Correos de prueba</h2>
+      <h2 className="text-lg font-semibold text-primary">Correos de prueba</h2>
       <p className="mt-1 mb-4 text-sm text-muted-foreground">Todas las cuentas de prueba con lo que tienen acceso: la gente de los conjuntos de prueba (administradores, auxiliares, portería y residentes), los trabajadores de un admin de mantenimiento de prueba, las @resiq.invalid y los correos marcados aquí (lo que invitas desde Pruebas ResiQ se marca solo).</p>
       <TestEmailForm />
       <ul className="mt-4 grid gap-2">{testAccounts.map((account) => <li key={account.email} className="grid gap-2 rounded-xl border p-3 text-sm sm:grid-cols-[1fr_auto] sm:items-start">

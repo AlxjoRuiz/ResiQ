@@ -51,7 +51,7 @@ export default async function PlatformHomePage() {
       <MetricCard label="Administradores de conjunto" value={admins.filter((row) => !row.invitation_id && !row.is_assistant && row.member_status === "active").length} />
     </section>
     <section aria-labelledby="por-atender" className="rounded-2xl border bg-white p-5">
-      <h2 id="por-atender" className="text-lg font-semibold">Por atender</h2>
+      <h2 id="por-atender" className="text-lg font-semibold text-primary">Por atender</h2>
       {items.length ? <ul className="mt-3 grid gap-2">{items.map((item, index) => <li key={`${item.href}-${index}`}><Link href={item.href} className="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors hover:bg-secondary">
         <span className="min-w-0"><span className="flex items-center gap-2 font-medium">{item.urgent && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full bg-urgent" />}{item.label}</span><span className="block truncate text-sm text-muted-foreground">{item.detail}</span></span>
         <span aria-hidden="true" className="shrink-0 text-muted-foreground">→</span>

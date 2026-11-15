@@ -86,7 +86,7 @@ export async function PorteriaVisits({ supabase, propertyId, timeZone, tab, page
           const entry = [...(visit.visitor_entries ?? [])].sort((a, b) => b.entered_at.localeCompare(a.entered_at))[0];
           return <div key={visit.id} className="grid gap-3">{showDay && <h2 className="mt-3 text-sm font-semibold first-letter:uppercase">{dayLabel(visitDay)}</h2>}<article className={`rounded-xl border p-5 transition-colors motion-reduce:transition-none ${statusCard[visitTone[visit.status] ?? "neutral"]}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{visitKindLabel(visit.kind)} · {unitLabel(visit.units)}</p><h2 className="mt-1 text-lg font-semibold"><Link href={detailPath} className="hover:underline">{visit.visitor_name}</Link></h2></div>
+              <div><p className="text-xs font-semibold tracking-wider text-primary uppercase">{visitKindLabel(visit.kind)} · {unitLabel(visit.units)}</p><h2 className="mt-1 text-lg font-semibold text-primary"><Link href={detailPath} className="hover:underline">{visit.visitor_name}</Link></h2></div>
               <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[visitTone[visit.status] ?? "neutral"]}`}>{tab === "historial" && visit.status === "authorized" ? "No llegó" : visitStatusLabel(visit.status)}</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{visit.kind === "maintenance" && visit.service_type ? `${visit.service_type} · ` : ""}{visit.people_count} persona{visit.people_count === 1 ? "" : "s"} autorizada{visit.people_count === 1 ? "" : "s"}</p>

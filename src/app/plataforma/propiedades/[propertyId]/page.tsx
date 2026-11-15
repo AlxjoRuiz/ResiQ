@@ -58,12 +58,12 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
       <Figure value={property.unit_count} label="Apartamentos" /><Figure value={property.resident_count} label="Residentes" /><Figure value={property.concierge_count} label="Portería" /><Figure value={property.administrator_count} label="Administradores" />
     </section>
 
-    <section><h2 className="mb-3 text-lg font-semibold first-letter:uppercase">Uso en {monthLabel}</h2><div className="grid gap-4 sm:grid-cols-4">
+    <section><h2 className="mb-3 text-lg font-semibold text-primary first-letter:uppercase">Uso en {monthLabel}</h2><div className="grid gap-4 sm:grid-cols-4">
       <Figure value={usage?.pqrs_count ?? 0} label="PQRS" /><Figure value={usage?.package_count ?? 0} label="Paquetes" /><Figure value={usage?.visitor_count ?? 0} label="Visitas" /><Figure value={usage?.reservation_count ?? 0} label="Reservas" />
     </div></section>
 
     <Card><CardContent>
-      <h2 className="text-lg font-semibold">Administración</h2>
+      <h2 className="text-lg font-semibold text-primary">Administración</h2>
       <p className="mt-1 text-sm text-muted-foreground">Administradores y auxiliares del conjunto, con las invitaciones pendientes.</p>
       <ul className="mt-4 grid gap-3">{admins.map((admin, index) => <li key={`${admin.email}-${admin.invitation_id ?? index}`} className="grid gap-3 rounded-xl border p-4 sm:grid-cols-[1fr_auto] sm:items-start">
         <div className="min-w-0"><p className="flex flex-wrap items-center gap-2 font-medium">{admin.display_name ?? "Sin aceptar todavía"}{admin.is_assistant && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Auxiliar</span>}</p><p className="break-all text-sm text-muted-foreground">{admin.email}</p><p className="mt-1 text-xs text-muted-foreground">{admin.invitation_id ? "Invitado el" : "Desde el"} {date.format(new Date(admin.since))}</p></div>
@@ -82,19 +82,19 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
     </details></CardContent></Card>
 
     {legal && <Card><CardContent>
-      <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">Jurídica{legal.assigned && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Asignado</span>}</h2>
+      <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-primary">Jurídica{legal.assigned && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-xs font-medium text-primary">Asignado</span>}</h2>
       <p className="mt-1 mb-4 text-sm text-muted-foreground">Si lo asignas, la abogada de cobros ve la cartera de este conjunto en solo lectura y quiénes tienen deudas vencidas, desde el primer día.</p>
       <LegalAssignmentForm key={`${legal.assigned}-${legal.overdue_days}`} propertyId={property.property_id} assigned={legal.assigned} />
     </CardContent></Card>}
 
     {property.property_status !== "archived" && <Card><CardContent>
-      <h2 className="text-lg font-semibold">Estado del conjunto</h2>
+      <h2 className="text-lg font-semibold text-primary">Estado del conjunto</h2>
       <p className="mt-1 mb-4 text-sm text-muted-foreground">Suspender bloquea el acceso de todo el conjunto sin borrar datos; reactivar lo devuelve como estaba.</p>
       <PropertyStatusForm key={property.property_status} propertyId={property.property_id} propertyName={property.property_name} suspended={property.property_status === "suspended"} />
     </CardContent></Card>}
 
     <Card><CardContent>
-      <h2 className="text-lg font-semibold">{isTest ? "Conjunto de prueba" : "Producción"}</h2>
+      <h2 className="text-lg font-semibold text-primary">{isTest ? "Conjunto de prueba" : "Producción"}</h2>
       <p className="mt-1 mb-4 text-sm text-muted-foreground">{isTest ? "Sale solo en Pruebas ResiQ, con toda su gente, y no cuenta en Inicio, Usuarios ni Métricas." : "Si es un conjunto para pruebas, pásalo a Pruebas ResiQ para que no se mezcle con producción."} Funciona igual en ambos casos.</p>
       <PropertyTestForm key={String(isTest)} propertyId={property.property_id} isTest={isTest} />
     </CardContent></Card>

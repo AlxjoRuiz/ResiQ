@@ -19,14 +19,14 @@ export function MaintenanceOverview({ data }: { data: MaintenanceDashboard }) {
   ].filter((item) => item.count > 0);
   return <section className="grid gap-4 lg:grid-cols-2">
     <article aria-labelledby="por-atender" className="rounded-2xl border bg-white p-5">
-      <h2 id="por-atender" className="text-lg font-semibold">Por atender</h2>
+      <h2 id="por-atender" className="text-lg font-semibold text-primary">Por atender</h2>
       {items.length ? <ul className="mt-3 grid gap-2">{items.map((item) => <li key={item.label}><Link href={item.href} className="flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors hover:bg-secondary">
         <span className="flex items-center gap-2 font-medium">{item.urgent && <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full bg-urgent" />}{item.label}</span>
         <span className="shrink-0 rounded-full bg-primary/12 px-2.5 py-0.5 text-sm font-semibold text-primary">{item.count}</span>
       </Link></li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Todo al día: no hay pendientes por atender.</p>}
     </article>
     <article aria-labelledby="en-jornada" className="rounded-2xl border bg-white p-5">
-      <div className="flex items-center justify-between gap-3"><h2 id="en-jornada" className="text-lg font-semibold">En jornada ahora</h2><Link href="/mantenimiento/asistencia" className="text-xs text-muted-foreground hover:text-foreground">Ver asistencia →</Link></div>
+      <div className="flex items-center justify-between gap-3"><h2 id="en-jornada" className="text-lg font-semibold text-primary">En jornada ahora</h2><Link href="/mantenimiento/asistencia" className="text-xs text-muted-foreground hover:text-foreground">Ver asistencia →</Link></div>
       {data.on_shift.length ? <ul className="mt-3 grid gap-2">{data.on_shift.map((worker, index) => <li key={index} className="flex items-center justify-between gap-3 rounded-xl border p-3 text-sm"><span className="font-medium">{worker.name}</span><span className="text-muted-foreground">Llegó a las {time.format(new Date(worker.check_in_at))}</span></li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Nadie ha marcado llegada hoy.</p>}
     </article>
   </section>;

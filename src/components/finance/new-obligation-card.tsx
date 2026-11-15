@@ -24,7 +24,7 @@ export function NewObligationCard({ propertyId, arrears, policy }: { propertyId:
   const tabs: [Tab, string][] = [["obligation", "Obligación"], ["agreement", "Acuerdo de pago"]];
 
   return <div className="rounded-xl border bg-card p-5 sm:p-6">
-    <h2 className="text-lg font-semibold">Nueva obligación</h2>
+    <h2 className="text-lg font-semibold text-primary">Nueva obligación</h2>
     <div role="tablist" aria-label="Opciones de nueva obligación" className="mt-4 flex flex-wrap gap-2">
       {tabs.map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={tab === value} onClick={() => { setTab(value); if (value === "agreement") setAgreementOpened(true); }} className={`inline-flex min-h-10 items-center rounded-full px-3 py-1.5 text-xs font-medium sm:min-h-0 ${tab === value ? "bg-primary text-white" : "bg-secondary"}`}>{label}</button>)}
     </div>

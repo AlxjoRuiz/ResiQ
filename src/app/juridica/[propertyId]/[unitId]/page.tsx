@@ -148,20 +148,20 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
       className={`rounded-full border px-4 py-2 text-sm font-medium transition hover:scale-105 hover:shadow-sm motion-reduce:hover:scale-100 ${tab === item.id ? "border-primary bg-primary text-primary-foreground" : "bg-white hover:bg-secondary"}`}>{item.label}{counts[item.id] > 0 && <span className="ml-2 opacity-80">{counts[item.id]}</span>}</Link>)}</nav>
 
     {tab === "expediente" && <>
-      <h2 className="text-lg font-semibold">Expediente prejurídico</h2>
+      <h2 className="text-lg font-semibold text-primary">Expediente prejurídico</h2>
       {caseError ? <p className="text-sm text-muted-foreground">El expediente todavía no está disponible.</p> : <CaseFilePanel propertyId={propertyId} unitId={unitId} caseFile={caseFile} />}
     </>}
     {tab === "requerimiento" && <>
-    <Card><CardContent><h2 className="text-lg font-semibold">Cobros vencidos y próximos a vencer</h2>
+    <Card><CardContent><h2 className="text-lg font-semibold text-primary">Cobros vencidos y próximos a vencer</h2>
       {debts.length ? <ul className="mt-3 grid gap-2">{debts.map((debt) => { const diff = dayDiff(debt.due_on); return <li key={debt.id} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${debt.overdue ? "border-urgent/40 bg-urgent/5" : "border-amber-200 bg-amber-50"}`}>
         <span className="min-w-0"><span className="block font-medium">{debt.concept}{agreementDebtIds && (agreementDebtIds.has(debt.id) ? <span className="ml-2 inline-block rounded-full border border-primary/40 bg-white px-2 py-0.5 text-xs font-medium text-primary">En el acuerdo de pago</span> : <span className="ml-2 inline-block rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">No está en el acuerdo de pago</span>)}</span><span className={`block text-xs ${debt.overdue ? "text-urgent" : "text-amber-900"}`}>{debt.overdue ? `Vencida hace ${-diff} ${-diff === 1 ? "día" : "días"}` : diff === 0 ? "Vence hoy" : `Vence en ${diff} ${diff === 1 ? "día" : "días"}`} · {formatDay(debt.due_on)}</span></span>
         <span className={`font-semibold ${debt.overdue ? "text-urgent" : ""}`}>{formatCop(debt.outstanding)}</span>
       </li>; })}</ul> : <p className="mt-2 text-sm text-muted-foreground">Este apartamento no tiene deudas con saldo.</p>}
-      {agreements.length > 0 && <section aria-label="Acuerdo de pago vigente" className="mt-6"><h2 className="text-lg font-semibold">Acuerdo de pago vigente</h2>{agreementCards}</section>}
+      {agreements.length > 0 && <section aria-label="Acuerdo de pago vigente" className="mt-6"><h2 className="text-lg font-semibold text-primary">Acuerdo de pago vigente</h2>{agreementCards}</section>}
     </CardContent></Card>
 
     <Card><CardContent>
-      <h2 className="text-lg font-semibold">Requerimiento de pago</h2>
+      <h2 className="text-lg font-semibold text-primary">Requerimiento de pago</h2>
       <p className="mt-1 mb-5 text-sm text-muted-foreground">Elige las deudas que vas a cobrar y escribe el mensaje. Le llega al correo del apartamento con el detalle de las deudas y tu firma.</p>
       {noticesReady ? <CollectionNoticeForm propertyId={propertyId} unitId={unitId} unitLabel={`${detail.unit.building} · ${detail.unit.code}`} propertyName={detail.property} debts={debts} recipients={recipients}
         agreement={agreements[0] && agreementDebtIds ? { total: Number(agreements[0].total), remaining: agreements[0].remaining, installmentCount: agreements[0].installments.length, debtIds: [...agreementDebtIds],
@@ -176,7 +176,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
         </li>)}</ul></div>}
     </CardContent></Card>
 
-    <Card><CardContent><h2 className="text-lg font-semibold">Contacto del residente</h2>
+    <Card><CardContent><h2 className="text-lg font-semibold text-primary">Contacto del residente</h2>
       {detail.contacts.length ? <ul className="mt-3 grid gap-2">{detail.contacts.map((contact, index) => <li key={index} className="rounded-xl border p-3 text-sm">
         <p className="font-medium">{contact.name ?? "Sin nombre"}{contact.type && <span className="font-normal text-muted-foreground"> · {contact.type}</span>}{contact.primary && <span className="ml-2 rounded-full bg-primary/12 px-2 py-0.5 text-xs text-primary">Principal</span>}</p>
         <p className="break-all text-muted-foreground">{[contact.email, contact.phone].filter(Boolean).join(" · ") || "Sin correo ni teléfono"}</p>
@@ -185,7 +185,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
     </>}
 
     {tab === "cartera" && <>
-    <Card><CardContent><h2 className="text-lg font-semibold">Cobros</h2>
+    <Card><CardContent><h2 className="text-lg font-semibold text-primary">Cobros</h2>
       <section aria-label="Cuotas y cobros" className="mt-4"><h3 className="text-sm font-semibold">Cuotas y cobros</h3>
       {detail.receivables.length ? <div className="mt-2 overflow-hidden rounded-xl border"><div className="overflow-x-auto"><table className={tableClass}>{columns}<thead><tr className={tableHead}><th className="px-3 py-2 font-medium">Concepto</th><th className="px-3 py-2 font-medium">Vence</th><th className="px-3 py-2 text-right font-medium">Valor</th><th className="px-3 py-2 text-right font-medium">Pendiente</th></tr></thead>
         <tbody>{sortedReceivables.map((row, index) => <tr key={index} className={`border-b last:border-0 ${row.status === "void" ? "text-muted-foreground" : ""}`}>
@@ -201,7 +201,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
       </section>
     </CardContent></Card>
 
-    <Card><CardContent><h2 className="text-lg font-semibold">Historial de pagos</h2>
+    <Card><CardContent><h2 className="text-lg font-semibold text-primary">Historial de pagos</h2>
       {postedPayments.length ? <>
         <ul className="mt-3 grid gap-2">{postedPayments.slice(0, 4).map(paymentItem)}</ul>
         {postedPayments.length > 4 && <details className="group mt-2"><summary className="cursor-pointer list-none rounded-lg px-2 py-1.5 text-sm font-medium text-primary marker:hidden hover:bg-secondary"><span className="group-open:hidden">Ver {postedPayments.length - 4} {postedPayments.length - 4 === 1 ? "pago más" : "pagos más"}</span><span className="hidden group-open:inline">Ver menos</span></summary>
@@ -209,7 +209,7 @@ export default async function LegalUnitPage({ params, searchParams }: { params: 
       </> : <p className="mt-2 text-sm text-muted-foreground">Sin pagos registrados.</p>}
     </CardContent></Card>
 
-    <Card><CardContent><h2 className="text-lg font-semibold">Anulaciones y cancelaciones</h2>
+    <Card><CardContent><h2 className="text-lg font-semibold text-primary">Anulaciones y cancelaciones</h2>
       <p className="mt-1 text-sm text-muted-foreground">Obligaciones anuladas (administración, multas u otras deudas), acuerdos de pago cancelados y pagos anulados por la administración.</p>
       {voids.length ? <ul className="mt-3 grid gap-2">{voids.map((item) => <li key={item.key} className="grid gap-1.5 rounded-xl border border-red-300 bg-red-50 p-3 text-sm">
         <div className="flex flex-wrap items-start justify-between gap-2"><p className="min-w-0 font-medium text-red-800">{item.title} · <span className="font-normal text-foreground">{item.detail}</span></p><span className="font-semibold text-red-700 line-through">{formatCop(item.amount)}</span></div>

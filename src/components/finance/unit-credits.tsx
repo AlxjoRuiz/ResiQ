@@ -101,7 +101,7 @@ export function UnitCreditsCard({ propertyId, unitId, credits, requests, debts, 
   const total = active.reduce((sum, credit) => sum + available(credit), 0);
   if (!admin && !active.length) return null;
   return <section className={`${className} rounded-2xl border bg-card p-5 sm:p-6`} aria-labelledby="saldo-a-favor">
-    <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="saldo-a-favor" className="text-lg font-semibold">Saldo a favor</h2><p className="text-2xl font-semibold text-primary">{formatCop(total)}</p></div>
+    <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 id="saldo-a-favor" className="text-lg font-semibold text-primary">Saldo a favor</h2><p className="text-2xl font-semibold text-primary">{formatCop(total)}</p></div>
     <p className="mt-1 text-sm text-muted-foreground">{admin ? "Se aplica a una deuda con saldo y queda como un abono a esa deuda. Las solicitudes del residente llegan a «Comprobantes de pago»." : "Dinero a favor de tu apartamento. Elige la deuda y el valor, y envía la solicitud: la administración la revisa y, al registrarla, se descuenta de tu deuda."}</p>
     {admin && <CreateForm propertyId={propertyId} unitId={unitId} today={today} />}
     {active.length > 0 && <div className="mt-4 grid gap-3">{ordered.slice(0, 3).map(creditCard)}{ordered.length > 3 && <details className="rounded-xl border p-4"><summary className="cursor-pointer text-sm font-medium">Ver {ordered.length - 3 === 1 ? "1 saldo a favor más" : `${ordered.length - 3} saldos a favor más`}</summary><div className="mt-3 grid gap-3">{ordered.slice(3).map(creditCard)}</div></details>}</div>}

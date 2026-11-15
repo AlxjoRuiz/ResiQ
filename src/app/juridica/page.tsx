@@ -28,7 +28,7 @@ export default async function LegalHomePage() {
           <span className={`${liftCard.icon} size-12 shrink-0`}><Building2 size={22} aria-hidden="true" /></span>
           {property.news_count > 0 || unread.get(property.property_id) ? <span className="flex flex-wrap justify-end gap-1">{property.news_count > 0 && <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">{property.news_count} {property.news_count === 1 ? "novedad" : "novedades"}</span>}{(unread.get(property.property_id) ?? 0) > 0 && <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-[11px] font-medium text-white">{unread.get(property.property_id)} por responder</span>}</span> : <ArrowRight size={18} aria-hidden="true" className="mt-1 text-muted-foreground" />}
         </div>
-        <h2 className="mt-5 text-lg font-semibold">{property.property_name}</h2>
+        <h2 className="mt-5 text-lg font-semibold text-primary">{property.property_name}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{property.city ?? "Sin ciudad"}</p>
         <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-xl bg-secondary/60 px-2.5 py-2"><dt className="text-[11px] text-muted-foreground">Más de 60 días</dt><dd className="text-base font-semibold text-urgent">{property.units_in_arrears}</dd></div>

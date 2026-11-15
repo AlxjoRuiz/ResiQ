@@ -25,7 +25,7 @@ export default async function ProfilePage() {
   // Las cuentas que no son superadmin conservan el perfil sencillo de siempre.
   if (!platformAdmin) {
     const hasGoogleOnly = user.identities?.some((identity) => identity.provider === "google");
-    return <main className="mx-auto max-w-xl px-6 py-12"><Button asChild variant="ghost" size="sm"><Link href="/panel">← Volver</Link></Button><Card className="mt-5"><CardContent className="p-7"><h1 className="text-2xl font-semibold">Tu perfil</h1><p className="mt-2 text-sm text-muted-foreground">{user.email}</p><ProfileForm displayName={profile?.display_name ?? user.user_metadata.display_name ?? ""} spacing="mt-6" />{hasGoogleOnly && <section className="mt-8 border-t pt-6"><h2 className="text-lg font-semibold">Acceso con contraseña</h2><p className="mt-2 text-sm text-muted-foreground">Crea una contraseña para entrar también con este correo. Puedes seguir usando Google.</p><PasswordForm /></section>}</CardContent></Card></main>;
+    return <main className="mx-auto max-w-xl px-6 py-12"><Button asChild variant="ghost" size="sm"><Link href="/panel">← Volver</Link></Button><Card className="mt-5"><CardContent className="p-7"><h1 className="text-2xl font-semibold">Tu perfil</h1><p className="mt-2 text-sm text-muted-foreground">{user.email}</p><ProfileForm displayName={profile?.display_name ?? user.user_metadata.display_name ?? ""} spacing="mt-6" />{hasGoogleOnly && <section className="mt-8 border-t pt-6"><h2 className="text-lg font-semibold text-primary">Acceso con contraseña</h2><p className="mt-2 text-sm text-muted-foreground">Crea una contraseña para entrar también con este correo. Puedes seguir usando Google.</p><PasswordForm /></section>}</CardContent></Card></main>;
   }
   const communities = ((statusData ?? []) as { property_id: string; property_name: string; property_status: string; roles: string[] }[]).sort((a, b) => a.property_name.localeCompare(b.property_name, "es"));
   const name = profile?.display_name ?? user.user_metadata.display_name ?? user.email ?? "";
@@ -42,12 +42,12 @@ export default async function ProfilePage() {
     </header>
     <div className="mt-7 grid gap-6 md:grid-cols-2">
       <Card><CardContent>
-        <h2 className="flex items-center gap-2 text-lg font-semibold"><UserRound size={19} className="text-primary" aria-hidden="true" />Datos personales</h2>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-primary"><UserRound size={19} className="text-primary" aria-hidden="true" />Datos personales</h2>
         <p className="mt-1 text-sm text-muted-foreground">Así te ven la administración, la portería y tu comunidad.</p>
         <ProfileForm displayName={profile?.display_name ?? user.user_metadata.display_name ?? ""} />
       </CardContent></Card>
       <Card><CardContent>
-        <h2 className="flex items-center gap-2 text-lg font-semibold"><ShieldCheck size={19} className="text-primary" aria-hidden="true" />Seguridad</h2>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-primary"><ShieldCheck size={19} className="text-primary" aria-hidden="true" />Seguridad</h2>
         <p className="mt-1 text-sm text-muted-foreground">Cómo entras a ResiQ.</p>
         <ul className="mt-5 grid gap-2 text-sm">
           <li className="flex items-center justify-between gap-3 rounded-xl border p-3"><span>Google</span><span className={`rounded-full px-3 py-1 text-xs font-medium ${hasGoogle ? "bg-primary/12 text-primary" : "bg-secondary"}`}>{hasGoogle ? "Conectado" : "No conectado"}</span></li>

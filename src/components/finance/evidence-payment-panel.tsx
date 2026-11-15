@@ -84,7 +84,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
 
   return <section className="mt-7 grid gap-6 lg:grid-cols-2">
     <Card><CardContent>
-      <h2 className="text-lg font-semibold">Comprobantes de pago</h2>
+      <h2 className="text-lg font-semibold text-primary">Comprobantes de pago</h2>
       <p className="mt-2 text-sm text-muted-foreground">Los comprobantes que sube el residente y sus pagos con saldo a favor, con la deuda y el valor que eligió. «Aceptar pago» llena el formulario de al lado para que lo revises y lo registres.</p>
       <div className="mt-5 grid gap-3">
         {shown.map((item) => item.evidence ? evidenceCard(item.evidence) : item.request ? <CreditRequestCard key={item.key} propertyId={propertyId} unitId={unitId} request={item.request} inForm={prefill?.creditRequestId === item.request.id} onAccept={() => acceptCredit(item.request!)} /> : null)}
@@ -93,7 +93,7 @@ export function EvidencePaymentPanel({ propertyId, unitId, evidences, receivable
       </div>
     </CardContent></Card>
     <Card><CardContent>
-      <h2 className="text-lg font-semibold">Registrar pago</h2>
+      <h2 className="text-lg font-semibold text-primary">Registrar pago</h2>
       <p className="mt-2 text-sm text-muted-foreground">Llénalo con «Aceptar pago» en un comprobante o en un pago con saldo a favor, o escribe un pago recibido sin comprobante.</p>
       <div ref={formRef} className="mt-5 scroll-mt-6"><PaymentForm key={prefill?.evidenceId ?? prefill?.creditRequestId ?? "manual"} propertyId={propertyId} unitId={unitId} receivables={receivables} prefill={prefill} onDone={() => setPrefill(undefined)} onCancel={() => setPrefill(undefined)} /></div>
       <VoidPaymentPicker propertyId={propertyId} unitId={unitId} payments={payments} />
