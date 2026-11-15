@@ -64,7 +64,7 @@ function UnitContent({ data, propertyId, unitId }: { data: UnitData; propertyId:
       {!occupants.length && <>
         <p className="text-sm text-muted-foreground">Sin residente vinculado. Un correo del Excel no concede acceso hasta aceptar la invitación.</p>
         {invitation && invitationOpen(invitation) && <InvitationStatus invitation={invitation} propertyId={propertyId} />}
-        {data.buildingActive && data.unitActive && !invitationOpen(invitation) && !records.length && <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Agregar residente</summary><div className="mt-3"><UnitResidentInvitationForm propertyId={propertyId} unitId={unitId} /></div></details>}
+        {data.buildingActive && data.unitActive && !invitationOpen(invitation) && !records.length && <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium text-primary">Agregar residente</summary><div className="mt-3"><UnitResidentInvitationForm propertyId={propertyId} unitId={unitId} /></div></details>}
       </>}
     </div>}
   </>;

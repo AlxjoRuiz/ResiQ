@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { InviteLegalForm, InviteMaintenanceAdminForm, ReissueLegalInvitationForm, ReissueMaintenanceInvitationForm } from "@/components/dashboard/create-property-form";
 import { LegalAssignmentForm, RemoveTestEmailForm, TestEmailForm } from "@/components/dashboard/platform-forms";
+import { UserPlus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { CreatePanel } from "@/components/ui/accent";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { loadTestScope } from "../test-scope";
 
@@ -40,7 +42,7 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${admin.member_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{statusLabels[admin.member_status] ?? admin.member_status}</span>
         {admin.invitation_id && <ReissueMaintenanceInvitationForm invitationId={admin.invitation_id} />}
       </li>)}{!maintenanceAdmins.length && <li className="text-sm text-muted-foreground">Todavía no hay admin de mantenimiento.</li>}</ul>
-      <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Invitar admin de mantenimiento</summary><div className="mt-4"><InviteMaintenanceAdminForm test={test} /></div></details>
+      <CreatePanel className="mt-4" icon={UserPlus} title="Invitar admin de mantenimiento"><InviteMaintenanceAdminForm test={test} /></CreatePanel>
     </CardContent></Card>
 
     <Card id={test ? "juridica-prueba" : "juridica"} className="scroll-mt-6"><CardContent>
@@ -51,7 +53,7 @@ export async function TeamsView({ test = false }: { test?: boolean }) {
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${person.member_status === "expired" ? "bg-amber-100 text-amber-900" : "bg-secondary"}`}>{statusLabels[person.member_status] ?? person.member_status}</span>
         {person.invitation_id && <ReissueLegalInvitationForm invitationId={person.invitation_id} />}
       </li>)}{!legalTeam.length && <li className="text-sm text-muted-foreground">Todavía no hay abogada.</li>}</ul>
-      {!legalTeam.some((person) => person.staff_id) && <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Invitar abogada</summary><div className="mt-4"><InviteLegalForm test={test} /></div></details>}
+      {!legalTeam.some((person) => person.staff_id) && <CreatePanel className="mt-4" icon={UserPlus} title="Invitar abogada"><InviteLegalForm test={test} /></CreatePanel>}
       <div className="mt-6 border-t pt-5">
         <h3 className="font-semibold">Conjuntos asignados</h3>
         <p className="mt-1 text-sm text-muted-foreground">Marca los conjuntos cuya cartera le llega a la abogada. Ella ve en mora a todo apartamento con alguna deuda vencida, desde el primer día. Si quitas un conjunto, deja de verlo al instante.</p>

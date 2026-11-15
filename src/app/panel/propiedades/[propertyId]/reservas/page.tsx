@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FactGrid, ItemHeader, TextBlock, filterBar, subtleSummary } from "@/components/ui/accent";
+import { statusPill, type StatusTone } from "@/lib/ui/status-tones";
 import { CancelReservationForm, DecisionForm } from "@/components/reservations/reservation-forms";
 import { NewReservationButton } from "@/components/reservations/new-reservation-button";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
@@ -24,6 +27,8 @@ type DisplayRow = {
   purpose?: string | null; reviewMessage?: string | null; reason?: string | null;
 };
 function one<T>(value: T | T[] | null) { return Array.isArray(value) ? value[0] : value; }
+// Color del estado (14/11/2026): pendiente en ámbar, aprobada en azul, rechazada o vencida en rojo, el resto en gris.
+const reservationTone = (status: string): StatusTone => status === "pending" ? "warning" : status === "approved" ? "success" : status === "rejected" || status === "expired" ? "danger" : "neutral";
 
 export default async function ReservationsPage({ params, searchParams }: {
   params: Promise<{ propertyId: string }>;
@@ -103,7 +108,7 @@ export default async function ReservationsPage({ params, searchParams }: {
     </header>
     {created && <p role="status" className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm text-primary">La reserva fue creada correctamente.</p>}
     {administrator && pendingCount > 0 && <p role="status" className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">Tienes {pendingCount} {pendingCount === 1 ? "solicitud pendiente" : "solicitudes pendientes"} de respuesta.{urgentCount > 0 ? ` ${urgentCount} ${urgentCount === 1 ? "vence" : "vencen"} en menos de 2 horas.` : ""} Usa el filtro «Pendientes» para revisarlas.</p>}
-    <form className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border bg-card p-4">
+    <form className={filterBar}>
       <label className="grid gap-1 text-sm">Estado
         <select name="status" defaultValue={selectedStatus} className="min-w-40 rounded-lg border bg-background px-3 py-2">
           <option value="all">Todos</option>
@@ -128,21 +133,18 @@ export default async function ReservationsPage({ params, searchParams }: {
       {visibleRows.length === 0 ? <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground">No hay reservas para estos filtros.</div> : visibleRows.map((row) => {
         const response = row.reviewMessage ?? (row.status === "rejected" ? row.reason : null);
         return <article key={row.id} className="rounded-2xl border bg-card p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold tracking-wider text-primary uppercase">{row.amenity}</p>
-              <h2 className="mt-2 text-lg font-semibold text-primary">{formatter.format(new Date(row.startsAt))} → {formatter.format(new Date(row.endsAt))}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Solicitada el {formatter.format(new Date(row.createdAt))}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{row.unit} · {row.attendeeCount} asistentes{row.requester ? ` · ${row.requester}` : ""}</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Motivo de la reserva:</strong> {row.purpose ?? "No registrado en esta solicitud anterior."}</p>
-              {response && <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Respuesta de Administración:</strong> {response}</p>}
-              {row.status === "cancelled" && row.reason && <p className="mt-2 whitespace-pre-wrap text-sm"><strong>Motivo de cancelación:</strong> {row.reason}</p>}
-              {row.status === "pending" && row.holdExpiresAt && <p className="mt-2 text-sm font-medium text-amber-900">{administrator ? "Responder antes del " : "Pendiente de aprobación hasta el "}{formatter.format(new Date(row.holdExpiresAt))}.</p>}
-            </div>
-            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">{reservationStatusLabel(row.status)}</span>
-          </div>
+          <ItemHeader icon={CalendarDays} title={row.amenity} subtitle={`Solicitada el ${formatter.format(new Date(row.createdAt))}`} badge={<span className={`rounded-full px-3 py-1 text-xs font-medium ${statusPill[reservationTone(row.status)]}`}>{reservationStatusLabel(row.status)}</span>} />
+          <FactGrid className="mt-4" columns="grid-cols-2 sm:grid-cols-4" facts={[
+            { label: "Desde", value: formatter.format(new Date(row.startsAt)) }, { label: "Hasta", value: formatter.format(new Date(row.endsAt)) },
+            { label: "Apartamento", value: row.unit || "—" }, { label: "Asistentes", value: row.attendeeCount },
+            ...(row.requester ? [{ label: "Solicitante", value: row.requester, wide: true }] : []),
+          ]} />
+          <TextBlock label="Motivo de la reserva">{row.purpose ?? "No registrado en esta solicitud anterior."}</TextBlock>
+          {response && <div className="mt-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2"><p className="text-xs font-medium text-primary">Respuesta de Administración</p><p className="mt-0.5 whitespace-pre-wrap text-sm">{response}</p></div>}
+          {row.status === "cancelled" && row.reason && <TextBlock label="Motivo de cancelación" className="mt-2">{row.reason}</TextBlock>}
+          {row.status === "pending" && row.holdExpiresAt && <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{administrator ? "Responder antes del " : "Pendiente de aprobación hasta el "}{formatter.format(new Date(row.holdExpiresAt))}.</p>}
           {administrator && row.status === "pending" && <div className="mt-5 border-t pt-5"><DecisionForm propertyId={propertyId} reservationId={row.id}/></div>}
-          {(administrator || (!concierge && resident)) && ["pending", "approved"].includes(row.status) && new Date(row.startsAt) > new Date() && <details className="mt-5 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Cancelar reserva</summary><div className="mt-4"><CancelReservationForm propertyId={propertyId} reservationId={row.id}/></div></details>}
+          {(administrator || (!concierge && resident)) && ["pending", "approved"].includes(row.status) && new Date(row.startsAt) > new Date() && <details className="mt-5 border-t pt-4"><summary className={subtleSummary}>Cancelar reserva</summary><div className="mt-4"><CancelReservationForm propertyId={propertyId} reservationId={row.id}/></div></details>}
         </article>;
       })}
     </section>

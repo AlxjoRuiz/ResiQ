@@ -17,7 +17,7 @@ type PostedPayment = { id: string; label: string };
 // Anular un pago registrado por error: se elige el pago y se escribe el motivo.
 function VoidPaymentPicker({ propertyId, unitId, payments }: { propertyId: string; unitId: string; payments: PostedPayment[] }) {
   const [state, action, pending] = useFormActionState(voidPayment, undefined as FinanceState);
-  return <details className="mt-6 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Anular un pago</summary>
+  return <details className="mt-6 border-t pt-4"><summary className="cursor-pointer text-sm font-medium text-primary">Anular un pago</summary>
     {payments.length ? <form onSubmit={action} className="mt-4 grid gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
       <label className="block text-sm font-medium">Pago<select name="paymentId" required defaultValue="" className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring"><option value="" disabled>Selecciona</option>{payments.map((payment) => <option key={payment.id} value={payment.id}>{payment.label}</option>)}</select></label>
       <label className="block text-sm font-medium">Motivo de anulación<input name="reason" minLength={3} maxLength={500} required className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
@@ -29,7 +29,7 @@ function VoidPaymentPicker({ propertyId, unitId, payments }: { propertyId: strin
 // Anular una obligación registrada por error; las que ya tienen pagos aplicados no se listan.
 function VoidReceivablePicker({ propertyId, unitId, receivables }: { propertyId: string; unitId: string; receivables: PostedPayment[] }) {
   const [state, action, pending] = useFormActionState(voidReceivable, undefined as FinanceState);
-  return <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Anular una obligación</summary>
+  return <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium text-primary">Anular una obligación</summary>
     {receivables.length ? <form onSubmit={action} className="mt-4 grid gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} />
       <label className="block text-sm font-medium">Obligación<select name="receivableId" required defaultValue="" className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring"><option value="" disabled>Selecciona</option>{receivables.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
       <label className="block text-sm font-medium">Motivo de anulación<input name="reason" minLength={3} maxLength={500} required className="mt-2 block h-11 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>

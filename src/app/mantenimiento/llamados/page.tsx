@@ -3,6 +3,7 @@ import { CalendarDays, Paperclip, TriangleAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
+import { CreatePanel, filterBar } from "@/components/ui/accent";
 import { NewWarningForm, WarningAdminActions } from "./warning-form";
 
 type Warning = { warning_id: string; staff_id: string; worker_name: string; warning_date: string; reason: string; description: string; created_at: string };
@@ -37,8 +38,8 @@ export default async function MaintenanceWarningsPage({ searchParams }: { search
     <Link href="/mantenimiento" className="text-sm text-muted-foreground hover:text-foreground">← Volver a mantenimiento</Link>
     <header className="mt-5 border-b pb-5"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Mantenimiento</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{admin ? "Llamados de atención" : "Mis llamados de atención"}</h1><p className="mt-2 text-sm text-muted-foreground">{admin ? "Registra y consulta los llamados de atención de cada trabajador." : "Aquí puedes consultar los llamados de atención que te han registrado."}</p></header>
     {admin && <>
-      <Card className="mt-6"><CardContent><details><summary className="cursor-pointer font-semibold">Nuevo llamado de atención</summary><div className="mt-5"><NewWarningForm workers={workers} today={today} /></div></details></CardContent></Card>
-      <form className="mt-6 flex flex-wrap items-end gap-3">
+      <CreatePanel title="Nuevo llamado de atención" description="Con fecha, motivo, descripción y documentos opcionales."><NewWarningForm workers={workers} today={today} /></CreatePanel>
+      <form className={filterBar}>
         <label className="text-sm font-medium">Trabajador<select name="trabajador" defaultValue={workerId ?? ""} className="mt-1 block h-11 rounded-lg border bg-white px-3 text-sm"><option value="">Todos</option>{workers.map((worker) => <option key={worker.staffId} value={worker.staffId}>{worker.name}</option>)}</select></label>
         <button className="h-11 rounded-lg border bg-white px-4 text-sm font-medium hover:bg-secondary">Ver</button>
       </form>

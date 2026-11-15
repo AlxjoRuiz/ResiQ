@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { InviteAdministratorForm, ReissueAdminInvitationForm } from "@/components/dashboard/create-property-form";
 import { PlatformPage } from "@/components/dashboard/platform-page";
 import { LegalAssignmentForm, PropertyStatusForm, PropertyTestForm } from "@/components/dashboard/platform-forms";
+import { UserPlus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { CreatePanel } from "@/components/ui/accent";
 import { requirePlatformAdmin } from "@/lib/auth/require-platform-admin";
 import { dateInputValue } from "@/lib/time-zone";
 import { propertyStatusLabel, propertyStatusTone } from "../../property-status";
@@ -70,7 +72,7 @@ export default async function PlatformPropertyPage({ params }: { params: Promise
         <span className={`w-fit rounded-full px-3 py-1 text-xs font-medium ${statusTones[admin.member_status] ?? "bg-secondary"}`}>{statusLabels[admin.member_status] ?? admin.member_status}</span>
         {admin.invitation_id && active && <div className="sm:col-span-2"><ReissueAdminInvitationForm invitationId={admin.invitation_id} /></div>}
       </li>)}{!admins.length && <li className="text-sm text-muted-foreground">Este conjunto no tiene administradores.</li>}</ul>
-      {active && <details className="mt-4 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Invitar otro administrador</summary><div className="mt-4"><InviteAdministratorForm propertyId={property.property_id} /></div></details>}
+      {active && <CreatePanel className="mt-4" icon={UserPlus} title="Invitar otro administrador"><InviteAdministratorForm propertyId={property.property_id} /></CreatePanel>}
     </CardContent></Card>
 
     <Card><CardContent><details>

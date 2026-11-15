@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { CalendarCheck2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ItemHeader, filterBar } from "@/components/ui/accent";
 import { DatePicker } from "@/components/ui/date-picker";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { signedPhotoLinks } from "@/lib/maintenance/photos";
@@ -37,13 +39,11 @@ function AttendanceRow({ item, photos, showName, admin }: { item: Attendance; ph
   const inPhoto = photos.get(item.check_in_photo_path), outPhoto = item.check_out_photo_path ? photos.get(item.check_out_photo_path) : undefined;
   const worked = workedTime(item);
   return <Card><CardContent>
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0">{showName && <h2 className="font-semibold">{item.worker_name}</h2>}<p className="text-sm capitalize text-muted-foreground">{dayFormat.format(new Date(item.check_in_at))}</p></div>
-      {item.check_out_at ? <span className="rounded-full bg-secondary px-3 py-1 text-xs">{worked}</span> : <span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-900">Sin salida</span>}
-    </div>
+    <ItemHeader icon={CalendarCheck2} title={showName ? item.worker_name : <span className="capitalize">{dayFormat.format(new Date(item.check_in_at))}</span>} subtitle={showName ? <span className="capitalize">{dayFormat.format(new Date(item.check_in_at))}</span> : "Jornada"}
+      badge={item.check_out_at ? <span className="rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary">{worked}</span> : <span className="rounded-full bg-amber-200 px-3 py-1 text-xs font-medium text-amber-950">Sin salida</span>} />
     <div className="mt-4 grid grid-cols-2 gap-3">
-      <figure className="min-w-0"><figcaption className="text-sm"><span className="text-muted-foreground">Llegada:</span> <strong>{timeFormat.format(new Date(item.check_in_at))}</strong></figcaption>{inPhoto && <Photo url={inPhoto} alt={`Foto de llegada de ${item.worker_name}`} />}</figure>
-      <figure className="min-w-0"><figcaption className="text-sm"><span className="text-muted-foreground">Salida:</span> <strong>{item.check_out_at ? timeFormat.format(new Date(item.check_out_at)) : "—"}</strong></figcaption>{outPhoto && <Photo url={outPhoto} alt={`Foto de salida de ${item.worker_name}`} />}{item.check_out_manual && <p className="mt-2 text-xs text-amber-900"><span className="rounded-full bg-amber-100 px-2 py-0.5">Salida registrada a mano</span><span className="mt-1 block text-muted-foreground">Motivo: {item.check_out_reason}</span></p>}</figure>
+      <figure className="min-w-0 rounded-lg bg-secondary/60 p-3"><figcaption className="text-sm"><span className="text-muted-foreground">Llegada:</span> <strong>{timeFormat.format(new Date(item.check_in_at))}</strong></figcaption>{inPhoto && <Photo url={inPhoto} alt={`Foto de llegada de ${item.worker_name}`} />}</figure>
+      <figure className="min-w-0 rounded-lg bg-secondary/60 p-3"><figcaption className="text-sm"><span className="text-muted-foreground">Salida:</span> <strong>{item.check_out_at ? timeFormat.format(new Date(item.check_out_at)) : "—"}</strong></figcaption>{outPhoto && <Photo url={outPhoto} alt={`Foto de salida de ${item.worker_name}`} />}{item.check_out_manual && <p className="mt-2 text-xs text-amber-900"><span className="rounded-full bg-amber-100 px-2 py-0.5">Salida registrada a mano</span><span className="mt-1 block text-muted-foreground">Motivo: {item.check_out_reason}</span></p>}</figure>
     </div>
     {admin && !item.check_out_at && <CloseAttendanceForm attendanceId={item.attendance_id} defaultTime={dateTimeInputValue(new Date(), COLOMBIA_TIME_ZONE)} />}
   </CardContent></Card>;
@@ -66,11 +66,11 @@ export default async function MaintenanceAttendancePage({ searchParams }: { sear
     return <main className="mx-auto min-h-screen max-w-2xl px-5 py-7 sm:px-10">
       {back}
       <header className="mt-5 border-b pb-5"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Mantenimiento</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Mi asistencia</h1><p className="mt-2 text-sm text-muted-foreground">La llegada se marca con una foto; la salida, sin foto. La hora la registra el sistema (hora de Colombia).</p></header>
-      <Card className="mt-6"><CardContent>
+      <Card className="mt-6 border-primary/30 bg-primary/5"><CardContent>
         <p className="mb-4 text-sm">{open ? <>Llegaste a las <strong>{timeFormat.format(new Date(open.check_in_at))}</strong>. Cuando termines, marca tu salida.</> : "No tienes una jornada abierta. Marca tu llegada al empezar."}</p>
         <CheckInOutForm key={open?.attendance_id ?? "in"} open={Boolean(open)} />
       </CardContent></Card>
-      <h2 className="mt-8 font-semibold">Últimos 14 días</h2>
+      <h2 className="mt-8 text-lg font-semibold text-primary">Últimos 14 días</h2>
       <div className="mt-3 grid gap-3">
         {items.map((item) => <AttendanceRow key={item.attendance_id} item={item} photos={photos} showName={false} admin={false} />)}
         {!items.length && <Card><CardContent><p className="text-sm text-muted-foreground">Todavía no tienes jornadas registradas.</p></CardContent></Card>}
@@ -95,13 +95,13 @@ export default async function MaintenanceAttendancePage({ searchParams }: { sear
   return <main className="mx-auto min-h-screen max-w-4xl px-5 py-7 sm:px-10">
     {back}
     <header className="mt-5 border-b pb-5"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Mantenimiento</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Asistencia</h1><p className="mt-2 text-sm text-muted-foreground">Llegadas y salidas de cada trabajador con su foto, en hora de Colombia.</p></header>
-    <form className="mt-6 flex flex-wrap items-end gap-3">
+    <form className={filterBar}>
       <label className="text-sm font-medium">Día<span className="block w-52"><DatePicker name="dia" defaultValue={day} max={today} /></span></label>
       <label className="text-sm font-medium">Trabajador<select name="trabajador" defaultValue={workerId ?? ""} className="mt-1 block h-11 rounded-lg border bg-white px-3 text-sm"><option value="">Todos</option>{workers.map((worker) => <option key={worker.staff_id} value={worker.staff_id}>{worker.first_name} {worker.first_surname}</option>)}</select></label>
       <button className="h-11 rounded-lg border bg-white px-4 text-sm font-medium hover:bg-secondary">Ver</button>
     </form>
-    {pending.length > 0 && <section className="mt-6"><h2 className="font-semibold">Sin salida de días anteriores</h2><p className="mt-1 text-sm text-muted-foreground">No suman horas hasta que se registre la salida.</p><div className="mt-3 grid gap-3">{pending.map((item) => <AttendanceRow key={item.attendance_id} item={item} photos={photos} showName admin />)}</div></section>}
-    <section className="mt-6"><h2 className="font-semibold capitalize">{dayFormat.format(zonedDayStart(day, COLOMBIA_TIME_ZONE))}</h2><div className="mt-3 grid gap-3">
+    {pending.length > 0 && <section className="mt-6"><h2 className="text-lg font-semibold text-primary">Sin salida de días anteriores</h2><p className="mt-1 text-sm text-muted-foreground">No suman horas hasta que se registre la salida.</p><div className="mt-3 grid gap-3">{pending.map((item) => <AttendanceRow key={item.attendance_id} item={item} photos={photos} showName admin />)}</div></section>}
+    <section className="mt-6"><h2 className="text-lg font-semibold capitalize text-primary">{dayFormat.format(zonedDayStart(day, COLOMBIA_TIME_ZONE))}</h2><div className="mt-3 grid gap-3">
       {items.map((item) => <AttendanceRow key={item.attendance_id} item={item} photos={photos} showName admin />)}
       {!items.length && <Card><CardContent><p className="text-sm text-muted-foreground">No hay llegadas registradas este día.</p></CardContent></Card>}
     </div></section>

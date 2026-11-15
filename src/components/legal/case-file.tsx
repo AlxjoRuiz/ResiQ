@@ -65,7 +65,7 @@ function OpenCase({ propertyId, unitId, caseFile }: { propertyId: string; unitId
     <div className="grid gap-3">
       <p className="font-medium">Compromisos de pago</p>
       {caseFile.commitments.length ? <ul className="grid gap-2">{caseFile.commitments.map((item) => <CommitmentRow key={item.id} propertyId={propertyId} unitId={unitId} item={item} today={caseFile.today} />)}</ul> : <p className="text-sm text-muted-foreground">Sin compromisos todavía.</p>}
-      <details className="rounded-xl border p-4"><summary className="cursor-pointer text-sm font-medium">Registrar compromiso</summary>
+      <details className="rounded-xl border p-4"><summary className="cursor-pointer text-sm font-medium text-primary">Registrar compromiso</summary>
         <form onSubmit={commitAction} className="mt-3 grid gap-3 sm:grid-cols-3"><Ids propertyId={propertyId} unitId={unitId} /><input type="hidden" name="caseId" value={caseFile.id} />
           <label className="text-sm font-medium">Valor (COP)<input name="amount" type="number" min={1} step={1} required className={`${field} h-11`} /></label>
           <label className="text-sm font-medium">Fecha de pago<DatePicker name="dueOn" required min={caseFile.today} className="mt-1" label="Elegir la fecha del compromiso" /></label>
@@ -76,7 +76,7 @@ function OpenCase({ propertyId, unitId, caseFile }: { propertyId: string; unitId
 
     <div className="grid gap-3">
       <p className="font-medium">Gestiones</p>
-      <details className="rounded-xl border p-4"><summary className="cursor-pointer text-sm font-medium">Registrar gestión</summary>
+      <details className="rounded-xl border p-4"><summary className="cursor-pointer text-sm font-medium text-primary">Registrar gestión</summary>
         <form onSubmit={actionAction} className="mt-3 grid gap-3 sm:grid-cols-2"><Ids propertyId={propertyId} unitId={unitId} /><input type="hidden" name="caseId" value={caseFile.id} />
           <label className="text-sm font-medium">Tipo<select name="kind" required defaultValue="call" className={`${field} h-11`}>{["call", "email", "whatsapp", "visit", "note"].map((value) => <option key={value} value={value}>{caseActionLabels[value]}</option>)}</select></label>
           <label className="text-sm font-medium">Fecha<DatePicker name="occurredOn" required defaultValue={caseFile.today} max={caseFile.today} className="mt-1" label="Elegir la fecha de la gestión" /></label>

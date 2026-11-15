@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Clock3, Hourglass, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardList, Clock3, Hourglass, XCircle } from "lucide-react";
+import { CreatePanel, FactGrid, ItemHeader, TextBlock, subtleSummary } from "@/components/ui/accent";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { signedPhotoLinks } from "@/lib/maintenance/photos";
@@ -30,7 +31,8 @@ function StatusBadge({ task }: { task: Task }) {
 
 function DeliveryView({ delivery, dueDate, photos }: { delivery: Delivery; dueDate: string; photos: Map<string, string> }) {
   const late = dateInputValue(new Date(delivery.submitted_at), COLOMBIA_TIME_ZONE) > dueDate;
-  return <div className="grid gap-2">
+  return <div className="grid gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+    <p className="text-xs font-medium text-primary">Entrega</p>
     <p className="text-sm"><span className="text-muted-foreground">Entregada:</span> {dateTime.format(new Date(delivery.submitted_at))}{late && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">Fuera de plazo</span>}</p>
     {/* Miniaturas de tamaño fijo (80 px en celular, 96 px en computador); al tocarlas se abre la foto completa. */}
     <div className="flex flex-wrap gap-2">{delivery.photo_paths.map((path, index) => { const url = photos.get(path); return url ? <a key={path} href={url} target="_blank" rel="noreferrer">
@@ -45,14 +47,11 @@ function DeliveryView({ delivery, dueDate, photos }: { delivery: Delivery; dueDa
 function TaskCard({ task, photos, admin }: { task: Task; photos: Map<string, string>; admin: boolean }) {
   const [latest, ...previous] = task.deliveries;
   return <Card><CardContent>
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0"><h2 className="font-semibold">{task.title}</h2><p className="text-sm text-muted-foreground">{task.property_name}{admin && <> · {task.worker_name}</>}</p></div>
-      <StatusBadge task={task} />
-    </div>
-    <p className="mt-3 text-sm whitespace-pre-line">{task.description}</p>
-    <p className="mt-2 text-sm"><span className="text-muted-foreground">Fecha límite:</span> <strong>{dateOnly.format(new Date(`${task.due_date}T12:00:00Z`))}</strong></p>
-    {latest && <div className="mt-4 border-t pt-4"><DeliveryView delivery={latest} dueDate={task.due_date} photos={photos} /></div>}
-    {previous.length > 0 && <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Entregas anteriores ({previous.length})</summary><div className="mt-3 grid gap-4">{previous.map((delivery) => <DeliveryView key={delivery.id} delivery={delivery} dueDate={task.due_date} photos={photos} />)}</div></details>}
+    <ItemHeader icon={ClipboardList} title={task.title} subtitle={<>Tarea{admin && <> · {task.worker_name}</>}</>} badge={<StatusBadge task={task} />} />
+    <FactGrid facts={[{ label: "Lugar", value: task.property_name }, { label: "Fecha límite", value: dateOnly.format(new Date(`${task.due_date}T12:00:00Z`)) }]} className="mt-4" />
+    <TextBlock label="Descripción">{task.description}</TextBlock>
+    {latest && <div className="mt-4"><DeliveryView delivery={latest} dueDate={task.due_date} photos={photos} /></div>}
+    {previous.length > 0 && <details className="mt-3"><summary className={subtleSummary}>Entregas anteriores ({previous.length})</summary><div className="mt-3 grid gap-4">{previous.map((delivery) => <DeliveryView key={delivery.id} delivery={delivery} dueDate={task.due_date} photos={photos} />)}</div></details>}
     {admin && task.status === "submitted" && <ReviewTaskForm taskId={task.task_id} />}
     {admin && task.status === "pending" && !task.deliveries.length && <DeleteTaskForm taskId={task.task_id} />}
     {!admin && (task.status === "pending" || task.status === "rejected") && <DeliverTaskForm taskId={task.task_id} again={task.status === "rejected"} />}
@@ -85,7 +84,7 @@ export default async function MaintenanceTasksPage({ searchParams }: { searchPar
     <Link href="/mantenimiento" className="text-sm text-muted-foreground hover:text-foreground">← Volver a mantenimiento</Link>
     <header className="mt-5 border-b pb-5"><p className="text-xs font-semibold tracking-wider text-primary uppercase">Mantenimiento</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{admin ? "Tareas" : "Mis tareas"}</h1><p className="mt-2 text-sm text-muted-foreground">{admin ? "Asigna tareas y revisa las entregas con sus fotos." : "Cuando termines una tarea, entrégala con fotos del trabajo."}</p></header>
     {admin && <>
-      <Card className="mt-6"><CardContent><details><summary className="cursor-pointer font-semibold">Nueva tarea</summary><div className="mt-5"><NewTaskForm workers={workers.filter((worker) => worker.active)} today={today} /></div></details></CardContent></Card>
+      <CreatePanel title="Nueva tarea" description="Asígnala a uno o varios trabajadores con su fecha límite."><NewTaskForm workers={workers.filter((worker) => worker.active)} today={today} /></CreatePanel>
       <TaskFilters key={`${status}|${workerId}|${range?.from}|${range?.to}`} status={status} workerId={workerId} range={range} today={today} statuses={statusFilters} workers={workers} />
     </>}
     <div className="mt-6 grid gap-4">
