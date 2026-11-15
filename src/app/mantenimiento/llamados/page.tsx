@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Paperclip } from "lucide-react";
+import { CalendarDays, Paperclip, TriangleAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireMaintenanceStaff } from "@/lib/auth/require-maintenance-staff";
 import { COLOMBIA_TIME_ZONE, dateInputValue } from "@/lib/time-zone";
@@ -44,12 +44,17 @@ export default async function MaintenanceWarningsPage({ searchParams }: { search
       </form>
     </>}
     <div className="mt-6 grid gap-4">
-      {warnings.map((warning) => <Card key={warning.warning_id}><CardContent>
-        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h2 className="font-semibold">{warning.reason}</h2>{admin && <p className="text-sm text-muted-foreground">{warning.worker_name}</p>}</div><span className="rounded-full bg-secondary px-3 py-1 text-xs">{dateOnly.format(new Date(`${warning.warning_date}T12:00:00Z`))}</span></div>
-        <p className="mt-3 text-sm whitespace-pre-line">{warning.description}</p>
-        {(attachmentsByWarning.get(warning.warning_id) ?? []).length > 0 && <div className="mt-3 flex flex-wrap gap-2">{(attachmentsByWarning.get(warning.warning_id) ?? []).map((attachment) => <a key={attachment.id} href={`/api/maintenance/warnings/attachments/${attachment.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border bg-secondary/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-secondary"><Paperclip size={14} aria-hidden="true" /><span className="truncate">{attachment.name}</span></a>)}</div>}
-        {admin && <WarningAdminActions warning={{ id: warning.warning_id, date: warning.warning_date, reason: warning.reason, description: warning.description }} today={today} attachments={attachmentsByWarning.get(warning.warning_id) ?? []} />}
-      </CardContent></Card>)}
+      {/* Tarjeta del llamado (14/11/2026): título azul, trabajador, fecha, descripción y documentos ordenados por bloques. */}
+      {warnings.map((warning) => { const files = attachmentsByWarning.get(warning.warning_id) ?? []; return <Card key={warning.warning_id}><CardContent>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><TriangleAlert size={18} aria-hidden="true" /></span>
+            <div className="min-w-0"><h2 className="break-words font-semibold text-primary">{warning.reason}</h2><p className="mt-0.5 text-xs text-muted-foreground">Llamado de atención{admin ? ` · ${warning.worker_name}` : ""}</p></div></div>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium"><CalendarDays size={13} aria-hidden="true" />{dateOnly.format(new Date(`${warning.warning_date}T12:00:00Z`))}</span>
+        </div>
+        <div className="mt-4 rounded-lg bg-secondary/60 px-3 py-2"><p className="text-xs text-muted-foreground">Descripción</p><p className="mt-0.5 whitespace-pre-line text-sm">{warning.description}</p></div>
+        {files.length > 0 && <div className="mt-3"><p className="text-xs text-muted-foreground">{files.length === 1 ? "1 documento" : `${files.length} documentos`}</p><div className="mt-1.5 flex flex-wrap gap-2">{files.map((attachment) => <a key={attachment.id} href={`/api/maintenance/warnings/attachments/${attachment.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-primary hover:bg-secondary"><Paperclip size={14} aria-hidden="true" /><span className="truncate">{attachment.name}</span></a>)}</div></div>}
+        {admin && <WarningAdminActions warning={{ id: warning.warning_id, date: warning.warning_date, reason: warning.reason, description: warning.description }} today={today} attachments={files} />}
+      </CardContent></Card>; })}
       {!warnings.length && <Card><CardContent><p className="text-sm text-muted-foreground">{admin ? "No hay llamados de atención registrados." : "No tienes llamados de atención."}</p></CardContent></Card>}
     </div>
   </main>;

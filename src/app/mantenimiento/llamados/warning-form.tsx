@@ -1,5 +1,6 @@
 "use client";
 
+import { Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useState } from "react";
@@ -34,8 +35,8 @@ export function NewWarningForm({ workers, today }: { workers: { staffId: string;
 // Admin: editar o borrar un llamado ya registrado (13/11/2026). Borrar pide confirmación.
 function RemoveAttachment({ attachment }: { attachment: WarningAttachment }) {
   const [state, action, pending] = useFormActionState(removeWarningAttachment, undefined as WarningState);
-  return <form onSubmit={action} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm"><input type="hidden" name="attachmentId" value={attachment.id} />
-    <span className="min-w-0 break-all">{attachment.name}</span>
+  return <form onSubmit={action} className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2 text-sm"><input type="hidden" name="attachmentId" value={attachment.id} />
+    <span className="flex min-w-0 items-center gap-2 text-primary"><Paperclip size={14} className="shrink-0" aria-hidden="true" /><span className="break-all">{attachment.name}</span></span>
     <span className="flex shrink-0 items-center gap-2">{state?.error && <span role="alert" className="text-xs text-destructive">{state.error}</span>}<Button size="sm" variant="outline" disabled={pending}>{pending ? "Quitando…" : "Quitar"}</Button></span>
   </form>;
 }
@@ -45,20 +46,25 @@ export function WarningAdminActions({ warning, today, attachments = [] }: { warn
   const [files, setFiles] = useState<File[]>([]);
   const [editState, edit, saving] = useFormActionState(async (previous: WarningState, data: FormData) => {
     const result = await updateWarning(previous, withFiles(data, files));
-    if (!result?.error) setFiles([]);
+    // Al guardar (14/11/2026) se cierra la edición y el aviso queda junto a «Editar».
+    if (!result?.error) { setFiles([]); setMode("none"); }
     return result;
   }, undefined as WarningState);
   const [deleteState, remove, deleting] = useFormActionState(deleteWarning, undefined as WarningState);
   return <div className="mt-4 border-t pt-3">
     {mode === "none" && <div className="flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setMode("edit")}>Editar</Button><Button type="button" size="sm" variant="outline" className="text-destructive" onClick={() => setMode("delete")}>Borrar</Button>{editState?.success && <p role="status" className="self-center text-sm text-primary">{editState.success}</p>}</div>}
-    {mode === "edit" && <form onSubmit={edit} className="grid gap-4 sm:grid-cols-2"><input type="hidden" name="warningId" value={warning.id} />
-      <label className="text-sm font-medium">Fecha<DatePicker name="date" required defaultValue={warning.date} max={today} /></label>
-      <label className="text-sm font-medium">Motivo<input name="reason" required minLength={3} maxLength={120} defaultValue={warning.reason} className={field} /></label>
-      <label className="text-sm font-medium sm:col-span-2">Descripción<textarea name="description" required minLength={3} maxLength={2000} rows={4} defaultValue={warning.description} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm" /></label>
-      <div className="sm:col-span-2"><LegalFilesField files={files} onChange={setFiles} disabled={saving} /></div>
-      <div className="flex flex-wrap items-center gap-2 sm:col-span-2"><Button size="sm" disabled={saving}>{saving ? "Guardando…" : "Guardar cambios"}</Button><Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => setMode("none")}>Cancelar</Button>{editState?.error && <p role="alert" className="text-sm text-destructive">{editState.error}</p>}{editState?.success && <p role="status" className="text-sm text-primary">{editState.success}</p>}</div>
-    </form>}
-    {mode === "edit" && attachments.length > 0 && <div className="mt-4 grid gap-2"><p className="text-sm font-medium">Documentos cargados</p>{attachments.map((attachment) => <RemoveAttachment key={attachment.id} attachment={attachment} />)}</div>}
+    {/* Edición en un recuadro (14/11/2026): primero los documentos cargados (cada uno con «Quitar»), después los datos. */}
+    {mode === "edit" && <div className="grid gap-4 rounded-xl border bg-secondary/30 p-4">
+      <p className="text-sm font-semibold text-primary">Editar llamado</p>
+      {attachments.length > 0 && <div className="grid gap-2"><p className="text-sm font-medium">Documentos cargados</p>{attachments.map((attachment) => <RemoveAttachment key={attachment.id} attachment={attachment} />)}</div>}
+      <form onSubmit={edit} className="grid gap-4 sm:grid-cols-2"><input type="hidden" name="warningId" value={warning.id} />
+        <label className="text-sm font-medium">Fecha<DatePicker name="date" required defaultValue={warning.date} max={today} /></label>
+        <label className="text-sm font-medium">Motivo<input name="reason" required minLength={3} maxLength={120} defaultValue={warning.reason} className={field} /></label>
+        <label className="text-sm font-medium sm:col-span-2">Descripción<textarea name="description" required minLength={3} maxLength={2000} rows={4} defaultValue={warning.description} className="mt-1 w-full rounded-lg border bg-white px-3 py-2 text-sm" /></label>
+        <div className="sm:col-span-2"><LegalFilesField files={files} onChange={setFiles} disabled={saving} /></div>
+        <div className="flex flex-wrap items-center gap-2 sm:col-span-2"><Button size="sm" disabled={saving}>{saving ? "Guardando…" : "Guardar cambios"}</Button><Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => setMode("none")}>Cancelar</Button>{editState?.error && <p role="alert" className="text-sm text-destructive">{editState.error}</p>}</div>
+      </form>
+    </div>}
     {mode === "delete" && <form onSubmit={remove} className="grid gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3"><input type="hidden" name="warningId" value={warning.id} />
       <p className="text-sm">¿Borrar este llamado de atención? El trabajador ya no lo verá y no se puede deshacer.</p>
       <div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" className="text-destructive" disabled={deleting}>{deleting ? "Borrando…" : "Sí, borrar"}</Button><Button type="button" size="sm" variant="outline" disabled={deleting} onClick={() => setMode("none")}>Cancelar</Button>{deleteState?.error && <p role="alert" className="text-sm text-destructive">{deleteState.error}</p>}</div>
