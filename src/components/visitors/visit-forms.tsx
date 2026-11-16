@@ -11,6 +11,9 @@ export type VisitDirectoryRow={unit_id:string;unit_code:string;building_name:str
 const inputClass="mt-2 box-border h-11 min-w-0 w-full max-w-full rounded-lg border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const areaClass="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring";
 const labelClass="block min-w-0 text-sm font-medium";
+// Bloques del formulario con el recuadro azul de la app (15/11/2026): solo aspecto, los campos no cambian.
+const groupClass="grid min-w-0 gap-5 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:p-5";
+const groupTitle="text-sm font-semibold text-primary";
 function Result({state}:{state:VisitState}){if(state?.error)return <p role="alert" className="text-sm text-destructive">{state.error}</p>;if(state?.success)return <p role="status" className="text-sm text-primary">{state.success}</p>;return null;}
 
 export function CreateVisitForm({propertyId,directory,timeZone}:{propertyId:string;directory:VisitDirectoryRow[];timeZone:string}){
@@ -20,15 +23,18 @@ export function CreateVisitForm({propertyId,directory,timeZone}:{propertyId:stri
   const units=useMemo(()=>Array.from(new Map(directory.map((row)=>[row.unit_id,{id:row.unit_id,label:`${row.building_name} · ${row.unit_code}`}])).values()),[directory]);
 
   return <form onSubmit={action} className="grid gap-5"><input type="hidden" name="propertyId" value={propertyId}/>
+    <div className={groupClass}><p className={groupTitle}>Visitante</p>
     <label className={labelClass}>Apartamento<select className={inputClass} name="unitId" value={unitId} onChange={(event)=>{setUnitId(event.target.value);}} required><option value="" disabled>Selecciona</option>{units.map((unit)=><option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></label>
     <div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Tipo<select className={inputClass} name="kind" value={kind} onChange={(event)=>setKind(event.target.value)}>{visitKinds.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label className={labelClass}>Cantidad de personas<input className={inputClass} name="peopleCount" value={values.peopleCount} onChange={(event)=>update("peopleCount",event.target.value)} type="number" min={1} max={20} required/></label></div>
     <label className={labelClass}>Nombre del visitante<input className={inputClass} name="visitorName" value={values.visitorName} onChange={(event)=>update("visitorName",event.target.value)} minLength={2} maxLength={120} required/></label>
     <label className={labelClass}>Últimos dígitos del documento <span className="font-normal text-muted-foreground">(opcional)</span><input className={inputClass} name="documentLastDigits" value={values.documentLastDigits} onChange={(event)=>update("documentLastDigits",event.target.value)} inputMode="numeric" pattern="[0-9]{2,6}" maxLength={6}/><span className="mt-1 block text-xs font-normal text-muted-foreground">Entre 2 y 6 dígitos. Puedes repetirlos en otras solicitudes.</span></label>
     {kind==="maintenance"&&<div className="grid gap-5 sm:grid-cols-2"><label className={labelClass}>Empresa<input className={inputClass} name="company" value={values.company} onChange={(event)=>update("company",event.target.value)} maxLength={120}/></label><label className={labelClass}>Tipo de servicio<input className={inputClass} name="serviceType" value={values.serviceType} onChange={(event)=>update("serviceType",event.target.value)} maxLength={120} required placeholder="Plomería, internet, reparación…"/></label></div>}
-    <p className="text-xs text-muted-foreground">Selecciona el horario del conjunto: {timeZone}.</p>
+    </div>
+    <div className={groupClass}><div><p className={groupTitle}>Horario de la visita</p><p className="mt-1 text-xs text-muted-foreground">Selecciona el horario del conjunto: {timeZone}. La ventana puede durar máximo 24 horas.</p></div>
     <div className="grid min-w-0 gap-5 sm:grid-cols-2"><DateTimeField name="scheduledStart" label="Inicio de la visita" value={values.scheduledStart} onChange={(value)=>update("scheduledStart",value)}/><DateTimeField name="scheduledEnd" label="Fin de la visita" value={values.scheduledEnd} onChange={(value)=>update("scheduledEnd",value)}/></div>
-    <label className={labelClass}>Observaciones<textarea className={areaClass} name="notes" value={values.notes} onChange={(event)=>update("notes",event.target.value)} maxLength={1000}/></label>
-    <p className="text-xs text-muted-foreground">El documento completo no se almacena. La ventana puede durar máximo 24 horas.</p>
+    </div>
+    <div className={groupClass}><label className={labelClass}><span className={groupTitle}>Observaciones</span> <span className="font-normal text-muted-foreground">(opcional)</span><textarea className={areaClass} name="notes" value={values.notes} onChange={(event)=>update("notes",event.target.value)} maxLength={1000}/></label></div>
+    <p className="text-xs text-muted-foreground">El documento completo no se almacena.</p>
     <div className="flex items-center gap-4"><Button disabled={pending||!unitId}>{pending?"Enviando…":"Enviar solicitud de ingreso"}</Button><Result state={state}/></div>
   </form>;
 }
