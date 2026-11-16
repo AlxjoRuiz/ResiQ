@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Scale, ShieldCheck, UserCog, UserRound, Wrench, type LucideIcon } from "lucide-react";
 
 // Etiqueta del perfil (15/11/2026, pedido de Alejandro): recuadro claro con el ícono en un cuadro de borde azul y el
@@ -13,12 +12,8 @@ export function ProfileBadge({ label, icon }: { label: string; icon?: LucideIcon
   </span>;
 }
 
-/** Enlace pequeño a «Tu perfil», al lado de la etiqueta (la etiqueta ya no lleva a ninguna parte). */
-export function MyProfileLink() {
-  return <Link href="/perfil" className="text-xs font-medium text-muted-foreground underline-offset-4 hover:text-primary hover:underline">Mi perfil</Link>;
-}
-
-/** Etiqueta + «Mi perfil» juntos, para la barra superior. */
+/** Etiqueta para la barra superior; children: el enlace «Cambiar a …» si la cuenta tiene otro perfil.
+ *  Sin «Mi perfil» (15/11/2026, pedido de Alejandro). */
 export function ProfileArea({ label, children }: { label: string; children?: React.ReactNode }) {
-  return <div className="flex flex-wrap items-center justify-end gap-3"><ProfileBadge label={label} />{children}<MyProfileLink /></div>;
+  return <div className="flex flex-wrap items-center justify-end gap-3"><ProfileBadge label={label} />{children}</div>;
 }
