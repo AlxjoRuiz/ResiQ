@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
+import { ProfileArea } from "@/components/ui/profile-badge";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Building2, FileBarChart, LogOut, MessagesSquare, Scale, UserRound } from "lucide-react";
+import { Building2, FileBarChart, LogOut, MessagesSquare, Scale } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import styles from "@/components/dashboard/dashboard.module.css";
 
@@ -34,6 +35,6 @@ export function LegalShell({ children, threads }: { children: ReactNode; threads
       </nav>
       <form action={signOut} className="mt-auto"><button className={`${styles.communityLink} flex items-center gap-2`}><LogOut size={15} aria-hidden="true" />Salir</button></form>
     </aside>
-    <div ref={contentRef} className={styles.content}><header className={styles.topbar}><div className={styles.property}><Scale size={19} aria-hidden="true" /><span>Cobro jurídico ResiQ</span></div><Link href="/perfil" className={styles.profileLink}><UserRound size={16} aria-hidden="true" />Abogada</Link></header><div className={styles.moduleContent}>{children}</div></div>
+    <div ref={contentRef} className={styles.content}><header className={styles.topbar}><div className={styles.property}><Scale size={19} aria-hidden="true" /><span>Cobro jurídico ResiQ</span></div><ProfileArea label="Abogada" /></header><div className={styles.moduleContent}>{children}</div></div>
   </div></div>;
 }

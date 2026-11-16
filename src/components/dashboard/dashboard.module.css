@@ -29,8 +29,6 @@
 .property span { overflow-wrap: anywhere; }
 /* Dirección y ciudad debajo del nombre del conjunto. */
 .propertyAddress { display: block; margin-top: 2px; font-size: 12px; color: #606671; }
-.roleSwitcher { display: flex; flex-wrap: wrap; gap: 7px; }
-.roleSwitcher a { border-radius: 24px; }
 .welcome { margin: 16px 0 18px; }
 .welcomeMain { display: flex; align-items: center; gap: 18px; margin-top: 8px; }
 .welcomeIcon { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; background: #d4dce9; color: #364763; }
@@ -70,7 +68,6 @@
 @media (min-width: 1300px) { .activitySummaries { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; } .sidebar { top: 0; z-index: 1; height: auto; overflow-y: visible; padding: 16px 18px 12px; border-bottom: 1px solid #e1e5ec; } .brand { padding: 0; } .sidebarLabel { margin: 10px 0 6px; } .navigation { display: flex; overflow-x: auto; gap: 4px; padding-bottom: 5px; } .navigation a { flex-shrink: 0; padding: 9px 11px; } .communityLink { margin-top: 0; padding: 8px 0 0; } .content { padding: 18px; } }
 @media (max-width: 560px) { .canvas { padding: 6px; } .shell { min-height: calc(100vh - 12px); border-radius: 18px; } .content { padding: 16px; } .topbar { align-items: flex-start; flex-direction: column; gap: 10px; } .welcomeMain { align-items: flex-start; gap: 12px; } .welcomeIcon { width: 44px; height: 44px; } .metrics, .summaries { grid-template-columns: minmax(0, 1fr); } .metrics > div > div { flex-direction: row; align-items: center; justify-content: space-between; padding: 16px; } .metrics p:last-child { max-width: 55%; } }
-.profileLink { display: flex; align-items: center; gap: 8px; padding: 9px 15px; background: white; color: #3e495d; border-radius: 24px; font-size: 13px; }
 .moduleContent { min-width: 0; overflow-wrap: anywhere; }
 .moduleContent > main { padding: 0; margin: 0; max-width: none; min-height: 0; width: 100%; }
 .moduleContent [data-slot="card"], .moduleContent section > a, .moduleContent section > div:global(.rounded-2xl) { border-radius: 22px; background-color: white; box-shadow: 0 4px 20px #344a3406; border-color: #e1e5ec; }

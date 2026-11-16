@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { ProfileArea } from "@/components/ui/profile-badge";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Bell, Building2, House, Megaphone, UserRound } from "lucide-react";
+import { Bell, Building2, House, Megaphone } from "lucide-react";
 import { adminModules, conciergeModules, residentModules } from "./navigation";
 import styles from "./dashboard.module.css";
 import { getUnseenSections, markSectionSeen } from "@/app/panel/propiedades/[propertyId]/section-seen-actions";
@@ -72,6 +73,6 @@ export function PropertyModuleShell({ children, propertyId, propertyName, roles,
       <Link href={`${base}/notificaciones`} aria-current={pathname.startsWith(`${base}/notificaciones`) ? "page" : undefined} className={pathname.startsWith(`${base}/notificaciones`) ? styles.activeLink : undefined}><Bell size={19} aria-hidden="true" />Notificaciones{dot("notificaciones")}</Link>
       <Link href={`${base}/comunicados`} aria-current={pathname.startsWith(`${base}/comunicados`) ? "page" : undefined} className={pathname.startsWith(`${base}/comunicados`) ? styles.activeLink : undefined}><Megaphone size={19} aria-hidden="true" />Comunicados{dot("comunicados")}</Link>
     </nav><Link href="/panel" className={styles.communityLink}>← Mis comunidades</Link></aside>
-    <div ref={contentRef} className={styles.content}><header className={styles.topbar}><div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{propertyName}</span></div><Link href="/perfil" className={styles.profileLink}><UserRound size={16} aria-hidden="true" />{label}</Link></header><div className={styles.moduleContent}>{noticeReturnId && <Link href={`${base}/notificaciones/${noticeReturnId}`} className="my-4 inline-flex rounded-lg border px-3 py-2 text-sm font-medium text-primary hover:bg-muted">← Volver al aviso</Link>}{children}</div></div>
+    <div ref={contentRef} className={styles.content}><header className={styles.topbar}><div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{propertyName}</span></div><ProfileArea label={label} /></header><div className={styles.moduleContent}>{noticeReturnId && <Link href={`${base}/notificaciones/${noticeReturnId}`} className="my-4 inline-flex rounded-lg border px-3 py-2 text-sm font-medium text-primary hover:bg-muted">← Volver al aviso</Link>}{children}</div></div>
   </div></div>;
 }

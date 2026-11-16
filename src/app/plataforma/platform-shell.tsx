@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
+import { ProfileArea } from "@/components/ui/profile-badge";
 import { usePathname } from "next/navigation";
-import { BriefcaseBusiness, Building2, ChartNoAxesCombined, FlaskConical, House, LogOut, Settings, ShieldCheck, UserRound, UsersRound } from "lucide-react";
+import { BriefcaseBusiness, Building2, ChartNoAxesCombined, FlaskConical, House, LogOut, Settings, ShieldCheck, UsersRound } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import styles from "@/components/dashboard/dashboard.module.css";
 
@@ -41,6 +42,6 @@ export function PlatformShell({ children }: { children: ReactNode }) {
       </nav>
       <form action={signOut} className="mt-auto"><button className={`${styles.communityLink} flex items-center gap-2`}><LogOut size={15} aria-hidden="true" />Salir</button></form>
     </aside>
-    <div ref={contentRef} className={styles.content}><header className={styles.topbar}><div className={styles.property}><ShieldCheck size={19} aria-hidden="true" /><span>Plataforma ResiQ</span></div><Link href="/perfil" className={styles.profileLink}><UserRound size={16} aria-hidden="true" />Superadmin</Link></header><div className={styles.moduleContent}>{children}</div></div>
+    <div ref={contentRef} className={styles.content}><header className={styles.topbar}><div className={styles.property}><ShieldCheck size={19} aria-hidden="true" /><span>Plataforma ResiQ</span></div><ProfileArea label="Superadmin" /></header><div className={styles.moduleContent}>{children}</div></div>
   </div></div>;
 }

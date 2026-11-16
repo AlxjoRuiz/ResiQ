@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { ProfileArea } from "@/components/ui/profile-badge";
 import styles from "@/components/dashboard/dashboard.module.css";
 import { redirect } from "next/navigation";
 import { residentModules, conciergeModules, adminModules } from "@/components/dashboard/navigation";
 import { Bell, Building2, House, Megaphone } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/dashboard/role-dashboard";
 import { AdminOverview, type AdminDashboard } from "@/components/dashboard/admin-overview";
 import { ResidentOverview, type ResidentDashboard } from "@/components/dashboard/resident-overview";
@@ -97,7 +97,9 @@ export default async function PropertyDashboardPage({ params, searchParams }: { 
       <div className={styles.content}>
         <header className={styles.topbar}>
           <div className={styles.property}><Building2 size={19} aria-hidden="true" /><span>{property.name}{(property.address || property.city) && <small className={styles.propertyAddress}>{[property.address, property.city].filter(Boolean).join(" · ")}</small>}</span></div>
-          <div className={styles.roleSwitcher} aria-label="Seleccionar perfil">{views.map((allowedView) => <Button key={allowedView} asChild size="sm" variant={allowedView === view ? "default" : "outline"}><Link href={`/panel/propiedades/${propertyId}/dashboard?vista=${allowedView}`} aria-current={allowedView === view ? "page" : undefined}>{allowedView === "administracion" ? "Administración" : allowedView === "porteria" ? "Portería" : "Residente"}</Link></Button>)}</div>
+          {/* Perfil (15/11/2026): solo la etiqueta del perfil actual, sin clic. Si la cuenta tiene otro perfil, un enlace
+              pequeño «Cambiar a …» permite pasar a él. */}
+          <ProfileArea label={viewLabel}>{views.filter((allowedView) => allowedView !== view).map((allowedView) => <Link key={allowedView} href={`/panel/propiedades/${propertyId}/dashboard?vista=${allowedView}`} className="text-xs font-medium text-primary underline-offset-4 hover:underline">Cambiar a {allowedView === "administracion" ? "Administración" : allowedView === "porteria" ? "Portería" : "Residente"}</Link>)}</ProfileArea>
         </header>
         <section className={styles.welcome}>
           <div className={styles.welcomeMain}>
