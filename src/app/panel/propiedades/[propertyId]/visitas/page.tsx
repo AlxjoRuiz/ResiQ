@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { DoorOpen, Wrench } from "lucide-react";
 import { FactGrid, ItemHeader } from "@/components/ui/accent";
-import { statusPill, type StatusTone } from "@/lib/ui/status-tones";
-// Color del estado (14/11/2026): pendiente en ámbar, aceptada o adentro en azul, rechazada en rojo, el resto en gris.
-const visitTone = (status: string): StatusTone => status === "pending" ? "warning" : status === "authorized" || status === "entered" ? "success" : status === "rejected" ? "danger" : "neutral";
+import { statusPill, visitTone } from "@/lib/ui/status-tones";
 import { dateInputValue } from "@/lib/time-zone";
 import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { dateBounds, readDateFilter } from "@/lib/date-range";

@@ -43,3 +43,11 @@ export const readPill: Record<ReadTone, string> = {
   unread: "bg-unread-notice text-white",
   read: "bg-secondary text-read-text",
 };
+
+// Color del estado por módulo (15/11/2026), para que listas y detalles usen el mismo tono:
+// por atender en ámbar, aprobado o activo en azul, rechazado o vencido en rojo, lo terminado en gris.
+export const visitTone = (status: string): StatusTone => status === "pending" ? "warning" : status === "authorized" || status === "entered" ? "success" : status === "rejected" ? "danger" : "neutral";
+export const pqrsTone = (status: string): StatusTone => status === "answered" ? "success" : status === "closed" ? "neutral" : "warning";
+export const packageTone = (status: string): StatusTone => status === "delivered" ? "neutral" : "success";
+export const attentionTone = (status: string): StatusTone => status === "closed" ? "neutral" : status === "in_review" ? "warning" : "success";
+export const reservationTone = (status: string): StatusTone => status === "pending" ? "warning" : status === "approved" ? "success" : status === "rejected" || status === "expired" ? "danger" : "neutral";

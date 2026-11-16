@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FactGrid, ItemHeader } from "@/components/ui/accent";
-import { statusPill, type StatusTone } from "@/lib/ui/status-tones";
+import { statusPill, pqrsTone } from "@/lib/ui/status-tones";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
 import { categoryLabel, requestTypeLabel, statusLabel } from "@/lib/pqrs/constants";
 import { dateInputValue, dateTimeFormatter } from "@/lib/time-zone";
@@ -12,9 +12,6 @@ import { dateBounds, readDateFilter } from "@/lib/date-range";
 
 type UnitRelation = { code: string; buildings: { name: string } | { name: string }[] | null } | { code: string; buildings: { name: string } | { name: string }[] | null }[] | null;
 function unitLabel(units: UnitRelation) { const unit = Array.isArray(units) ? units[0] : units; const building = Array.isArray(unit?.buildings) ? unit.buildings[0] : unit?.buildings; return [building?.name, unit?.code].filter(Boolean).join(" · ") || "Apartamento"; }
-
-// Color del estado (14/11/2026): por atender en ámbar, respondida en azul, cerrada en gris.
-const pqrsTone = (status: string): StatusTone => status === "answered" ? "success" : status === "closed" ? "neutral" : "warning";
 
 export default async function PqrsPage({ params, searchParams }: { params: Promise<{ propertyId: string }>; searchParams: Promise<{ desde?: string; hasta?: string }> }) {
   const { propertyId } = await params;

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FactGrid, ItemHeader, TextBlock, filterBar, subtleSummary } from "@/components/ui/accent";
-import { statusPill, type StatusTone } from "@/lib/ui/status-tones";
+import { statusPill, reservationTone } from "@/lib/ui/status-tones";
 import { CancelReservationForm, DecisionForm } from "@/components/reservations/reservation-forms";
 import { NewReservationButton } from "@/components/reservations/new-reservation-button";
 import { requirePropertyMember } from "@/lib/auth/require-property-member";
@@ -27,9 +27,6 @@ type DisplayRow = {
   purpose?: string | null; reviewMessage?: string | null; reason?: string | null;
 };
 function one<T>(value: T | T[] | null) { return Array.isArray(value) ? value[0] : value; }
-// Color del estado (14/11/2026): pendiente en ámbar, aprobada en azul, rechazada o vencida en rojo, el resto en gris.
-const reservationTone = (status: string): StatusTone => status === "pending" ? "warning" : status === "approved" ? "success" : status === "rejected" || status === "expired" ? "danger" : "neutral";
-
 export default async function ReservationsPage({ params, searchParams }: {
   params: Promise<{ propertyId: string }>;
   searchParams: Promise<{ created?: string; status?: string; zone?: string; mora?: string }>;
