@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { applyUnitCredit, createUnitCredit, rejectCreditRequest, requestUnitCredit, voidUnitCredit, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { formatCop } from "@/lib/finance/constants";
@@ -49,7 +50,7 @@ function VoidForm({ propertyId, unitId, creditId }: { propertyId: string; unitId
   return <details className="mt-3"><summary className="cursor-pointer text-xs font-medium text-muted-foreground">Anular este saldo a favor</summary>
     <form onSubmit={action} className="mt-2 flex flex-wrap items-end gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} /><input type="hidden" name="creditId" value={creditId} />
       <label className={`${labelClass} min-w-56 flex-1`}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required /></label>
-      <Button size="sm" variant="outline" disabled={pending}>{pending ? "Anulando…" : "Anular"}</Button><Result state={state} />
+      <ConfirmButton disabled={pending} title="Anular saldo a favor" message="¿Desea anular este saldo a favor? El apartamento ya no podrá usarlo y la anulación queda registrada con su motivo. Esta acción no se puede deshacer." confirmLabel="Sí, anular">{pending ? "Anulando…" : "Anular"}</ConfirmButton><Result state={state} />
     </form>
   </details>;
 }
@@ -84,7 +85,7 @@ export function CreditRequestCard({ propertyId, unitId, request, inForm, onAccep
       <details><summary className="cursor-pointer text-xs font-medium text-muted-foreground">Rechazar</summary>
         <form onSubmit={reject} className="mt-2 flex flex-wrap items-end gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} /><input type="hidden" name="requestId" value={request.id} />
           <label className={`${labelClass} min-w-56 flex-1`}>Motivo<input className={inputClass} name="reason" minLength={3} maxLength={500} required /></label>
-          <Button size="sm" variant="outline" disabled={rejecting}>{rejecting ? "Rechazando…" : "Rechazar"}</Button>
+          <ConfirmButton disabled={rejecting} title="Rechazar solicitud" message="¿Desea rechazar esta solicitud de pago con saldo a favor? El valor apartado vuelve a quedar disponible para el residente, que verá el motivo del rechazo." confirmLabel="Sí, rechazar">{rejecting ? "Rechazando…" : "Rechazar"}</ConfirmButton>
         </form>
       </details>
       <Result state={rejectState} />

@@ -5,6 +5,7 @@ import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { Plus, UserPlus } from "lucide-react";
 import { unlinkUnitResidents, updateCensusRecord, type ManagementState } from "@/app/panel/propiedades/actions";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { normalizeCensusHeader } from "@/lib/census/parse";
 
 const sections = ["Residente", "Familia", "Vehículos", "Mascotas", "Otros"] as const;
@@ -33,24 +34,17 @@ function fieldHint(header: string, occupied: boolean) {
 
 type LinkedResident = { linkId: string; label: string };
 
-// Desvincular junto a Editar, con confirmación antes de quitar el acceso.
+// Desvincular junto a Editar, con el aviso rojo común en el centro de la pantalla (15/11/2026).
 function UnlinkResidents({ propertyId, residents }: { propertyId: string; residents: LinkedResident[] }) {
-  const [confirming, setConfirming] = useState(false);
   const [state, action, pending] = useFormActionState(unlinkUnitResidents, undefined as ManagementState);
-  if (!confirming) return <>
-    <Button type="button" size="sm" variant="outline" onClick={() => setConfirming(true)}>Desvincular</Button>
-    {state?.error && <p role="alert" className="w-full text-sm text-destructive">{state.error}</p>}
-  </>;
-  // Confirmación centrada sobre la ficha, con el contenido desenfocado detrás.
-  return <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Confirmar desvinculación">
-    <form onSubmit={action} className="w-full max-w-md space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-lg">
+  return <>
+    <form onSubmit={action} className="contents">
       <input type="hidden" name="propertyId" value={propertyId} />
       {residents.map((resident) => <input key={resident.linkId} type="hidden" name="unitMembershipId" value={resident.linkId} />)}
-      <p>¿Seguro que quieres desvincular a {residents.map((resident) => resident.label).join(" y ")}? Perderá el acceso a ResiQ para este apartamento. El apartamento y su historial se conservan.</p>
-      <div className="flex flex-wrap gap-2"><Button size="sm" disabled={pending}>{pending ? "Desvinculando…" : "Sí, desvincular"}</Button><Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => setConfirming(false)}>Cancelar</Button></div>
-      {state?.error && <p role="alert" className="text-destructive">{state.error}</p>}
+      <ConfirmButton disabled={pending} title="Desvincular residente" message={<>¿Desea desvincular a <strong>{residents.map((resident) => resident.label).join(" y ")}</strong>? Perderá el acceso a ResiQ para este apartamento. El apartamento y su historial se conservan.</>} confirmLabel="Sí, desvincular">{pending ? "Desvinculando…" : "Desvincular"}</ConfirmButton>
     </form>
-  </div>;
+    {state?.error && <p role="alert" className="w-full text-sm text-destructive">{state.error}</p>}
+  </>;
 }
 
 export function CensusDetail({ headers, cells, propertyId, recordId, residents, vacant }: { headers: string[]; cells: (string | null)[]; propertyId: string; recordId: string; residents: LinkedResident[]; vacant: boolean }) {

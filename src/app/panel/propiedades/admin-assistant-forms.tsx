@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import type { Vehicle } from "@/lib/concierge/person";
@@ -72,7 +73,7 @@ export function AdminAssistantInvitationForm({ propertyId, invitationId }: { pro
 export function AdminAssistantStatusForm({ propertyId, memberId, suspended }: { propertyId: string; memberId: string; suspended: boolean }) {
   const [state, action, pending] = useFormActionState(setAdminAssistantStatus, undefined as ManagementState);
   return <form onSubmit={action} className="flex w-full flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="memberId" value={memberId} /><input type="hidden" name="status" value={suspended ? "active" : "suspended"} />
-    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : suspended ? "Reactivar acceso" : "Suspender acceso"}</Button>
+    {suspended ? <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : "Reactivar acceso"}</Button> : <ConfirmButton disabled={pending} title="Suspender acceso" message="¿Desea suspender el acceso de este auxiliar? No podrá entrar a la administración hasta que lo reactive. Su ficha y su usuario se conservan." confirmLabel="Sí, suspender">{pending ? "Guardando…" : "Suspender acceso"}</ConfirmButton>}
     {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}
   </form>;
 }

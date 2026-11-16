@@ -13,6 +13,7 @@ import {
   type ReservationState,
 } from "@/app/panel/propiedades/[propertyId]/reservas/actions";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DateTimeField, TimeField } from "@/components/ui/date-time-field";
 import { slotDurationHoursLabel, weekdayLabels } from "@/lib/reservations/constants";
@@ -83,7 +84,7 @@ export function BlackoutForm({ propertyId, amenityId }: { propertyId: string; am
 
 export function DeleteBlackoutForm({ propertyId, blackoutId }: { propertyId: string; blackoutId: string }) {
   const [state, action, pending] = useFormActionState(deleteAmenityBlackout, undefined as ReservationState);
-  return <form onSubmit={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="blackoutId" value={blackoutId}/><Button size="sm" variant="ghost" disabled={pending}>{pending?"Eliminando…":"Eliminar cierre"}</Button><Result state={state}/></form>;
+  return <form onSubmit={action} className="flex flex-wrap items-center gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="blackoutId" value={blackoutId}/><ConfirmButton variant="ghost" className="text-destructive" disabled={pending} title="Eliminar cierre" message="¿Desea eliminar este cierre programado? La zona volverá a estar disponible para reservas en esas fechas." confirmLabel="Sí, eliminar cierre">{pending?"Eliminando…":"Eliminar cierre"}</ConfirmButton><Result state={state}/></form>;
 }
 
 export type ReservationAmenity = { id: string; name: string; capacity: number; requires_approval: boolean; slot_minutes: number };
@@ -121,10 +122,10 @@ export function CreateReservationForm({ propertyId, amenities, units, amenityId,
 
 export function DecisionForm({ propertyId, reservationId }: { propertyId: string; reservationId: string }) {
   const [state, action, pending] = useFormActionState(decideReservation, undefined as ReservationState);
-  return <form onSubmit={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Mensaje para el residente al aprobar o rechazar<textarea className={areaClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-2"><Button name="decision" value="approve" size="sm" disabled={pending}>Aprobar</Button><Button name="decision" value="reject" size="sm" variant="outline" disabled={pending}>Rechazar</Button><Result state={state}/></div></form>;
+  return <form onSubmit={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Mensaje para el residente al aprobar o rechazar<textarea className={areaClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-2"><Button name="decision" value="approve" size="sm" disabled={pending}>Aprobar</Button><ConfirmButton name="decision" value="reject" disabled={pending} title="Rechazar reserva" message="¿Desea rechazar esta reserva? El residente recibirá su mensaje y el horario quedará libre para otras reservas." confirmLabel="Sí, rechazar">Rechazar</ConfirmButton><Result state={state}/></div></form>;
 }
 
 export function CancelReservationForm({ propertyId, reservationId }: { propertyId: string; reservationId: string }) {
   const [state, action, pending] = useFormActionState(cancelReservation, undefined as ReservationState);
-  return <form onSubmit={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Motivo de cancelación<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending}>{pending?"Cancelando…":"Cancelar reserva"}</Button><Result state={state}/></div></form>;
+  return <form onSubmit={action} className="grid gap-3"><input type="hidden" name="propertyId" value={propertyId}/><input type="hidden" name="reservationId" value={reservationId}/><label className={labelClass}>Motivo de cancelación<input className={inputClass} name="reason" minLength={3} maxLength={500} required/></label><div className="flex flex-wrap items-center gap-3"><ConfirmButton disabled={pending} title="Cancelar reserva" message="¿Desea cancelar esta reserva? El horario quedará libre para otras reservas y la cancelación queda registrada con su motivo. Esta acción no se puede deshacer." confirmLabel="Sí, cancelar reserva">{pending?"Cancelando…":"Cancelar reserva"}</ConfirmButton><Result state={state}/></div></form>;
 }

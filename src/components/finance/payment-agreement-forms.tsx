@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { addReceivableToAgreement, cancelPaymentAgreement, createPaymentAgreement, type FinanceState } from "@/app/panel/propiedades/[propertyId]/cartera/actions";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { formatCop } from "@/lib/finance/constants";
 
@@ -122,6 +123,6 @@ export function CancelPaymentAgreementForm({ propertyId, unitId, agreementId }: 
   return <form onSubmit={action} className="mt-4 flex flex-wrap items-end gap-3 border-t pt-4">
     <input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="unitId" value={unitId} /><input type="hidden" name="agreementId" value={agreementId} />
     <label className={`${labelClass} min-w-64 flex-1`}>Motivo de cancelación<input className={inputClass} name="reason" minLength={4} maxLength={1000} required /></label>
-    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Cancelando…" : "Cancelar acuerdo"}</Button><Result state={state} />
+    <ConfirmButton disabled={pending} title="Cancelar acuerdo de pago" message="¿Desea cancelar este acuerdo de pago? Las cuotas pendientes dejan de aplicar y las deudas vuelven a cobrarse como antes del acuerdo. Esta acción no se puede deshacer." confirmLabel="Sí, cancelar acuerdo">{pending ? "Cancelando…" : "Cancelar acuerdo"}</ConfirmButton><Result state={state} />
   </form>;
 }

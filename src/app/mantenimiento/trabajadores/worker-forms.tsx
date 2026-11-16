@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { conciergeUsername } from "@/lib/concierge/identity";
 import type { Vehicle } from "@/lib/concierge/person";
@@ -49,7 +50,7 @@ export function MaintenanceWorkerForm() {
 export function MaintenanceWorkerStatusForm({ recordId, suspended }: { recordId: string; suspended: boolean }) {
   const [state, action, pending] = useFormActionState(setMaintenanceWorkerStatus, undefined as WorkerState);
   return <form onSubmit={action} className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4"><input type="hidden" name="recordId" value={recordId} /><input type="hidden" name="status" value={suspended ? "active" : "suspended"} />
-    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : suspended ? "Reactivar acceso" : "Suspender acceso"}</Button>
+    {suspended ? <Button size="sm" variant="outline" disabled={pending}>{pending ? "Guardando…" : "Reactivar acceso"}</Button> : <ConfirmButton disabled={pending} title="Suspender acceso" message="¿Desea suspender el acceso de este trabajador? No podrá entrar al módulo de mantenimiento hasta que lo reactive. Su ficha y su historial se conservan." confirmLabel="Sí, suspender">{pending ? "Guardando…" : "Suspender acceso"}</ConfirmButton>}
     {state?.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}{state?.success && <p role="status" className="text-sm text-primary">{state.success}</p>}
   </form>;
 }

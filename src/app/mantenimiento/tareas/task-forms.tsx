@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { compressImage } from "@/lib/images/compress";
@@ -42,8 +43,8 @@ export function ReviewTaskForm({ taskId }: { taskId: string }) {
 
 export function DeleteTaskForm({ taskId }: { taskId: string }) {
   const [state, action, pending] = useFormActionState(deleteTask, undefined as TaskState);
-  return <form onSubmit={(event) => { if (!confirm("¿Eliminar esta tarea? Esta acción no se puede deshacer.")) { event.preventDefault(); return; } action(event); }} className="mt-3 flex flex-wrap items-center gap-3"><input type="hidden" name="taskId" value={taskId} />
-    <Button size="sm" variant="ghost" className="text-destructive" disabled={pending}>Eliminar tarea</Button><Feedback state={state} />
+  return <form onSubmit={action} className="mt-3 flex flex-wrap items-center gap-3"><input type="hidden" name="taskId" value={taskId} />
+    <ConfirmButton variant="ghost" className="text-destructive" disabled={pending} title="Eliminar tarea" message="¿Desea eliminar esta tarea de forma definitiva? El trabajador dejará de verla y esta acción no se puede deshacer." confirmLabel="Sí, eliminar tarea">{pending ? "Eliminando…" : "Eliminar tarea"}</ConfirmButton><Feedback state={state} />
   </form>;
 }
 

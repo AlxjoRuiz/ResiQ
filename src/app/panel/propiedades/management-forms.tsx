@@ -2,6 +2,7 @@
 
 
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 import { endUnitMembership, manageMember, queueResidentInvitation, revealInvitationLink, saveBuilding, updateProperty, type InvitationLinkState, type ManagementState } from "./actions";
 
@@ -56,7 +57,7 @@ export function EndMembershipForm({ propertyId, unitMembershipId }: { propertyId
   return <form onSubmit={action} className="flex flex-wrap items-center gap-2">
     <input type="hidden" name="propertyId" value={propertyId} />
     <input type="hidden" name="unitMembershipId" value={unitMembershipId} />
-    <Button type="submit" size="sm" variant="outline" disabled={pending}>{pending ? "Desvinculando…" : "Desvincular del apartamento"}</Button>
+    <ConfirmButton disabled={pending} title="Desvincular del apartamento" message="¿Desea desvincular a esta persona del apartamento? Perderá el acceso a ResiQ para este apartamento. El apartamento y su historial se conservan." confirmLabel="Sí, desvincular">{pending ? "Desvinculando…" : "Desvincular del apartamento"}</ConfirmButton>
     <Result state={state} />
   </form>;
 }

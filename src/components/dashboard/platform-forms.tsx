@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { setLegalAssignment, setPropertyStatus, setPropertyTest, setSeasonalDecor, setSeasonalTheme, setTestEmail, type PlatformState } from "@/app/plataforma/actions";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
 
 function Result({ state }: { state: PlatformState }) { if (state?.error) return <p role="alert" className="text-sm text-destructive">{state.error}</p>; if (state?.success) return <p role="status" className="text-sm text-primary">{state.success}</p>; return null; }
@@ -19,20 +20,15 @@ export function SeasonalThemeForm({ theme }: { theme: keyof typeof themeLabels }
   return <form onSubmit={action} className="flex flex-wrap items-center gap-2">{(Object.keys(themeLabels) as (keyof typeof themeLabels)[]).map((key) => <Button key={key} name="theme" value={key} size="sm" variant={key === theme ? "default" : "outline"} aria-pressed={key === theme} disabled={pending}>{themeLabels[key]}</Button>)}<Result state={state} /></form>;
 }
 
-// Suspender pide confirmación centrada con el fondo desenfocado (mismo diseño que desvincular).
+// Suspender pide confirmación con el aviso rojo común en el centro de la pantalla (15/11/2026).
 export function PropertyStatusForm({ propertyId, propertyName, suspended }: { propertyId: string; propertyName: string; suspended: boolean }) {
   const [state, action, pending] = useFormActionState(setPropertyStatus, undefined as PlatformState);
-  const [confirming, setConfirming] = useState(false);
-  const form = (label: string) => <form onSubmit={action} className="flex flex-wrap items-center gap-2"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="status" value={suspended ? "active" : "suspended"} /><Button size="sm" disabled={pending}>{pending ? "Guardando…" : label}</Button>{confirming && <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => setConfirming(false)}>Cancelar</Button>}</form>;
-  if (suspended) return <div className="flex flex-wrap items-center gap-3">{form("Reactivar conjunto")}<Result state={state} /></div>;
   return <div className="flex flex-wrap items-center gap-3">
-    <Button type="button" size="sm" variant="outline" onClick={() => setConfirming(true)}>Suspender conjunto</Button><Result state={state} />
-    {confirming && <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Confirmar suspensión">
-      <div className="w-full max-w-md space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-lg">
-        <p>¿Seguro que quieres suspender «{propertyName}»? Nadie del conjunto (administración, portería ni residentes) podrá entrar a sus datos hasta que lo reactives. No se borra nada.</p>
-        {form("Sí, suspender")}
-      </div>
-    </div>}
+    <form onSubmit={action} className="flex flex-wrap items-center gap-2"><input type="hidden" name="propertyId" value={propertyId} /><input type="hidden" name="status" value={suspended ? "active" : "suspended"} />
+      {suspended ? <Button size="sm" disabled={pending}>{pending ? "Guardando…" : "Reactivar conjunto"}</Button>
+        : <ConfirmButton disabled={pending} title="Suspender conjunto" message={<>¿Desea suspender <strong>{propertyName}</strong>? Nadie del conjunto (administración, portería ni residentes) podrá entrar a sus datos hasta que lo reactive. No se borra ninguna información.</>} confirmLabel="Sí, suspender">{pending ? "Guardando…" : "Suspender conjunto"}</ConfirmButton>}
+    </form>
+    <Result state={state} />
   </div>;
 }
 
@@ -64,6 +60,6 @@ export function TestEmailForm() {
 export function RemoveTestEmailForm({ email }: { email: string }) {
   const [state, action, pending] = useFormActionState(setTestEmail, undefined as PlatformState);
   return <form onSubmit={action} className="flex flex-wrap items-center gap-2"><input type="hidden" name="email" value={email} /><input type="hidden" name="isTest" value="false" />
-    <Button size="sm" variant="outline" disabled={pending}>{pending ? "Quitando…" : "Quitar"}</Button><Result state={state} />
+    <ConfirmButton disabled={pending} title="Quitar correo de prueba" message={<>¿Desea quitar <strong>{email}</strong> de los correos de prueba? Sus datos volverán a contarse como reales.</>} confirmLabel="Sí, quitar">{pending ? "Quitando…" : "Quitar"}</ConfirmButton><Result state={state} />
   </form>;
 }

@@ -2,6 +2,7 @@
 
 import { Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ui/confirm-button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useState } from "react";
 import { useFormActionState } from "@/lib/forms/use-form-action-state";
@@ -32,17 +33,17 @@ export function NewWarningForm({ workers, today }: { workers: { staffId: string;
   </form>;
 }
 
-// Admin: editar o borrar un llamado ya registrado (13/11/2026). Borrar pide confirmación.
+// Admin: editar o borrar un llamado ya registrado (13/11/2026). Borrar pide confirmación con el aviso rojo común (15/11/2026).
 function RemoveAttachment({ attachment }: { attachment: WarningAttachment }) {
   const [state, action, pending] = useFormActionState(removeWarningAttachment, undefined as WarningState);
   return <form onSubmit={action} className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2 text-sm"><input type="hidden" name="attachmentId" value={attachment.id} />
     <span className="flex min-w-0 items-center gap-2 text-primary"><Paperclip size={14} className="shrink-0" aria-hidden="true" /><span className="break-all">{attachment.name}</span></span>
-    <span className="flex shrink-0 items-center gap-2">{state?.error && <span role="alert" className="text-xs text-destructive">{state.error}</span>}<Button size="sm" variant="outline" disabled={pending}>{pending ? "Quitando…" : "Quitar"}</Button></span>
+    <span className="flex shrink-0 items-center gap-2">{state?.error && <span role="alert" className="text-xs text-destructive">{state.error}</span>}<ConfirmButton disabled={pending} title="Quitar documento" message={<>¿Desea quitar el documento «{attachment.name}» de este llamado de atención? El trabajador dejará de verlo.</>} confirmLabel="Sí, quitar">{pending ? "Quitando…" : "Quitar"}</ConfirmButton></span>
   </form>;
 }
 
 export function WarningAdminActions({ warning, today, attachments = [] }: { warning: { id: string; date: string; reason: string; description: string }; today: string; attachments?: WarningAttachment[] }) {
-  const [mode, setMode] = useState<"none" | "edit" | "delete">("none");
+  const [mode, setMode] = useState<"none" | "edit">("none");
   const [files, setFiles] = useState<File[]>([]);
   const [editState, edit, saving] = useFormActionState(async (previous: WarningState, data: FormData) => {
     const result = await updateWarning(previous, withFiles(data, files));
@@ -52,7 +53,7 @@ export function WarningAdminActions({ warning, today, attachments = [] }: { warn
   }, undefined as WarningState);
   const [deleteState, remove, deleting] = useFormActionState(deleteWarning, undefined as WarningState);
   return <div className="mt-4 border-t pt-3">
-    {mode === "none" && <div className="flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setMode("edit")}>Editar</Button><Button type="button" size="sm" variant="outline" className="text-destructive" onClick={() => setMode("delete")}>Borrar</Button>{editState?.success && <p role="status" className="self-center text-sm text-primary">{editState.success}</p>}</div>}
+    {mode === "none" && <div className="flex flex-wrap gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setMode("edit")}>Editar</Button><form onSubmit={remove}><input type="hidden" name="warningId" value={warning.id} /><ConfirmButton className="text-destructive" disabled={deleting} title="Borrar llamado de atención" message="¿Desea borrar este llamado de atención? El trabajador ya no lo verá y esta acción no se puede deshacer." confirmLabel="Sí, borrar">{deleting ? "Borrando…" : "Borrar"}</ConfirmButton></form>{deleteState?.error && <p role="alert" className="self-center text-sm text-destructive">{deleteState.error}</p>}{editState?.success && <p role="status" className="self-center text-sm text-primary">{editState.success}</p>}</div>}
     {/* Edición en un recuadro (14/11/2026): primero los documentos cargados (cada uno con «Quitar»), después los datos. */}
     {mode === "edit" && <div className="grid gap-4 rounded-xl border bg-secondary/30 p-4">
       <p className="text-sm font-semibold text-primary">Editar llamado</p>
@@ -65,9 +66,5 @@ export function WarningAdminActions({ warning, today, attachments = [] }: { warn
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2"><Button size="sm" disabled={saving}>{saving ? "Guardando…" : "Guardar cambios"}</Button><Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => setMode("none")}>Cancelar</Button>{editState?.error && <p role="alert" className="text-sm text-destructive">{editState.error}</p>}</div>
       </form>
     </div>}
-    {mode === "delete" && <form onSubmit={remove} className="grid gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3"><input type="hidden" name="warningId" value={warning.id} />
-      <p className="text-sm">¿Borrar este llamado de atención? El trabajador ya no lo verá y no se puede deshacer.</p>
-      <div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="outline" className="text-destructive" disabled={deleting}>{deleting ? "Borrando…" : "Sí, borrar"}</Button><Button type="button" size="sm" variant="outline" disabled={deleting} onClick={() => setMode("none")}>Cancelar</Button>{deleteState?.error && <p role="alert" className="text-sm text-destructive">{deleteState.error}</p>}</div>
-    </form>}
   </div>;
 }
